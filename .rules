@@ -131,58 +131,77 @@ While updating an entity (`cx: Context<T>`), it can emit an event using `cx.emit
 
 Other entities can then register a callback to handle these events by doing `cx.subscribe(other_entity, |this, other_entity, event, cx| ...)`. This will return a `Subscription` which deregisters the callback when dropped.  Typically `cx.subscribe` happens when creating a new entity and the subscriptions are stored in a `_subscriptions: Vec<Subscription>` field.
 
-## Build guidelines
+# Mux architecture guidelines
 
-- Use `./script/clippy` instead of `cargo clippy`
+zerminal uses a server-canonical multiplexer model. The GUI client renders state; `mux_server` owns all authority.
+
+* **Server-canonical terminal state.** `mux_server` owns PTY fds, runs the alacritty emulator, parses DEC escape sequences, and holds scrollback. The GUI client never parses PTY bytes and never holds layout authority.（来源：spec §3.1, §15.1）
+* **One data path.** Local and remote sessions use the same framed binary protocol over a socket. There is no shared-memory fast path and no dual parsing.（来源：spec §3.1）
+* **`MuxDomain` is a concrete struct.** Do not introduce a `Domain` trait for a single implementation. Extract a trait only if a second real implementation appears.（来源：spec §3.2）
+* **Generation counter.** Each pane has a monotonic generation counter that increments on every render-affecting change: PTY output, cursor style, alternate screen switch, scroll offset, and title update.（来源：spec §3.3, §15.13）
+* **Row-level grid diff.** Grid diffs are row-level and aligned with alacritty's internal `dirty_lines` damage tracking. Do not invent a separate damage model.（来源：spec §3.3, §16.3）
+* **Push signal, pull data.** `mux_server` sends a lightweight `PaneDirty(PaneId)` push notification; the client schedules a repaint and then calls `fetch_grid_update` to pull the actual diff or full snapshot.（来源：spec §3.3, §3.4）
+* **Notification delivery semantics.** `PaneDirty` is at-most-once (missing one is harmless). Lifecycle events such as `PaneAdded`, `PaneRemoved`, and `SessionLayoutChanged` are at-least-once; losing a `PaneRemoved` creates a zombie pane.（来源：spec §3.4）
+* **Authoritative reconnect.** On attach or reconnect, the server returns a full session snapshot (panes, tabs, layout tree, focus, generations). The client reconciles from this snapshot rather than relying on missed push notifications.（来源：spec §15.4, §15.12）
+* **Process keepalive.** By default `keep_alive = true`. The daemon stays alive until explicitly killed, matching tmux expectations.（来源：spec §3.5, §16.1）
+
+# Migration tracking
+
+zerminal is migrating from a Zed fork. Migration holes are marked explicitly and fixed by removing the marker.
+
+* **Mark holes with `#[zerminal_todo]`.** Use this attribute on functions, modules, or items that reference deleted crates, broken references, stubs, or disabled features.（来源：spec §8.1）
+* **Fixing a hole means deleting the attribute.** There is no separate cleanup step. When the underlying issue is resolved, remove `#[zerminal_todo]`.
+* **Categories.** Use exactly one of:
+  - `removed-crate` — code depends on a crate that has been deleted.
+  - `broken-ref` — a type/function reference is broken because its source was pruned.
+  - `stub` — a placeholder implementation that needs real logic.
+  - `disabled-feature` — functionality temporarily disabled during migration.
+* **Feature flag behavior.** Without the `zerminal-migration` feature, `#[zerminal_todo]` expands to `compile_error!`. With `--features zerminal-migration` it registers the hole and compilation succeeds.（来源：spec §8.1）
+* **Two-pass discipline.** Pass 1 scans and marks holes; Pass 2 fixes them. Verify milestones with `cargo check --features zerminal-migration`.（来源：spec §8.2）
+* **`.rs.old` files must never be committed.** They are local temporary artifacts. Git history is the official backup; delete `.rs.old` files before any commit.（来源：spec §8.2）
+
+# Extension system
+
+zerminal's UI chrome is implemented as QuickJS extensions. Native GPUI chrome is the Day 0 baseline, not a fallback.
+
+* **QuickJS runtime on a dedicated OS thread.** The extension host must not run on the GPUI render thread. Extensions communicate with the UI via async channels; a hung extension freezes only itself.（来源：spec §5.2）
+* **Extensions declare their runtime side.** In `extension.toml`, set `[runtime] side = "server" | "client" | "both"`. Server-side extensions run on the remote host and access remote PTY/grid/filesystem; client-side extensions render chrome via GPUI.（来源：spec §16.8）
+* **Core commands work without the extension host.** Split pane, switch pane, create/close tab, attach/detach, settings, and kill server/session must all be reachable through native keybindings even if QuickJS is not running, crashed, or fuel-limited.（来源：spec §15.7）
+* **Chrome renders through JSON, not direct GPUI calls.** Extensions return a Virtual DOM or display-list JSON; the native GPUI bridge maps it to elements. High-frequency widgets (clocks, meters) use the display-list pattern.（来源：spec §5.4）
+* **Capabilities and resource limits.** Enforce declared capabilities and resource limits (`memory_limit_mb`, `cpu_budget_ms`, `io_rate_limit`) at runtime. Violations suspend the extension.（来源：spec §5.3, §5.6）
+
+# Shadow snapshot constraints
+
+Shadow snapshot provides crash-safe, fine-grained filesystem versioning independent of git.
+
+* **Single-writer thread for WAL.** WAL appends and MemTable inserts happen on exactly one watcher processing thread. There is no concurrent insertion.（来源：spec §4.3, §4.5）
+* **SeqNo is monotonic.** Assign `SeqNo` atomically before WAL append. Never use wall clock or file mtime for ordering; NTP rollback must not break ordering.（来源：spec §4.4, §4.5）
+* **WAL append before file write.** For decline/undo operations, append the WAL entry and fsync before writing the restored file to disk. Crash recovery replays the WAL to finish incomplete operations.（来源：spec §4.8）
+* **Bounded delta chain with Rope replay.** Delta chains are capped at `D_max = 16`. The 17th version forces a full snapshot. Replay deltas using Rope operations, not string concatenation.（来源：spec §4.6）
+* **Age-based eviction.** Evict old nodes by `SeqNo` (FIFO), not LRU. Promote delta children to full snapshots when needed during GC.（来源：spec §4.9）
+
+# Build guidelines
+
+* During active migration, use `cargo check --features zerminal-migration`. This lets `#[zerminal_todo]` holes compile so you can verify intermediate states.
+* For final verification, use `cargo check` with no migration feature. Unfixed holes become `compile_error!`, so a clean check means migration is complete.
+* Do not use `./script/clippy` until the migration scripts are updated for zerminal.
 
 # Pull request hygiene
 
 When an agent opens or updates a pull request, it must:
 
-- Use a clear, correctly capitalized, imperative PR title (for example, `Fix crash in project panel`).
-- Avoid conventional commit prefixes in PR titles (`fix:`, `feat:`, `docs:`, etc.).
-- Avoid trailing punctuation in PR titles.
-- Optionally prefix the title with a crate name when one crate is the clear scope (for example, `git_ui: Add history view`).
-- Include a `Release Notes:` section as the final section in the PR body.
-- Use one bullet under `Release Notes:`:
+* Use a clear, correctly capitalized, imperative PR title (for example, `Fix crash in session manager` or `Add scrollback search to terminal pane`).
+* Avoid conventional commit prefixes in PR titles (`fix:`, `feat:`, `docs:`, etc.).
+* Avoid trailing punctuation in PR titles.
+* Optionally prefix the title with a crate name when one crate is the clear scope (for example, `mux: Add remote transport handshake`).
+* Include a `Release Notes:` section as the final section in the PR body.
+* Use one bullet under `Release Notes:`:
   - `- Added ...`, `- Fixed ...`, or `- Improved ...` for user-facing changes, or
   - `- N/A` for docs-only and other non-user-facing changes.
-- Format release notes exactly with a blank line after the heading, for example:
+* Format release notes exactly with a blank line after the heading, for example:
 
 ```
 Release Notes:
 
 - N/A
 ```
-
-# Crash Investigation
-
-## Sentry Integration
-- Crash investigation prompts: `.factory/prompts/crash/investigate.md`
-- Crash fix prompts: `.factory/prompts/crash/fix.md`
-- Fetch crash reports: `script/sentry-fetch <issue-id>`
-- Generate investigation prompt from crash: `script/crash-to-prompt <issue-id>`
-
-# Rules Hygiene
-
-These `.rules` files are read by every agent session. Keep them high-signal.
-
-## After any agentic session
-If you discover a non-obvious pattern that would help future sessions, include a **"Suggested .rules additions"** heading in your PR description with the proposed text. Do **not** edit `.rules` inline during normal feature/fix work. Reviewers decide what gets merged.
-
-## High bar for new rules
-Editing or clarifying existing rules is always welcome. New rules must meet **all three** criteria:
-1. **Non-obvious** — someone familiar with the codebase would still get it wrong without the rule.
-2. **Repeatedly encountered** — it came up more than once (multiple hits in one session counts).
-3. **Specific enough to act on** — a concrete instruction, not a vague principle.
-
-Rules that apply to a single crate belong in that crate's own `.rules` file, not the repo root.
-
-## What NOT to put in `.rules`
-Avoid architectural descriptions of a crate (module layout, data flow, key types). These go stale fast and the agent can gather them by reading the code. Rules should be **traps to avoid**, not **maps to follow**.
-
-## No drive-by additions
-Rules emerge from validated patterns, not one-off observations. The workflow is:
-1. Agent notes a pattern during a session.
-2. Team validates the pattern in code review.
-3. A dedicated commit adds the rule with context on *why* it exists.
