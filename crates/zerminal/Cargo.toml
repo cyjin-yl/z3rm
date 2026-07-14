@@ -5,52 +5,30 @@ path = "src/main.rs"
 [[bin]]
 name = "zed_visual_test_runner"
 path = "src/visual_test_runner.rs"
-required-features = [ "visual-tests",]
+required-features = [ "visual-tests"]
 
 [package]
 description = "The fast, collaborative code editor."
 name = "zerminal"
 version = "1.12.0"
 license = "GPL-3.0-or-later"
-authors = [ "Zed Team <hi@zed.dev>",]
+authors = [ "Zed Team <hi@zed.dev>"]
 default-run = "zerminal"
 
 [lints]
 workspace = true
 
 [features]
-tracy = [ "ztracing/tracy",]
-track-project-leak = [ "gpui/leak-detection",]
-test-support = [ "gpui/test-support", "gpui_platform/screen-capture", "dep:image", "workspace/test-support", "project/test-support", "editor/test-support", "terminal_view/test-support", "image_viewer/test-support", "recent_projects/test-support", "repl/test-support", "title_bar/test-support",]
-visual-tests = [ "gpui/test-support", "gpui_platform/screen-capture", "gpui_platform/test-support", "dep:image", "dep:tempfile", "dep:action_log", "dep:agent_servers", "workspace/test-support", "project/test-support", "editor/test-support", "terminal_view/test-support", "image_viewer/test-support", "clock/test-support", "acp_thread/test-support", "action_log/test-support", "agent_ui/test-support", "db/test-support", "agent/test-support", "language_model/test-support", "fs/test-support", "recent_projects/test-support", "title_bar/test-support",]
+tracy = [ "ztracing/tracy"]
+track-project-leak = [ "gpui/leak-detection"]
+test-support = [ "gpui/test-support", "gpui_platform/screen-capture", "workspace/test-support", "project/test-support", "editor/test-support", "terminal_view/test-support", "recent_projects/test-support", "title_bar/test-support"]
+visual-tests = [ "gpui/test-support", "gpui_platform/screen-capture", "gpui_platform/test-support", "dep:tempfile", "workspace/test-support", "project/test-support", "editor/test-support", "terminal_view/test-support", "clock/test-support", "db/test-support", "fs/test-support", "recent_projects/test-support", "title_bar/test-support"]
 
 [package.edition]
 workspace = true
 
 [package.publish]
 workspace = true
-
-[dependencies.acp_tools]
-workspace = true
-
-[dependencies.activity_indicator]
-workspace = true
-
-[dependencies.agent]
-workspace = true
-
-[dependencies.agent-client-protocol]
-workspace = true
-
-[dependencies.agent_settings]
-workspace = true
-
-[dependencies.agent_skills]
-workspace = true
-
-[dependencies.agent_ui]
-workspace = true
-features = [ "audio",]
 
 [dependencies.anyhow]
 workspace = true
@@ -61,40 +39,13 @@ workspace = true
 [dependencies.assets]
 workspace = true
 
-[dependencies.audio]
-workspace = true
-
 [dependencies.auto_update]
 workspace = true
 
 [dependencies.auto_update_ui]
 workspace = true
 
-[dependencies.breadcrumbs]
-workspace = true
-
-[dependencies.call]
-workspace = true
-
-[dependencies.chrono]
-workspace = true
-
-[dependencies.channel]
-workspace = true
-
-[dependencies.clap]
-workspace = true
-
 [dependencies.cli]
-workspace = true
-
-[dependencies.client]
-workspace = true
-
-[dependencies.codestral]
-workspace = true
-
-[dependencies.collab_ui]
 workspace = true
 
 [dependencies.collections]
@@ -106,40 +57,13 @@ workspace = true
 [dependencies.component]
 workspace = true
 
-[dependencies.component_preview]
-workspace = true
-
-[dependencies.copilot]
-workspace = true
-
-[dependencies.copilot_chat]
-workspace = true
-
 [dependencies.copilot_ui]
 workspace = true
 
 [dependencies.crashes]
 workspace = true
 
-[dependencies.csv_preview]
-workspace = true
-
-[dependencies.dap_adapters]
-workspace = true
-
 [dependencies.db]
-workspace = true
-
-[dependencies.debug_adapter_extension]
-workspace = true
-
-[dependencies.debugger_tools]
-workspace = true
-
-[dependencies.debugger_ui]
-workspace = true
-
-[dependencies.dev_container]
 workspace = true
 
 [dependencies.diagnostics]
@@ -166,9 +90,6 @@ workspace = true
 [dependencies.feature_flags]
 workspace = true
 
-[dependencies.feedback]
-workspace = true
-
 [dependencies.file_finder]
 workspace = true
 
@@ -186,33 +107,22 @@ workspace = true
 
 [dependencies.git_ui]
 workspace = true
-features = [ "call",]
 
 [dependencies.go_to_line]
 workspace = true
 
-[dependencies.system_specs]
-workspace = true
-
 [dependencies.gpui]
 workspace = true
-features = [ "input-latency-histogram",]
+features = [ "input-latency-histogram"]
 
 [dependencies.gpui_platform]
 workspace = true
-features = [ "screen-capture", "font-kit", "wayland", "x11",]
+features = [ "screen-capture", "font-kit", "wayland", "x11"]
 
 [dependencies.hdrhistogram]
 workspace = true
 
-[dependencies.image]
-workspace = true
-optional = true
-
 [dependencies.itertools]
-workspace = true
-
-[dependencies.semver]
 workspace = true
 
 [dependencies.tempfile]
@@ -223,45 +133,13 @@ optional = true
 workspace = true
 optional = true
 
-[dependencies.acp_thread]
-workspace = true
-
-[dependencies.action_log]
-workspace = true
-optional = true
-
-[dependencies.agent_servers]
-workspace = true
-optional = true
-
 [dependencies.gpui_tokio]
 workspace = true
 
 [dependencies.rayon]
 workspace = true
 
-[dependencies.edit_prediction]
-workspace = true
-
-[dependencies.edit_prediction_ui]
-workspace = true
-
 [dependencies.http_client]
-workspace = true
-
-[dependencies.image_viewer]
-workspace = true
-
-[dependencies.input_latency_ui]
-workspace = true
-
-[dependencies.inspector_ui]
-workspace = true
-
-[dependencies.install_cli]
-workspace = true
-
-[dependencies.journal]
 workspace = true
 
 [dependencies.json_schema_store]
@@ -276,63 +154,23 @@ workspace = true
 [dependencies.language_extension]
 workspace = true
 
-[dependencies.language_model]
-workspace = true
-
-[dependencies.language_models]
-workspace = true
-
-[dependencies.language_onboarding]
-workspace = true
-
 [dependencies.language_selector]
-workspace = true
-
-[dependencies.language_tools]
 workspace = true
 
 [dependencies.languages]
 workspace = true
-features = [ "load-grammars",]
+features = [ "load-grammars"]
 
 [dependencies.line_ending_selector]
-workspace = true
-
-[dependencies.log]
 workspace = true
 
 [dependencies.markdown]
 workspace = true
 
-[dependencies.markdown_preview]
-workspace = true
-
 [dependencies.menu]
 workspace = true
 
-[dependencies.migrator]
-workspace = true
-
-[dependencies.miniprofiler_ui]
-workspace = true
-
-[dependencies.mimalloc]
-version = "0.1"
-optional = true
-
-[dependencies.node_runtime]
-workspace = true
-
 [dependencies.notifications]
-workspace = true
-
-[dependencies.onboarding]
-workspace = true
-
-[dependencies.outline]
-workspace = true
-
-[dependencies.outline_panel]
 workspace = true
 
 [dependencies.parking_lot]
@@ -356,9 +194,6 @@ workspace = true
 [dependencies.project_symbols]
 workspace = true
 
-[dependencies.prompt_store]
-workspace = true
-
 [dependencies.proto]
 workspace = true
 
@@ -371,12 +206,6 @@ workspace = true
 [dependencies.remote]
 workspace = true
 
-[dependencies.repl]
-workspace = true
-
-[dependencies.reqwest]
-workspace = true
-
 [dependencies.reqwest_client]
 workspace = true
 
@@ -387,12 +216,6 @@ workspace = true
 workspace = true
 
 [dependencies.search]
-workspace = true
-
-[dependencies.serde]
-workspace = true
-
-[dependencies.serde_json]
 workspace = true
 
 [dependencies.session]
@@ -416,25 +239,10 @@ workspace = true
 [dependencies.smol]
 workspace = true
 
-[dependencies.snippet_provider]
-workspace = true
-
-[dependencies.snippets_ui]
-workspace = true
-
-[dependencies.svg_preview]
-workspace = true
-
 [dependencies.sysinfo]
 workspace = true
 
 [dependencies.tab_switcher]
-workspace = true
-
-[dependencies.task]
-workspace = true
-
-[dependencies.tasks_ui]
 workspace = true
 
 [dependencies.telemetry]
@@ -458,12 +266,6 @@ workspace = true
 [dependencies.theme_selector]
 workspace = true
 
-[dependencies.time]
-workspace = true
-
-[dependencies.time_format]
-workspace = true
-
 [dependencies.title_bar]
 workspace = true
 
@@ -471,9 +273,6 @@ workspace = true
 workspace = true
 
 [dependencies.tracing]
-workspace = true
-
-[dependencies.toolchain_selector]
 workspace = true
 
 [dependencies.ui]
@@ -489,24 +288,6 @@ workspace = true
 workspace = true
 
 [dependencies.util]
-workspace = true
-
-[dependencies.uuid]
-workspace = true
-
-[dependencies.vim]
-workspace = true
-
-[dependencies.vim_mode_setting]
-workspace = true
-
-[dependencies.watch]
-workspace = true
-
-[dependencies.web_search]
-workspace = true
-
-[dependencies.web_search_providers]
 workspace = true
 
 [dependencies.which_key]
@@ -530,103 +311,75 @@ workspace = true
 [dependencies.zerminal_macros_types]
 workspace = true
 
-[build-dependencies.windows_resources]
-path = "../windows_resources"
-
-[dev-dependencies.call]
-workspace = true
-features = [ "test-support",]
-
 [dev-dependencies.editor]
 workspace = true
-features = [ "test-support",]
+features = [ "test-support"]
 
 [dev-dependencies.gpui]
 workspace = true
-features = [ "input-latency-histogram", "test-support",]
-
-[dev-dependencies.image_viewer]
-workspace = true
-features = [ "test-support",]
+features = [ "input-latency-histogram", "test-support"]
 
 [dev-dependencies.itertools]
 workspace = true
 
 [dev-dependencies.language]
 workspace = true
-features = [ "test-support",]
-
-[dev-dependencies.pretty_assertions]
-workspace = true
+features = [ "test-support"]
 
 [dev-dependencies.project]
 workspace = true
-features = [ "test-support",]
-
-[dev-dependencies.semver]
-workspace = true
+features = [ "test-support"]
 
 [dev-dependencies.terminal_view]
 workspace = true
-features = [ "test-support",]
+features = [ "test-support"]
 
 [dev-dependencies.title_bar]
 workspace = true
-features = [ "test-support",]
+features = [ "test-support"]
 
 [dev-dependencies.workspace]
 workspace = true
-features = [ "test-support",]
-
-[dev-dependencies.image]
-workspace = true
-
-[dev-dependencies.agent_ui]
-workspace = true
-features = [ "test-support",]
+features = [ "test-support"]
 
 [dev-dependencies.search]
 workspace = true
-features = [ "test-support",]
-
-[dev-dependencies.repl]
-workspace = true
-features = [ "test-support",]
+features = [ "test-support"]
 
 [package.metadata.bundle-dev]
-icon = [ "resources/app-icon-dev@2x.png", "resources/app-icon-dev.png",]
+icon = [ "resources/app-icon-dev@2x.png", "resources/app-icon-dev.png"]
 identifier = "dev.zerminal.Zerminal-Dev"
 name = "Zerminal Dev"
 osx_minimum_system_version = "10.15.7"
-osx_info_plist_exts = [ "resources/info/*",]
-osx_url_schemes = [ "zerminal",]
+osx_info_plist_exts = [ "resources/info/*"]
+osx_url_schemes = [ "zerminal"]
 
 [package.metadata.bundle-nightly]
-icon = [ "resources/app-icon-nightly@2x.png", "resources/app-icon-nightly.png",]
+icon = [ "resources/app-icon-nightly@2x.png", "resources/app-icon-nightly.png"]
 identifier = "dev.zerminal.Zerminal-Nightly"
 name = "Zerminal Nightly"
 osx_minimum_system_version = "10.15.7"
-osx_info_plist_exts = [ "resources/info/*",]
-osx_url_schemes = [ "zerminal",]
+osx_info_plist_exts = [ "resources/info/*"]
+osx_url_schemes = [ "zerminal"]
 
 [package.metadata.bundle-preview]
-icon = [ "resources/app-icon-preview@2x.png", "resources/app-icon-preview.png",]
+icon = [ "resources/app-icon-preview@2x.png", "resources/app-icon-preview.png"]
 identifier = "dev.zerminal.Zerminal-Preview"
 name = "Zerminal Preview"
 osx_minimum_system_version = "10.15.7"
-osx_info_plist_exts = [ "resources/info/*",]
-osx_url_schemes = [ "zerminal",]
+osx_info_plist_exts = [ "resources/info/*"]
+osx_url_schemes = [ "zerminal"]
 
 [package.metadata.bundle-stable]
-icon = [ "resources/app-icon@2x.png", "resources/app-icon.png",]
+icon = [ "resources/app-icon@2x.png", "resources/app-icon.png"]
 identifier = "dev.zerminal.Zerminal"
 name = "Zerminal"
 osx_minimum_system_version = "10.15.7"
-osx_info_plist_exts = [ "resources/info/*",]
-osx_url_schemes = [ "zerminal",]
+osx_info_plist_exts = [ "resources/info/*"]
+osx_url_schemes = [ "zerminal"]
 
 [package.metadata.cargo-machete]
-ignored = [ "profiling", "zstd", "tracing",]
+ignored = [ "profiling", "zstd", "tracing"]
 
 [target."cfg(target_os = \"linux\")".build-dependencies]
 pkg-config = "0.3.22"
@@ -634,22 +387,13 @@ pkg-config = "0.3.22"
 [target."cfg(target_os = \"windows\")".dependencies.etw_tracing]
 workspace = true
 
-[target."cfg(target_os = \"windows\")".dependencies.windows]
-workspace = true
-
 [target."cfg(target_os = \"windows\")".dependencies.gpui]
 workspace = true
-features = [ "input-latency-histogram", "windows-manifest",]
+features = [ "input-latency-histogram", "windows-manifest"]
 
 [target."cfg(any(target_os = \"linux\", target_os = \"freebsd\"))".dependencies.gpui]
 workspace = true
-features = [ "input-latency-histogram", "wayland", "x11",]
-
-[target."cfg(any(target_os = \"linux\", target_os = \"freebsd\"))".dependencies.ashpd]
-workspace = true
-
-[target."cfg(any(target_os = \"linux\", target_os = \"freebsd\"))".dependencies.image]
-workspace = true
+features = [ "input-latency-histogram", "wayland", "x11"]
 
 [target."cfg(any(target_os = \"linux\", target_os = \"freebsd\"))".build-dependencies.image]
 workspace = true

@@ -5,7 +5,16 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{panic::Location, pin::Pin};
 
-// use system_specs::GpuSpecs;  // removed-crate: system_specs
+// GPU 信息类型 - system_specs 已删除,使用 stub 替代
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct GpuSpecs {
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct GpuInfo {
+    pub name: String,
+}
 
 use std::{
     env,
@@ -168,7 +177,7 @@ where
 pub struct CrashServer {
     initialization_params: Mutex<Option<InitCrashHandler>>,
     panic_info: Mutex<Option<CrashPanic>>,
-    active_gpu: Mutex<Option<system_specs::GpuSpecs>>,
+    active_gpu: Mutex<Option<GpuSpecs>>,
     user_info: Mutex<Option<UserInfo>>,
     has_connection: Arc<AtomicBool>,
     logs_dir: PathBuf,
@@ -179,8 +188,8 @@ pub struct CrashInfo {
     pub init: InitCrashHandler,
     pub panic: Option<CrashPanic>,
     pub minidump_error: Option<String>,
-    pub gpus: Vec<system_specs::GpuInfo>,
-    pub active_gpu: Option<system_specs::GpuSpecs>,
+    pub gpus: Vec<GpuInfo>,
+    pub active_gpu: Option<GpuSpecs>,
     pub user_info: Option<UserInfo>,
 }
 
@@ -269,17 +278,8 @@ impl minidumper::ServerHandler for CrashServer {
             Err(e) => Some(format!("{e:?}")),
         };
 
-        #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
-        let gpus = vec![];
-
-        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-        let gpus = match system_specs::read_gpu_info_from_sys_class_drm() {
-            Ok(gpus) => gpus,
-            Err(err) => {
-                log::warn!("Failed to collect GPU information for crash report: {err}");
-                vec![]
-            }
-        };
+// system_specs 已删除, GPU 信息收集暂时跳过
+let gpus = vec![];
 
         let crash_info = CrashInfo {
             init: self

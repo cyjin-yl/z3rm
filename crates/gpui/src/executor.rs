@@ -2,11 +2,11 @@ use crate::{App, PlatformDispatcher, PlatformScheduler};
 use futures::channel::mpsc;
 use futures::prelude::*;
 use gpui_util::{TryFutureExt, TryFutureExtBacktrace};
-// use scheduler::Instant;  // removed-crate: scheduler
-// use scheduler::Scheduler;  // removed-crate: scheduler
+use scheduler::Instant;
+use scheduler::Scheduler;
 use std::{future::Future, marker::PhantomData, mem, pin::Pin, rc::Rc, sync::Arc, time::Duration};
 
-// pub use scheduler::{FallibleTask, LocalExecutor as SchedulerLocalExecutor, Priority, Task};  // removed-crate: scheduler
+pub use scheduler::{FallibleTask, LocalExecutor as SchedulerLocalExecutor, Priority, Task};
 
 /// A pointer to the executor that is currently running,
 /// for spawning background tasks.

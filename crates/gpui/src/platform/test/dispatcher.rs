@@ -1,6 +1,6 @@
 use crate::{PlatformDispatcher, Priority, RunnableVariant};
-// use scheduler::Instant;  // removed-crate: scheduler
-// use scheduler::{Clock, Scheduler, SessionId, TestScheduler, TestSchedulerConfig, Yield};  // removed-crate: scheduler
+use scheduler::Instant;
+use scheduler::{Clock, Scheduler, SessionId, TestScheduler, TestSchedulerConfig, Yield};
 use std::{
     sync::{
         Arc,

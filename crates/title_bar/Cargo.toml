@@ -16,8 +16,6 @@ doctest = false
 default = []
 
 test-support = [
-    "call/test-support",
-    "client/test-support",
 
     "gpui/test-support",
 

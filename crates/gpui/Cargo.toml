@@ -90,6 +90,7 @@ async-channel.workspace = true
 stacksafe.workspace = true
 strum.workspace = true
 sum_tree.workspace = true
+scheduler.workspace = true
 taffy = "=0.10.1"
 thiserror.workspace = true
 gpui_util.workspace = true

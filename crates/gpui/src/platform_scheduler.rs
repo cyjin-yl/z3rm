@@ -2,11 +2,10 @@ use crate::{PlatformDispatcher, RunnableMeta};
 use async_task::Runnable;
 use chrono::{DateTime, Utc};
 use futures::channel::oneshot;
-// use scheduler::Instant;  // removed-crate: scheduler
-// use scheduler::{
-    Clock, LocalExecutor, Priority, Scheduler, SessionId, Task, TestScheduler, Timer,
-    spawn_dedicated_thread,
-};  // removed-crate: scheduler
+use scheduler::{
+    BackgroundExecutor, Clock, Instant, LocalExecutor, Priority, Scheduler, SessionId,
+    SpawnTime, Task, TestScheduler, Timer, spawn_dedicated_thread,
+};
 #[cfg(not(target_family = "wasm"))]
 use std::task::{Context, Poll};
 use std::{
@@ -189,7 +188,6 @@ impl Clock for PlatformClock {
 mod tests {
     use super::*;
     use crate::RunnableVariant;
-// use scheduler::BackgroundExecutor;  // removed-crate: scheduler
     use std::time::Instant as StdInstant;
 
     // `spawn_dedicated` shouldn't touch the platform dispatcher at all;

@@ -14,8 +14,6 @@ doctest = false
 
 [features]
 test-support = [
-    "channel/test-support",
-
     "gpui/test-support",
     "rpc/test-support",
 ]

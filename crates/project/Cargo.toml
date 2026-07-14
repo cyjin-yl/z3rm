@@ -21,16 +21,12 @@ path = "tests/integration/project_tests.rs"
 [features]
 test-support = [
     "buffer_diff/test-support",
-    "client/test-support",
     "language/test-support",
     "remote/test-support",
     "settings/test-support",
-    "snippet_provider/test-support",
     "text/test-support",
-    "prettier/test-support",
     "worktree/test-support",
     "gpui/test-support",
-    "dap/test-support",
 ]
 
 [dependencies]

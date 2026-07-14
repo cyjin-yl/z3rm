@@ -15,7 +15,6 @@ doctest = false
 [features]
 default = []
 test-support = [
-    "copilot/test-support",
     "gpui/test-support",
 ]
 

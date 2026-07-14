@@ -14,7 +14,6 @@ doctest = false
 
 [features]
 test-support = [
-    "client/test-support",
     "http_client/test-support",
     "db/test-support",
     "project/test-support",

@@ -49,9 +49,6 @@ workspace = true
 [dependencies.markup5ever_rcdom]
 workspace = true
 
-[dependencies.mermaid_render]
-path = "../mermaid_render"
-
 [dependencies.pulldown-cmark]
 workspace = true
 
@@ -107,9 +104,6 @@ features = [ "test-support",]
 [dev-dependencies.languages]
 workspace = true
 features = [ "load-grammars",]
-
-[dev-dependencies.node_runtime]
-workspace = true
 
 [dev-dependencies.settings]
 workspace = true

@@ -789,24 +789,13 @@ impl SettingsStore {
         user_settings_content: &str,
         file: SettingsFile,
     ) -> (Option<SettingsContentType>, SettingsParseResult) {
-        let mut migration_status = MigrationStatus::NotNeeded;
+        // migrator 已删除,直接跳过迁移
+        // 来源: spec §8.2 M2 - broken-ref 修复
+        let migration_status = MigrationStatus::NotNeeded;
         let (settings, parse_status) = if user_settings_content.is_empty() {
             SettingsContentType::parse_json("{}")
         } else {
-            let migration_res = migrator::migrate_settings(user_settings_content);
-            migration_status = match &migration_res {
-                Ok(Some(_)) => MigrationStatus::Succeeded,
-                Ok(None) => MigrationStatus::NotNeeded,
-                Err(err) => MigrationStatus::Failed {
-                    error: err.to_string(),
-                },
-            };
-            let content = match &migration_res {
-                Ok(Some(content)) => content,
-                Ok(None) => user_settings_content,
-                Err(_) => user_settings_content,
-            };
-            SettingsContentType::parse_json(content)
+            SettingsContentType::parse_json(user_settings_content)
         };
 
         let result = SettingsParseResult {

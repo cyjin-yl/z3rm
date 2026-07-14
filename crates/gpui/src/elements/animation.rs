@@ -1,4 +1,4 @@
-// use scheduler::Instant;  // removed-crate: scheduler
+use scheduler::Instant;
 use std::{rc::Rc, time::Duration};
 
 use crate::{

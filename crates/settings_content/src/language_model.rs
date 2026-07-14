@@ -6,6 +6,40 @@ use serde::{Deserialize, Serialize};
 use settings_macros::{MergeFrom, with_fallible_options};
 
 use std::sync::Arc;
+// language_model_core 已删除,以下类型为本 crate 内 stub 替代
+// 来源: spec §8.2 M2 - broken-ref 修复
+
+/// 模型运行模式 (stub)
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
+pub enum ModelMode {
+    #[default]
+    Thinking,
+}
+
+/// 推理努力等级 (stub)
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
+pub enum ReasoningEffort {
+    Minimal,
+    #[default]
+    Medium,
+    High,
+}
+
+/// OpenAI 推理努力等级 (stub)
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
+pub enum OpenAiReasoningEffort {
+    Low,
+    #[default]
+    Medium,
+}
+
+/// 模型速度模式 (stub 替代 language_model_core::Speed)
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
+pub enum Speed {
+    #[default]
+    Balanced,
+    Fast,
+}
 
 #[with_fallible_options]
 #[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
@@ -399,11 +433,6 @@ pub struct OpenAiAvailableModel {
 
 // pub use language_model_core::ReasoningEffort as OpenAiReasoningEffort;  // removed-crate: language_model_core
 
-impl MergeFrom for OpenAiReasoningEffort {
-    fn merge_from(&mut self, other: &Self) {
-        *self = *other;
-    }
-}
 
 #[with_fallible_options]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
@@ -635,8 +664,3 @@ pub struct LanguageModelCacheConfiguration {
 
 // pub use language_model_core::ModelMode;  // removed-crate: language_model_core
 
-impl MergeFrom for ModelMode {
-    fn merge_from(&mut self, other: &Self) {
-        *self = *other;
-    }
-}

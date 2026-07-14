@@ -26,8 +26,6 @@ workspace = true
 [dependencies.simplelog]
 workspace = true
 
-[build-dependencies.windows_resources]
-path = "../windows_resources"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 scopeguard = "1.2"
