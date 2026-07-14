@@ -1,2 +1,0 @@
-ZERMINAL_ENVIRONMENT=production
-RUST_LOG=info
