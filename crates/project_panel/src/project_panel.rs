@@ -30,7 +30,7 @@ use gpui::{
     linear_color_stop, linear_gradient, point, px, size, transparent_white, uniform_list,
 };
 use language::DiagnosticSeverity;
-use markdown_preview::markdown_preview_view::MarkdownPreviewView;
+// use markdown_preview::markdown_preview_view::MarkdownPreviewView;  // removed-crate: markdown_preview
 use menu::{Confirm, SelectFirst, SelectLast, SelectNext, SelectPrevious};
 use notifications::status_toast::StatusToast;
 use project::{

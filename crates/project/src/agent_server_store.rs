@@ -14,7 +14,7 @@ use gpui::{
     TaskExt,
 };
 use http_client::{HttpClient, github::AssetKind};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use percent_encoding::percent_decode_str;
 use remote::RemoteClient;
 use rpc::{AnyProtoClient, TypedEnvelope, proto};
@@ -1669,7 +1669,7 @@ mod tests {
     };
     use crate::worktree_store::{WorktreeIdCounter, WorktreeStore};
     use gpui::TestAppContext;
-    use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
     use settings::Settings as _;
 
     fn make_npx_agent(id: &str, version: &str) -> RegistryAgent {

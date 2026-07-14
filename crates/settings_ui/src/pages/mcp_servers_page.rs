@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use collections::HashMap;
-use context_server::ContextServerId;
+// use context_server::ContextServerId;  // removed-crate: context_server
 use editor::Editor;
 use extension_host::ExtensionStore;
 use gpui::{Action as _, Entity, Focusable as _, ScrollHandle, WeakEntity, prelude::*};

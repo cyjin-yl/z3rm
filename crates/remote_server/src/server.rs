@@ -25,7 +25,7 @@ use gpui_tokio::Tokio;
 use http_client::{Url, read_proxy_from_env};
 use language::LanguageRegistry;
 use net::async_net::{UnixListener, UnixStream};
-use node_runtime::{NodeBinaryOptions, NodeRuntime};
+// use node_runtime::{NodeBinaryOptions, NodeRuntime};  // removed-crate: node_runtime
 use paths::logs_dir;
 use project::{project_settings::ProjectSettings, trusted_worktrees};
 use proto::CrashReport;

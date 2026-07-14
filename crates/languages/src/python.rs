@@ -16,7 +16,7 @@ use language::{LanguageName, ManifestName, ManifestProvider, ManifestQuery};
 use language::{Toolchain, ToolchainList, ToolchainLister, ToolchainMetadata};
 use lsp::{CompletionItemKind, LanguageServerBinary, Uri};
 use lsp::{LanguageServerBinaryOptions, LanguageServerName};
-use node_runtime::{NodeRuntime, VersionStrategy};
+// use node_runtime::{NodeRuntime, VersionStrategy};  // removed-crate: node_runtime
 use pet_core::Configuration;
 use pet_core::os_environment::Environment;
 use pet_core::python_environment::{PythonEnvironment, PythonEnvironmentKind};

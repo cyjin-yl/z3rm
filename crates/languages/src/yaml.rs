@@ -5,7 +5,7 @@ use language::{
     LspAdapter, LspAdapterDelegate, LspInstaller, Toolchain, language_settings::AllLanguageSettings,
 };
 use lsp::{LanguageServerBinary, LanguageServerName, Uri};
-use node_runtime::{NodeRuntime, VersionStrategy};
+// use node_runtime::{NodeRuntime, VersionStrategy};  // removed-crate: node_runtime
 use project::lsp_store::language_server_settings;
 use semver::Version;
 use serde_json::Value;

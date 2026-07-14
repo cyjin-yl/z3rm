@@ -102,7 +102,7 @@ use lsp::{
 use lsp_command::*;
 use lsp_store::{CompletionDocumentation, LspFormatTarget, OpenLspBufferHandle};
 pub use manifest_tree::ManifestProvidersStore;
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use parking_lot::Mutex;
 pub use prettier_store::PrettierStore;
 use project_settings::{ProjectSettings, SettingsObserver, SettingsObserverEvent};
@@ -116,9 +116,9 @@ use rpc::{
 use search::{SearchInputKind, SearchQuery, SearchResult};
 use search_history::SearchHistory;
 use settings::{InvalidSettingsError, RegisterSetting, Settings, SettingsLocation, SettingsStore};
-use snippet::Snippet;
+// use snippet::Snippet;  // removed-crate: snippet
 pub use snippet_provider;
-use snippet_provider::SnippetProvider;
+// use snippet_provider::SnippetProvider;  // removed-crate: snippet_provider
 use std::{
     borrow::Cow,
     collections::BTreeMap,

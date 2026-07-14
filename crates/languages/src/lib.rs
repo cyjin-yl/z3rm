@@ -1,5 +1,5 @@
 use gpui::{App, SharedString, UpdateGlobal};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use project::Fs;
 use python::PyprojectTomlManifestProvider;
 use rust::CargoManifestProvider;

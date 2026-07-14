@@ -12,7 +12,7 @@ use fs::Fs;
 use gpui::{App, AppContext as _, AsyncApp, Context, Entity, PromptLevel, TaskExt};
 use http_client::HttpClient;
 use language::{Buffer, BufferEvent, LanguageRegistry, proto::serialize_operation};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use project::{
     AgentRegistryStore, LspStore, LspStoreEvent, ManifestTree, PrettierStore, ProjectEnvironment,
     ProjectPath, ToolchainStore, WorktreeId,

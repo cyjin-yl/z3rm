@@ -44,7 +44,6 @@ buffer_diff.workspace = true
 circular-buffer.workspace = true
 clock.workspace = true
 collections.workspace = true
-context_server.workspace = true
 credentials_provider.workspace = true
 extension.workspace = true
 fancy-regex.workspace = true
@@ -64,7 +63,6 @@ language.workspace = true
 log.workspace = true
 lsp.workspace = true
 markdown.workspace = true
-node_runtime.workspace = true
 parking_lot.workspace = true
 paths.workspace = true
 postage.workspace = true
@@ -82,8 +80,6 @@ sha2.workspace = true
 shellexpand.workspace = true
 smallvec.workspace = true
 smol.workspace = true
-snippet.workspace = true
-snippet_provider.workspace = true
 sum_tree.workspace = true
 tempfile.workspace = true
 terminal.workspace = true
@@ -92,7 +88,6 @@ toml.workspace = true
 url.workspace = true
 percent-encoding.workspace = true
 util.workspace = true
-watch.workspace = true
 wax.workspace = true
 which.workspace = true
 worktree.workspace = true
@@ -105,7 +100,6 @@ tracing.workspace = true
 [dev-dependencies]
 encoding_rs.workspace = true
 collections = { workspace = true, features = ["test-support"] }
-context_server = { workspace = true, features = ["test-support"] }
 buffer_diff = { workspace = true, features = ["test-support"] }
 fs = { workspace = true, features = ["test-support"] }
 gpui = { workspace = true, features = ["test-support"] }
@@ -115,7 +109,6 @@ pretty_assertions.workspace = true
 project = {workspace = true, features = ["test-support"]}
 rpc = { workspace = true, features = ["test-support"] }
 settings = { workspace = true, features = ["test-support"] }
-snippet_provider = { workspace = true, features = ["test-support"] }
 unindent.workspace = true
 util = { workspace = true, features = ["test-support"] }
 worktree = { workspace = true, features = ["test-support"] }

@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use collections::HashMap;
-use context_server::ContextServerCommand;
+// use context_server::ContextServerCommand;  // removed-crate: context_server
 // use dap::adapters::DebugAdapterName;  // removed-crate: dap
 use fs::Fs;
 use futures::StreamExt as _;

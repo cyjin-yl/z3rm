@@ -1,6 +1,6 @@
 use anyhow::Result;
-use context_server::test::create_fake_transport;
-use context_server::{ContextServer, ContextServerId};
+// use context_server::test::create_fake_transport;  // removed-crate: context_server
+// use context_server::{ContextServer, ContextServerId};  // removed-crate: context_server
 use gpui::{AppContext, AsyncApp, Entity, Subscription, Task, TestAppContext, UpdateGlobal as _};
 use http_client::{FakeHttpClient, Response};
 use project::context_server_store::registry::ContextServerDescriptorRegistry;
@@ -920,7 +920,7 @@ async fn test_remote_context_server(cx: &mut TestAppContext) {
 // an opaque request failure while the server stays "Running".
 #[gpui::test]
 async fn test_http_server_authenticates_on_post_init_401(cx: &mut TestAppContext) {
-    use context_server::transport::TransportError;
+// use context_server::transport::TransportError;  // removed-crate: context_server
 
     const SERVER_ID: &str = "auth-server";
     let server_id = ContextServerId(SERVER_ID.into());

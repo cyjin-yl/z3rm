@@ -2,7 +2,7 @@ use anyhow::{Context as _, Result};
 use editor::Editor;
 use fs::Fs;
 use gpui::WeakEntity;
-use migrator::{migrate_keymap, migrate_settings};
+// use migrator::{migrate_keymap, migrate_settings};  // removed-crate: migrator
 use settings::{KeymapFile, Settings, SettingsStore};
 use util::ResultExt;
 use workspace::notifications::NotifyTaskExt;

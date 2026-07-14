@@ -520,7 +520,7 @@ mod tests {
     use fs::FakeFs;
     use gpui::{AppContext, TestAppContext};
     use http_client::BlockedHttpClient;
-    use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
     use remote::RemoteClient;
     use remote_server::{HeadlessAppState, HeadlessProject};
     use serde_json::json;

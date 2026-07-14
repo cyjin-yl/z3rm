@@ -20,7 +20,7 @@ use gpui::{
     FocusHandle, Focusable, PromptLevel, Subscription, Task, TaskExt, WeakEntity, Window,
 };
 use log::{debug, info};
-use open_path_prompt::OpenPathDelegate;
+// use open_path_prompt::OpenPathDelegate;  // removed-crate: open_path_prompt
 use paths::{global_ssh_config_file, user_ssh_config_file};
 use picker::{Picker, PickerDelegate, PickerEditorPosition};
 use project::{Fs, Project};

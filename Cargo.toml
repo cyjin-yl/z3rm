@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "crates/askpass", "crates/assets", "crates/auto_update", "crates/auto_update_helper", "crates/auto_update_ui", "crates/aws_http_client", "crates/buffer_diff", "crates/cli", "crates/clock", "crates/collections", "crates/command_palette", "crates/command_palette_hooks", "crates/component", "crates/crashes", "crates/credentials_provider", "crates/db", "crates/diagnostics", "crates/docs_preprocessor", "crates/editor", "crates/encoding_selector", "crates/env_var", "crates/etw_tracing", "crates/extension", "crates/extension_api", "crates/extension_cli", "crates/extension_host", "crates/extensions_ui", "crates/feature_flags", "crates/feature_flags_macros", "crates/file_finder", "crates/file_icons", "crates/fs", "crates/fuzzy", "crates/fuzzy_nucleo", "crates/git", "crates/git_hosting_providers", "crates/git_ui", "crates/go_to_line", "crates/grammars", "crates/gpui", "crates/gpui_shared_string", "crates/gpui_linux", "crates/gpui_macos", "crates/gpui_macros", "crates/gpui_platform", "crates/gpui_tokio", "crates/gpui_util", "crates/gpui_web", "crates/gpui_wgpu", "crates/gpui_windows", "crates/html_to_markdown", "crates/http_client", "crates/http_client_tls", "crates/http_proxy", "crates/icons", "crates/json_schema_store", "crates/keymap_editor", "crates/language", "crates/language_core", "crates/language_extension", "crates/language_selector", "crates/languages", "crates/line_ending_selector", "crates/llama_cpp", "crates/lsp", "crates/markdown", "crates/menu", "crates/multi_buffer", "crates/net", "crates/notifications", "crates/oauth_callback_server", "crates/panel", "crates/paths", "crates/picker", "crates/picker_preview", "crates/platform_title_bar", "crates/project", "crates/project_panel", "crates/project_symbols", "crates/proto", "crates/recent_projects", "crates/refineable", "crates/refineable/derive_refineable", "crates/release_channel", "crates/remote", "crates/remote_connection", "crates/remote_server", "crates/reqwest_client", "crates/rope", "crates/rpc", "crates/sandbox", "crates/search", "crates/session", "crates/settings", "crates/settings_content", "crates/settings_json", "crates/settings_macros", "crates/settings_profile_selector", "crates/settings_ui", "crates/shell_command_parser", "crates/sidebar", "crates/sqlez", "crates/sqlez_macros", "crates/sum_tree", "crates/syntax_theme", "crates/tab_switcher", "crates/telemetry", "crates/telemetry_events", "crates/terminal", "crates/terminal_view", "crates/text", "crates/theme", "crates/theme_extension", "crates/theme_settings", "crates/theme_importer", "crates/theme_selector", "crates/title_bar", "crates/ui", "crates/ui_input", "crates/ui_macros", "crates/ui_prompt", "crates/util", "crates/util_macros", "crates/which_key", "crates/workspace", "crates/worktree", "crates/zerminal", "crates/zed_actions", "crates/zed_credentials_provider", "crates/zed_env_vars", "crates/zeta_prompt", "crates/zlog", "crates/zlog_settings", "crates/ztracing", "crates/ztracing_macro", "crates/zerminal_macros", "crates/zerminal_macros_types", "extensions/glsl", "extensions/html", "extensions/proto", "extensions/test-extension", "tooling/compliance", "tooling/perf", "tooling/xtask", "crates/action_log", "crates/activity_indicator", "crates/breadcrumbs", "crates/component_preview", "crates/context_server", "crates/input_latency_ui", "crates/inspector_ui", "crates/install_cli", "crates/language_onboarding", "crates/language_tools", "crates/markdown_preview", "crates/migrator", "crates/miniprofiler_ui", "crates/node_runtime", "crates/onboarding", "crates/open_path_prompt", "crates/outline", "crates/outline_panel", "crates/scheduler", "crates/snippet", "crates/snippet_provider", "crates/snippets_ui", "crates/system_specs", "crates/time_format", "crates/toolchain_selector", "crates/watch", "crates/media", "crates/windows_resources", "crates/eval_utils", "crates/streaming_diff",]
+members = [ "crates/askpass", "crates/assets", "crates/auto_update", "crates/auto_update_helper", "crates/auto_update_ui", "crates/aws_http_client", "crates/buffer_diff", "crates/cli", "crates/clock", "crates/collections", "crates/command_palette", "crates/command_palette_hooks", "crates/component", "crates/crashes", "crates/credentials_provider", "crates/db", "crates/diagnostics", "crates/docs_preprocessor", "crates/editor", "crates/encoding_selector", "crates/env_var", "crates/etw_tracing", "crates/extension", "crates/extension_api", "crates/extension_cli", "crates/extension_host", "crates/extensions_ui", "crates/feature_flags", "crates/feature_flags_macros", "crates/file_finder", "crates/file_icons", "crates/fs", "crates/fuzzy", "crates/fuzzy_nucleo", "crates/git", "crates/git_hosting_providers", "crates/git_ui", "crates/go_to_line", "crates/grammars", "crates/gpui", "crates/gpui_shared_string", "crates/gpui_linux", "crates/gpui_macos", "crates/gpui_macros", "crates/gpui_platform", "crates/gpui_tokio", "crates/gpui_util", "crates/gpui_web", "crates/gpui_wgpu", "crates/gpui_windows", "crates/html_to_markdown", "crates/http_client", "crates/http_client_tls", "crates/http_proxy", "crates/icons", "crates/json_schema_store", "crates/keymap_editor", "crates/language", "crates/language_core", "crates/language_extension", "crates/language_selector", "crates/languages", "crates/line_ending_selector", "crates/llama_cpp", "crates/lsp", "crates/markdown", "crates/menu", "crates/multi_buffer", "crates/net", "crates/notifications", "crates/oauth_callback_server", "crates/panel", "crates/paths", "crates/picker", "crates/picker_preview", "crates/platform_title_bar", "crates/project", "crates/project_panel", "crates/project_symbols", "crates/proto", "crates/recent_projects", "crates/refineable", "crates/refineable/derive_refineable", "crates/release_channel", "crates/remote", "crates/remote_connection", "crates/remote_server", "crates/reqwest_client", "crates/rope", "crates/rpc", "crates/sandbox", "crates/search", "crates/session", "crates/settings", "crates/settings_content", "crates/settings_json", "crates/settings_macros", "crates/settings_profile_selector", "crates/settings_ui", "crates/shell_command_parser", "crates/sidebar", "crates/sqlez", "crates/sqlez_macros", "crates/sum_tree", "crates/syntax_theme", "crates/tab_switcher", "crates/telemetry", "crates/telemetry_events", "crates/terminal", "crates/terminal_view", "crates/text", "crates/theme", "crates/theme_extension", "crates/theme_settings", "crates/theme_importer", "crates/theme_selector", "crates/title_bar", "crates/ui", "crates/ui_input", "crates/ui_macros", "crates/ui_prompt", "crates/util", "crates/util_macros", "crates/which_key", "crates/workspace", "crates/worktree", "crates/zerminal", "crates/zed_actions", "crates/zed_credentials_provider", "crates/zed_env_vars", "crates/zeta_prompt", "crates/zlog", "crates/zlog_settings", "crates/ztracing", "crates/ztracing_macro", "crates/zerminal_macros", "crates/zerminal_macros_types", "extensions/glsl", "extensions/html", "extensions/proto", "extensions/test-extension", "tooling/compliance", "tooling/perf", "tooling/xtask",]
 default-members = [ "crates/zerminal",]
 
 [workspace.package]
@@ -954,11 +954,7 @@ features = [ "Foundation_Numerics", "Globalization_DateTimeFormatting", "Storage
 
 
 
-[workspace.dependencies.action_log]
-path = "crates/action_log"
 
-[workspace.dependencies.activity_indicator]
-path = "crates/activity_indicator"
 
 
 
@@ -966,8 +962,6 @@ path = "crates/activity_indicator"
 
 
 
-[workspace.dependencies.breadcrumbs]
-path = "crates/breadcrumbs"
 
 
 
@@ -975,11 +969,7 @@ path = "crates/breadcrumbs"
 
 
 
-[workspace.dependencies.component_preview]
-path = "crates/component_preview"
 
-[workspace.dependencies.context_server]
-path = "crates/context_server"
 
 
 
@@ -995,90 +985,44 @@ path = "crates/context_server"
 
 
 
-[workspace.dependencies.input_latency_ui]
-path = "crates/input_latency_ui"
 
-[workspace.dependencies.inspector_ui]
-path = "crates/inspector_ui"
 
-[workspace.dependencies.install_cli]
-path = "crates/install_cli"
 
 
 
 
 
-[workspace.dependencies.language_onboarding]
-path = "crates/language_onboarding"
 
-[workspace.dependencies.language_tools]
-path = "crates/language_tools"
 
 
-[workspace.dependencies.markdown_preview]
-path = "crates/markdown_preview"
 
-[workspace.dependencies.migrator]
-path = "crates/migrator"
 
-[workspace.dependencies.miniprofiler_ui]
-path = "crates/miniprofiler_ui"
 
-[workspace.dependencies.node_runtime]
-path = "crates/node_runtime"
 
-[workspace.dependencies.onboarding]
-path = "crates/onboarding"
 
-[workspace.dependencies.open_path_prompt]
-path = "crates/open_path_prompt"
 
-[workspace.dependencies.outline]
-path = "crates/outline"
 
-[workspace.dependencies.outline_panel]
-path = "crates/outline_panel"
 
 
 
 
-[workspace.dependencies.scheduler]
-path = "crates/scheduler"
 
-[workspace.dependencies.snippet]
-path = "crates/snippet"
 
-[workspace.dependencies.snippet_provider]
-path = "crates/snippet_provider"
 
-[workspace.dependencies.snippets_ui]
-path = "crates/snippets_ui"
 
 
-[workspace.dependencies.system_specs]
-path = "crates/system_specs"
 
 
 
-[workspace.dependencies.time_format]
-path = "crates/time_format"
 
-[workspace.dependencies.toolchain_selector]
-path = "crates/toolchain_selector"
 
 
 
-[workspace.dependencies.watch]
-path = "crates/watch"
 
 
 
-[workspace.dependencies.media]
-path = "crates/media"
 
 
-[workspace.dependencies.windows_resources]
-path = "crates/windows_resources"
 
 
 
@@ -1088,8 +1032,6 @@ path = "crates/windows_resources"
 
 
 
-[workspace.dependencies.eval_utils]
-path = "crates/eval_utils"
 
 
 
@@ -1100,8 +1042,6 @@ path = "crates/eval_utils"
 
 
 
-[workspace.dependencies.streaming_diff]
-path = "crates/streaming_diff"
 
 
 [workspace.lints.clippy]

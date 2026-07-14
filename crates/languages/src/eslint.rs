@@ -7,7 +7,7 @@ use http_client::{
 };
 use language::{LspAdapter, LspAdapterDelegate, LspInstaller, Toolchain};
 use lsp::{CodeActionKind, LanguageServerBinary, LanguageServerName, Uri};
-use node_runtime::{NodeRuntime, read_package_installed_version};
+// use node_runtime::{NodeRuntime, read_package_installed_version};  // removed-crate: node_runtime
 use project::Fs;
 use project::lsp_store::language_server_settings_for;
 use semver::Version;

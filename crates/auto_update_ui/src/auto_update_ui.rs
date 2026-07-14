@@ -9,7 +9,7 @@ use gpui::{
     App, DismissEvent, Entity, EventEmitter, FocusHandle, Focusable, TaskExt, Window, actions,
     prelude::*,
 };
-use markdown_preview::markdown_preview_view::{MarkdownPreviewMode, MarkdownPreviewView};
+// use markdown_preview::markdown_preview_view::{MarkdownPreviewMode, MarkdownPreviewView};  // removed-crate: markdown_preview
 // use prompt_store::rules_to_skills_migration;  // removed-crate: prompt_store
 use release_channel::{AppVersion, ReleaseChannel};
 use semver::Version;

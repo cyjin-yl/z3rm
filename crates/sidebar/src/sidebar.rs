@@ -1,7 +1,7 @@
 mod thread_switcher;
 
 // use acp_thread::ThreadStatus;  // removed-crate: acp_thread
-use action_log::DiffStats;
+// use action_log::DiffStats;  // removed-crate: action_log
 // use agent::{ThreadStore, ZED_AGENT_ID};  // removed-crate: agent
 use agent_client_protocol::schema::v1 as acp;
 // use agent_settings::AgentSettings;  // removed-crate: agent_settings

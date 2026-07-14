@@ -33,7 +33,7 @@ use futures::{
 use gpui::{App, AppContext, AsyncApp, Context, Entity, EventEmitter, SharedString, Task, TaskExt};
 use http_client::HttpClient;
 use language::{Buffer, LanguageToolchainStore};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use settings::InlayHintKind;
 
 use remote::RemoteClient;

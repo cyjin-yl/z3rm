@@ -34,7 +34,7 @@ use lsp::{
     CompletionContext, CompletionResponse, CompletionTriggerKind, DEFAULT_LSP_REQUEST_TIMEOUT,
     LanguageServerName,
 };
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use project::{
     ProgressToken, Project,
     agent_server_store::AgentServerCommand,

@@ -36,7 +36,6 @@ json_schema_store.workspace = true
 language.workspace = true
 log.workspace = true
 lsp.workspace = true
-node_runtime.workspace = true
 parking_lot.workspace = true
 pet-conda.workspace = true
 pet-core.workspace = true
@@ -55,7 +54,6 @@ settings.workspace = true
 smallvec.workspace = true
 semver.workspace = true
 smol.workspace = true
-snippet.workspace = true
 terminal.workspace = true
 theme.workspace = true
 tree-sitter = { workspace = true, optional = true }

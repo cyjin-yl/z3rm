@@ -7,9 +7,9 @@ use std::time::Duration;
 
 use anyhow::{Context as _, Result};
 use collections::{HashMap, HashSet};
-use context_server::oauth::{self, McpOAuthTokenProvider, OAuthDiscovery, OAuthSession};
-use context_server::transport::HttpTransport;
-use context_server::{ContextServer, ContextServerCommand, ContextServerId};
+// use context_server::oauth::{self, McpOAuthTokenProvider, OAuthDiscovery, OAuthSession};  // removed-crate: context_server
+// use context_server::transport::HttpTransport;  // removed-crate: context_server
+// use context_server::{ContextServer, ContextServerCommand, ContextServerId};  // removed-crate: context_server
 use credentials_provider::CredentialsProvider;
 use futures::future::Either;
 use futures::{FutureExt as _, StreamExt as _, future::join_all};
@@ -1924,9 +1924,9 @@ async fn resolve_auth_required(
 
     match context_server::oauth::discover(&http_client, &server_url, www_authenticate).await {
         Ok(discovery) => {
-            use context_server::oauth::{
+// use context_server::oauth::{
                 ClientRegistrationStrategy, determine_registration_strategy,
-            };
+            };  // removed-crate: context_server
 
             let has_preregistered_client_id = matches!(
                 configuration.as_ref(),

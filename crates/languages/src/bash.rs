@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use collections::HashMap;
 use language::{LanguageServerName, LspAdapter, LspAdapterDelegate, LspInstaller, Toolchain};
 use lsp::LanguageServerBinary;
-use node_runtime::{NodeRuntime, VersionStrategy};
+// use node_runtime::{NodeRuntime, VersionStrategy};  // removed-crate: node_runtime
 use project::ContextProviderWithTasks;
 use semver::Version;
 use std::{future::Future, path::PathBuf, sync::Arc, vec};

@@ -17,8 +17,8 @@ use extension::{ExtensionManifest, ExtensionSnippets};
 use language::LanguageConfig;
 use reqwest_client::ReqwestClient;
 use settings_content::SemanticTokenRules;
-use snippet_provider::file_to_snippets;
-use snippet_provider::format::VsSnippetsFile;
+// use snippet_provider::file_to_snippets;  // removed-crate: snippet_provider
+// use snippet_provider::format::VsSnippetsFile;  // removed-crate: snippet_provider
 // use task::TaskTemplates;  // removed-crate: task
 use tokio::process::Command;
 use tree_sitter::{Language, Query, WasmStore};

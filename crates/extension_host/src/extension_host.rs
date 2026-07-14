@@ -39,7 +39,7 @@ use language::{
     LanguageConfig, LanguageMatcher, LanguageName, LanguageQueries, LoadedLanguage,
     QUERY_FILENAME_PREFIXES, Rope,
 };
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use project::ContextProviderWithTasks;
 use release_channel::ReleaseChannel;
 use remote::RemoteClient;

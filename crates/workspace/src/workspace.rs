@@ -75,7 +75,7 @@ pub use item::{
 use itertools::Itertools;
 use language::{Buffer, LanguageRegistry, Rope, language_settings::all_language_settings};
 pub use modal_layer::*;
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use notifications::{
     DetachAndPromptErr, Notifications, dismiss_app_notification,
     simple_message_notification::MessageNotification,
@@ -1192,7 +1192,7 @@ impl AppState {
     #[cfg(any(test, feature = "test-support"))]
     pub fn test(cx: &mut App) -> Arc<Self> {
         use fs::Fs;
-        use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
         use session::Session;
         use settings::SettingsStore;
 
@@ -7859,7 +7859,7 @@ impl Workspace {
 
     #[cfg(any(test, feature = "test-support"))]
     pub fn test_new(project: Entity<Project>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
         use session::Session;
 
         let client = project.read(cx).client();

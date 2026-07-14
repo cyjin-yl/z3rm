@@ -9,7 +9,7 @@ use gpui::{
     Render, TaskExt, WeakEntity, Window, actions,
 };
 use language::{Buffer, LanguageMatcher, LanguageName, LanguageRegistry};
-use open_path_prompt::file_finder_settings::FileFinderSettings;
+// use open_path_prompt::file_finder_settings::FileFinderSettings;  // removed-crate: open_path_prompt
 use picker::{Picker, PickerDelegate};
 use project::Project;
 use settings::Settings;

@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use scheduler::{Instant, SpawnTime};
+// use scheduler::{Instant, SpawnTime};  // removed-crate: scheduler
 use std::{
     cell::LazyCell,
     collections::{HashMap, VecDeque},

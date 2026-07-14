@@ -19,7 +19,7 @@ use language::{
     language_settings::{Formatter, LanguageSettings},
 };
 use lsp::{LanguageServer, LanguageServerId, LanguageServerName};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use paths::default_prettier_dir;
 // use prettier::Prettier;  // removed-crate: prettier
 use settings::Settings;

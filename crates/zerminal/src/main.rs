@@ -36,14 +36,14 @@ use gpui_platform;
 
 use gpui_tokio::Tokio;
 use language::LanguageRegistry;
-use onboarding::{FIRST_OPEN, show_onboarding_view};
+// use onboarding::{FIRST_OPEN, show_onboarding_view};  // removed-crate: onboarding
 use project_panel::ProjectPanel;
 // use prompt_store::PromptBuilder;  // removed-crate: prompt_store
 use remote::RemoteConnectionOptions;
 use reqwest_client::ReqwestClient;
 
 use assets::Assets;
-use node_runtime::{NodeBinaryOptions, NodeRuntime};
+// use node_runtime::{NodeBinaryOptions, NodeRuntime};  // removed-crate: node_runtime
 use parking_lot::Mutex;
 use project::{project_settings::ProjectSettings, trusted_worktrees};
 use recent_projects::{RemoteSettings, open_remote_project};

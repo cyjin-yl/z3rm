@@ -2,7 +2,7 @@ use assets::Assets;
 use gpui::{Entity, KeyBinding, Length, StyleRefinement, WindowOptions, rgb};
 use language::LanguageRegistry;
 use markdown::{Markdown, MarkdownElement, MarkdownStyle};
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use settings::SettingsStore;
 use std::sync::Arc;
 use theme::LoadThemes;

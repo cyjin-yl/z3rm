@@ -17,7 +17,7 @@ use gpui::{
     DevicePixels, ForegroundExecutor, ScreenCaptureFrame, ScreenCaptureSource, ScreenCaptureStream,
     SharedString, SourceMetadata, size,
 };
-use media::core_media::{CMSampleBuffer, CMSampleBufferRef};
+// use media::core_media::{CMSampleBuffer, CMSampleBufferRef};  // removed-crate: media
 use metal::NSInteger;
 use objc::{
     class,

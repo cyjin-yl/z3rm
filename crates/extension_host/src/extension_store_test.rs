@@ -13,7 +13,7 @@ use http_client::{FakeHttpClient, Response};
 use language::{BinaryStatus, LanguageMatcher, LanguageName, LanguageRegistry};
 use language_extension::LspAccess;
 use lsp::LanguageServerName;
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use parking_lot::Mutex;
 use project::{DEFAULT_COMPLETION_CONTEXT, Project};
 use release_channel::AppVersion;

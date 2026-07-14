@@ -6,7 +6,7 @@ use crate::{
         SerializedItems, SerializedTerminalPanel, deserialize_terminal_panel, serialize_pane_group,
     },
 };
-use breadcrumbs::Breadcrumbs;
+// use breadcrumbs::Breadcrumbs;  // removed-crate: breadcrumbs
 use collections::HashMap;
 use db::kvp::KeyValueStore;
 use futures::{channel::oneshot, future::join_all};

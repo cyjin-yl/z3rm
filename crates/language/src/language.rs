@@ -103,7 +103,7 @@ pub use language_registry::{
     QUERY_FILENAME_PREFIXES,
 };
 pub use lsp::{LanguageServerId, LanguageServerName};
-pub use outline::*;
+// pub use outline::*;  // removed-crate: outline
 pub use syntax_map::{
     OwnedSyntaxLayer, SyntaxLayer, SyntaxMapMatches, ToTreeSitterPoint, TreeSitterOptions,
 };

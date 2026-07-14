@@ -26,7 +26,7 @@ use http_client::HttpClient;
 use language::LanguageName;
 use lsp::LanguageServerName;
 use moka::sync::Cache;
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use release_channel::ReleaseChannel;
 use semver::Version;
 use settings::Settings;
@@ -1000,7 +1000,7 @@ mod tests {
     use fs::FakeFs;
     use gpui::TestAppContext;
     use http_client::FakeHttpClient;
-    use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
     use serde_json::json;
     use settings::SettingsStore;
 

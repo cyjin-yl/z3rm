@@ -6,7 +6,7 @@ use language::{
     LanguageName, LspAdapter, LspAdapterDelegate, LspInstaller, PromptResponseContext, Toolchain,
 };
 use lsp::{CodeActionKind, LanguageServerBinary, LanguageServerName, Uri};
-use node_runtime::{NodeRuntime, VersionStrategy};
+// use node_runtime::{NodeRuntime, VersionStrategy};  // removed-crate: node_runtime
 use project::{Fs, lsp_store::language_server_settings};
 use regex::Regex;
 use semver::Version;

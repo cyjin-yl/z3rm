@@ -1,4 +1,4 @@
-use action_log::DiffStats;
+// use action_log::DiffStats;  // removed-crate: action_log
 #[cfg(test)]
 // use agent_ui::TerminalId;  // removed-crate: agent_ui
 // use agent_ui::{

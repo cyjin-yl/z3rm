@@ -4,10 +4,10 @@
 };  // removed-crate: csv_preview
 use feature_flags::FeatureFlagAppExt as _;
 use gpui::{AnyElement, Modifiers, WeakEntity};
-use markdown_preview::{
+// use markdown_preview::{
     OpenPreview as MarkdownOpenPreview, OpenPreviewToTheSide as MarkdownOpenPreviewToTheSide,
     markdown_preview_view::MarkdownPreviewView,
-};
+};  // removed-crate: markdown_preview
 // use svg_preview::{
     OpenPreview as SvgOpenPreview, OpenPreviewToTheSide as SvgOpenPreviewToTheSide,
     svg_preview_view::SvgPreviewView,

@@ -5,7 +5,7 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{panic::Location, pin::Pin};
 
-use system_specs::GpuSpecs;
+// use system_specs::GpuSpecs;  // removed-crate: system_specs
 
 use std::{
     env,

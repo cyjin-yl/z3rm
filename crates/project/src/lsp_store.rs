@@ -101,7 +101,7 @@ use lsp::{
     RenameFilesParams, SymbolKind, TextDocumentSyncSaveOptions, TextEdit, Uri, WillRenameFiles,
     WorkDoneProgressCancelParams, WorkspaceFolder, notification::DidRenameFiles,
 };
-use node_runtime::read_package_installed_version;
+// use node_runtime::read_package_installed_version;  // removed-crate: node_runtime
 use parking_lot::Mutex;
 use postage::{mpsc, sink::Sink, stream::Stream, watch};
 use rand::prelude::*;
@@ -114,7 +114,7 @@ use serde::Serialize;
 use serde_json::Value;
 use settings::{Settings, SettingsLocation, SettingsStore};
 use sha2::{Digest, Sha256};
-use snippet::Snippet;
+// use snippet::Snippet;  // removed-crate: snippet
 use std::{
     any::TypeId,
     borrow::Cow,

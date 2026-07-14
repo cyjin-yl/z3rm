@@ -7,7 +7,7 @@ use std::{ops::Range, path::PathBuf};
 
 use util::redact::should_redact;
 
-pub use context_server::*;
+// pub use context_server::*;  // removed-crate: context_server
 // pub use dap::*;  // removed-crate: dap
 pub use lsp::*;
 pub use slash_command::*;

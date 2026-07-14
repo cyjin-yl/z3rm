@@ -12,7 +12,7 @@ use image::{
     AnimationDecoder, DynamicImage, Frame, ImageError, ImageFormat, Rgba,
     codecs::{gif::GifDecoder, webp::WebPDecoder},
 };
-use scheduler::Instant;
+// use scheduler::Instant;  // removed-crate: scheduler
 use smallvec::SmallVec;
 use std::{
     fs,

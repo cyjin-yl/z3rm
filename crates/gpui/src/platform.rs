@@ -52,8 +52,8 @@ use image::RgbaImage;
 use image::codecs::gif::GifDecoder;
 use image::{AnimationDecoder as _, Frame};
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use scheduler::Instant;
-pub use scheduler::RunnableMeta;
+// use scheduler::Instant;  // removed-crate: scheduler
+// pub use scheduler::RunnableMeta;  // removed-crate: scheduler
 use schemars::JsonSchema;
 use seahash::SeaHasher;
 use serde::{Deserialize, Serialize};

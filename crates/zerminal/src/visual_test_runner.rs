@@ -964,7 +964,7 @@ cargo run
 #[cfg(target_os = "macos")]
 fn init_app_state(cx: &mut App) -> Arc<AppState> {
     use fs::Fs;
-    use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
     use session::Session;
     use settings::SettingsStore;
 

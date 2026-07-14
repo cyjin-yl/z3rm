@@ -4,7 +4,7 @@ mod file_finder_tests;
 mod multi_select_tests;
 
 use futures::future::join_all;
-pub use open_path_prompt::OpenPathDelegate;
+// pub use open_path_prompt::OpenPathDelegate;  // removed-crate: open_path_prompt
 
 // use channel::ChannelStore;  // removed-crate: channel
 // use client::ChannelId;  // removed-crate: client
@@ -19,10 +19,10 @@ use gpui::{
     WeakEntity, Window, actions, rems,
 };
 use language::{BufferSnapshot, Point};
-use open_path_prompt::{
+// use open_path_prompt::{
     OpenPathPrompt,
     file_finder_settings::{FileFinderSettings, FileFinderWidth},
-};
+};  // removed-crate: open_path_prompt
 use picker::{Picker, PickerDelegate};
 use project::{
     PathMatchCandidateSet, Project, ProjectPath, WorktreeId, worktree_store::WorktreeStore,

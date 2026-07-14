@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use collections::HashMap;
-use context_server::ContextServerCommand;
+// use context_server::ContextServerCommand;  // removed-crate: context_server
 use extension::ContextServerConfiguration;
 use gpui::{App, AppContext as _, AsyncApp, Context, Entity, Global, Task};
 

@@ -41,7 +41,7 @@ use gpui::{
     Task, TaskExt, WeakEntity,
 };
 use http_client::HttpClient;
-use node_runtime::NodeRuntime;
+// use node_runtime::NodeRuntime;  // removed-crate: node_runtime
 use remote::RemoteClient;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

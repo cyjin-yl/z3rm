@@ -234,7 +234,7 @@ use settings::{
     update_settings_file,
 };
 use smallvec::{SmallVec, smallvec};
-use snippet::Snippet;
+// use snippet::Snippet;  // removed-crate: snippet
 use std::{
     any::{Any, TypeId},
     borrow::Cow,

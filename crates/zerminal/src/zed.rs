@@ -21,7 +21,7 @@ use anyhow::Context as _;
 pub use app_menus::*;
 use assets::Assets;
 
-use breadcrumbs::Breadcrumbs;
+// use breadcrumbs::Breadcrumbs;  // removed-crate: breadcrumbs
 // use client::zed_urls;  // removed-crate: client
 use collections::VecDeque;
 // use debugger_ui::debugger_panel::DebugPanel;  // removed-crate: debugger_ui
@@ -47,15 +47,15 @@ use gpui::{
 };
 // use image_viewer::ImageInfo;  // removed-crate: image_viewer
 use language::Capability;
-use language_onboarding::BasedPyrightBanner;
-use language_tools::lsp_button::{self, LspButton};
-use language_tools::lsp_log_view::LspLogToolbarItemView;
+// use language_onboarding::BasedPyrightBanner;  // removed-crate: language_onboarding
+// use language_tools::lsp_button::{self, LspButton};  // removed-crate: language_tools
+// use language_tools::lsp_log_view::LspLogToolbarItemView;  // removed-crate: language_tools
 use markdown::{Markdown, MarkdownElement, MarkdownFont, MarkdownStyle};
 use migrate::{MigrationBanner, MigrationEvent, MigrationNotification, MigrationType};
-use migrator::migrate_keymap;
-use onboarding::multibuffer_hint::MultibufferHint;
+// use migrator::migrate_keymap;  // removed-crate: migrator
+// use onboarding::multibuffer_hint::MultibufferHint;  // removed-crate: onboarding
 pub use open_listener::*;
-use outline_panel::OutlinePanel;
+// use outline_panel::OutlinePanel;  // removed-crate: outline_panel
 use paths::{
     local_debug_file_relative_path, local_settings_file_relative_path,
     local_tasks_file_relative_path,
