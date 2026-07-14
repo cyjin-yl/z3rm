@@ -65,12 +65,12 @@ def judge_verifier_args(judge: JudgeConfig, judge_model: str) -> list[str]:
         "--ve",
         "EVAL_API_KEY=unused-by-agent-evals-proxy",
         "--ve",
-        f"ZED_JUDGE_UPSTREAM={judge.upstream}",
+        f"ZERMINAL_JUDGE_UPSTREAM={judge.upstream}",
         "--ve",
-        f"ZED_JUDGE_AUTH_ENV={judge.auth_env}",
+        f"ZERMINAL_JUDGE_AUTH_ENV={judge.auth_env}",
     ]
     if judge.max_tokens is not None:
-        args.extend(["--ve", f"ZED_JUDGE_MAX_TOKENS={judge.max_tokens}"])
+        args.extend(["--ve", f"ZERMINAL_JUDGE_MAX_TOKENS={judge.max_tokens}"])
     return args
 
 

@@ -48,7 +48,7 @@ impl WgpuContext {
         compositor_gpu: Option<CompositorGpuHint>,
         reject_software: bool,
     ) -> anyhow::Result<Self> {
-        let device_id_filter = match std::env::var("ZED_DEVICE_ID") {
+        let device_id_filter = match std::env::var("ZERMINAL_DEVICE_ID") {
             Ok(val) => parse_pci_id(&val)
                 .context("Failed to parse device ID from `ZED_DEVICE_ID` environment variable")
                 .log_err(),
@@ -232,7 +232,7 @@ impl WgpuContext {
         }
 
         if let Some(device_id) = device_id_filter {
-            log::info!("ZED_DEVICE_ID filter: {:#06x}", device_id);
+            log::info!("ZERMINAL_DEVICE_ID filter: {:#06x}", device_id);
         }
 
         // Sort adapters into a single priority order. Tiers (from highest to lowest):

@@ -85,7 +85,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 fn build_application() -> Application {
     let platform = gpui_platform::current_platform(false);
-    if std::env::var("ZED_EXPERIMENTAL_A11Y").as_deref() == Ok("1") {
+    if std::env::var("ZERMINAL_EXPERIMENTAL_A11Y").as_deref() == Ok("1") {
         Application::with_platform(platform)
     } else {
         Application::new_inaccessible(platform)
@@ -278,7 +278,7 @@ fn main() {
         Ok(path) => askpass::set_askpass_program(path),
         Err(err) => {
             eprintln!("Error: {}", err);
-            if std::option_env!("ZED_BUNDLE").is_some() {
+            if std::option_env!("ZERMINAL_BUNDLE").is_some() {
                 process::exit(1);
             }
         }
@@ -303,9 +303,9 @@ fn main() {
     }
     ztracing::init();
 
-    let version = option_env!("ZED_BUILD_ID");
+    let version = option_env!("ZERMINAL_BUILD_ID");
     let app_commit_sha =
-        option_env!("ZED_COMMIT_SHA").map(|commit_sha| AppCommitSha::new(commit_sha.to_string()));
+        option_env!("ZERMINAL_COMMIT_SHA").map(|commit_sha| AppCommitSha::new(commit_sha.to_string()));
     let app_version = AppVersion::load(env!("CARGO_PKG_VERSION"), version, app_commit_sha.clone());
 
     if args.system_specs {
@@ -383,7 +383,7 @@ fn main() {
     }
 
     let should_install_crash_handler = matches!(
-        env::var("ZED_GENERATE_MINIDUMPS").as_deref(),
+        env::var("ZERMINAL_GENERATE_MINIDUMPS").as_deref(),
         Ok("true" | "1")
     ) || *release_channel::RELEASE_CHANNEL
         != ReleaseChannel::Dev;
@@ -424,7 +424,7 @@ fn main() {
 
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
-        if cfg!(target_os = "macos") && option_env!("ZED_BUNDLE").as_deref() == Some("true") {
+        if cfg!(target_os = "macos") && option_env!("ZERMINAL_BUNDLE").as_deref() == Some("true") {
             app.path_for_auxiliary_executable("git")
                 .context("could not find git binary path")
                 .log_err()

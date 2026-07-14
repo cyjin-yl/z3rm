@@ -8,8 +8,8 @@ set -eu
 main() {
     platform="$(uname -s)"
     arch="$(uname -m)"
-    channel="${ZED_CHANNEL:-stable}"
-    ZED_VERSION="${ZED_VERSION:-latest}"
+    channel="${ZERMINAL_CHANNEL:-stable}"
+    ZERMINAL_VERSION="${ZERMINAL_VERSION:-latest}"
     # Use TMPDIR if available (for environments with non-standard temp directories)
     if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
         temp="$(mktemp -d "$TMPDIR/zed-XXXXXX")"
@@ -79,11 +79,11 @@ main() {
 }
 
 linux() {
-    if [ -n "${ZED_BUNDLE_PATH:-}" ]; then
-        cp "$ZED_BUNDLE_PATH" "$temp/zed-linux-$arch.tar.gz"
+    if [ -n "${ZERMINAL_BUNDLE_PATH:-}" ]; then
+        cp "$ZERMINAL_BUNDLE_PATH" "$temp/zed-linux-$arch.tar.gz"
     else
-        echo "Downloading Zed version: $ZED_VERSION"
-        curl "https://cloud.zed.dev/releases/$channel/$ZED_VERSION/download?asset=zed&arch=$arch&os=linux&source=install.sh" > "$temp/zed-linux-$arch.tar.gz"
+        echo "Downloading Zed version: $ZERMINAL_VERSION"
+        curl "https://cloud.zed.dev/releases/$channel/$ZERMINAL_VERSION/download?asset=zed&arch=$arch&os=linux&source=install.sh" > "$temp/zed-linux-$arch.tar.gz"
     fi
 
     suffix=""
@@ -141,8 +141,8 @@ linux() {
 }
 
 macos() {
-    echo "Downloading Zed version: $ZED_VERSION"
-    curl "https://cloud.zed.dev/releases/$channel/$ZED_VERSION/download?asset=zed&os=macos&arch=$arch&source=install.sh" > "$temp/Zed-$arch.dmg"
+    echo "Downloading Zed version: $ZERMINAL_VERSION"
+    curl "https://cloud.zed.dev/releases/$channel/$ZERMINAL_VERSION/download?asset=zed&os=macos&arch=$arch&source=install.sh" > "$temp/Zed-$arch.dmg"
     hdiutil attach -quiet "$temp/Zed-$arch.dmg" -mountpoint "$temp/mount"
     app="$(cd "$temp/mount/"; echo *.app)"
     echo "Installing $app"

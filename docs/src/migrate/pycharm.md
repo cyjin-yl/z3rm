@@ -225,7 +225,7 @@ This means:
   },
   {
     "label": "test current file",
-    "command": "pytest $ZED_FILE"
+    "command": "pytest $ZERMINAL_FILE"
   }
 ]
 ```
@@ -285,7 +285,7 @@ For more control, create a `.zed/debug.json` file:
   {
     "label": "Debug Current File",
     "adapter": "Debugpy",
-    "program": "$ZED_FILE",
+    "program": "$ZERMINAL_FILE",
     "request": "launch"
   },
   {

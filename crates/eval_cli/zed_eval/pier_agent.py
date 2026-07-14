@@ -115,7 +115,7 @@ class ZedPierAgent(BaseInstalledAgent):
 
         # A Baseten (or other OpenAI-compatible) provider is wired via this JSON;
         # allow its api_url host too.
-        providers_json = self._get_env("ZED_OPENAI_COMPATIBLE_PROVIDERS")
+        providers_json = self._get_env("ZERMINAL_OPENAI_COMPATIBLE_PROVIDERS")
         if providers_json:
             try:
                 parsed = json.loads(providers_json)
@@ -140,13 +140,13 @@ class ZedPierAgent(BaseInstalledAgent):
     def _api_env(self) -> dict[str, str]:
         env = provider_api_env(self.model_name, self._get_env)
         add_openai_compatible_provider_env(
-            env, self._get_env("ZED_OPENAI_COMPATIBLE_PROVIDERS")
+            env, self._get_env("ZERMINAL_OPENAI_COMPATIBLE_PROVIDERS")
         )
         add_anthropic_available_models_env(
-            env, self._get_env("ZED_ANTHROPIC_AVAILABLE_MODELS")
+            env, self._get_env("ZERMINAL_ANTHROPIC_AVAILABLE_MODELS")
         )
         add_zed_eval_env(
-            env, self._extra_env, exclude={"ZED_EVAL_INSTRUCTION_SUFFIX_FILE"}
+            env, self._extra_env, exclude={"ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE"}
         )
         return env
 
@@ -185,7 +185,7 @@ class ZedPierAgent(BaseInstalledAgent):
         timeout = self._get_env("EVAL_CLI_TIMEOUT")
         if timeout:
             parts.append(f"--timeout {shlex.quote(timeout)}")
-        instruction_suffix_file = self._get_env("ZED_EVAL_INSTRUCTION_SUFFIX_FILE")
+        instruction_suffix_file = self._get_env("ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE")
         if instruction_suffix_file:
             parts.append(
                 f"--instruction-suffix-file {shlex.quote(instruction_suffix_file)}"

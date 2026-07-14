@@ -39,14 +39,14 @@ def add_openai_compatible_provider_env(
     env: dict[str, str], providers_json: str | None
 ) -> None:
     if providers_json:
-        env["ZED_OPENAI_COMPATIBLE_PROVIDERS"] = providers_json
+        env["ZERMINAL_OPENAI_COMPATIBLE_PROVIDERS"] = providers_json
 
 
 def add_anthropic_available_models_env(
     env: dict[str, str], models_json: str | None
 ) -> None:
     if models_json:
-        env["ZED_ANTHROPIC_AVAILABLE_MODELS"] = models_json
+        env["ZERMINAL_ANTHROPIC_AVAILABLE_MODELS"] = models_json
 
 
 def add_zed_eval_env(
@@ -54,7 +54,7 @@ def add_zed_eval_env(
 ) -> None:
     exclude = exclude or set()
     for key, value in extra_env.items():
-        if key.startswith("ZED_EVAL_") and key not in exclude:
+        if key.startswith("ZERMINAL_EVAL_") and key not in exclude:
             env[key] = value
 
 

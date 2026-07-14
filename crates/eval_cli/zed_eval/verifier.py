@@ -21,7 +21,7 @@ class ZedJudgeProxyVerifier(Verifier):
 
     async def _ensure_judge_proxy(self) -> None:
         merged_env = self._merged_verifier_env()
-        if not merged_env.get("ZED_JUDGE_UPSTREAM"):
+        if not merged_env.get("ZERMINAL_JUDGE_UPSTREAM"):
             return
 
         env = resolve_env_vars(merged_env)
@@ -29,20 +29,20 @@ class ZedJudgeProxyVerifier(Verifier):
             command=(
                 "set -e\n"
                 "mkdir -p /usr/local/lib /usr/local/bin\n"
-                "cat > /usr/local/lib/zed_judge_proxy.py <<'ZED_PROXY_EOF'\n"
+                "cat > /usr/local/lib/zed_judge_proxy.py <<'ZERMINAL_PROXY_EOF'\n"
                 f"{JUDGE_PROXY_SCRIPT}"
-                "ZED_PROXY_EOF\n"
-                "cat > /usr/local/bin/ensure-judge-proxy <<'ZED_ENSURE_EOF'\n"
+                "ZERMINAL_PROXY_EOF\n"
+                "cat > /usr/local/bin/ensure-judge-proxy <<'ZERMINAL_ENSURE_EOF'\n"
                 f"{JUDGE_PROXY_ENSURE_SCRIPT}"
-                "ZED_ENSURE_EOF\n"
+                "ZERMINAL_ENSURE_EOF\n"
                 "chmod +x /usr/local/bin/ensure-judge-proxy\n"
                 "ensure-judge-proxy\n"
-                "python3 - <<'ZED_PROXY_CHECK_EOF'\n"
+                "python3 - <<'ZERMINAL_PROXY_CHECK_EOF'\n"
                 "import os, socket\n"
-                "port = int(os.environ.get('ZED_JUDGE_PROXY_PORT', '8089'))\n"
+                "port = int(os.environ.get('ZERMINAL_JUDGE_PROXY_PORT', '8089'))\n"
                 "with socket.create_connection(('127.0.0.1', port), timeout=5):\n"
                 "    pass\n"
-                "ZED_PROXY_CHECK_EOF\n"
+                "ZERMINAL_PROXY_CHECK_EOF\n"
                 "if [ -f /tmp/zed-judge-proxy.log ]; then "
                 "tail -2 /tmp/zed-judge-proxy.log; fi\n"
             ),

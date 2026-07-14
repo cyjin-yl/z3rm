@@ -251,11 +251,11 @@ mod python_locator {
     async fn test_python_locator() {
         let adapter = DebugAdapterName("Debugpy".into());
         let build_task = TaskTemplate {
-            label: "run module '$ZED_FILE'".into(),
-            command: "$ZED_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN".into(),
-            args: vec!["-m".into(), "$ZED_CUSTOM_PYTHON_MODULE_NAME".into()],
+            label: "run module '$ZERMINAL_FILE'".into(),
+            command: "$ZERMINAL_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN".into(),
+            args: vec!["-m".into(), "$ZERMINAL_CUSTOM_PYTHON_MODULE_NAME".into()],
             env: Default::default(),
-            cwd: Some("$ZED_WORKTREE_ROOT".into()),
+            cwd: Some("$ZERMINAL_WORKTREE_ROOT".into()),
             use_new_terminal: false,
             allow_concurrent_runs: false,
             reveal: task::RevealStrategy::Always,
@@ -275,10 +275,10 @@ mod python_locator {
             build: None,
             config: json!({
                 "request": "launch",
-                "python": "$ZED_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN",
+                "python": "$ZERMINAL_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN",
                 "args": [],
-                "cwd": "$ZED_WORKTREE_ROOT",
-                "module": "$ZED_CUSTOM_PYTHON_MODULE_NAME",
+                "cwd": "$ZERMINAL_WORKTREE_ROOT",
+                "module": "$ZERMINAL_CUSTOM_PYTHON_MODULE_NAME",
             }),
             tcp_connection: None,
         };

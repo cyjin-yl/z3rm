@@ -303,11 +303,11 @@ impl TaskTemplate {
         })
     }
 
-    /// Validates that all `$ZED_*` variables used in this template are known
+    /// Validates that all `$ZERMINAL_*` variables used in this template are known
     /// variable names, returning a vector with all of the unique unknown
     /// variables.
     ///
-    /// Note that `$ZED_CUSTOM_*` variables are never considered to be invalid
+    /// Note that `$ZERMINAL_CUSTOM_*` variables are never considered to be invalid
     /// since those are provided dynamically by extensions.
     pub fn unknown_variables(&self) -> Vec<String> {
         let mut variables = HashSet::default();
@@ -811,7 +811,7 @@ mod tests {
         let task = TaskTemplate {
             label: "My task".into(),
             command: "echo".into(),
-            args: vec!["$ZED_VARIABLE".into()],
+            args: vec!["$ZERMINAL_VARIABLE".into()],
             ..TaskTemplate::default()
         };
         assert!(
@@ -1062,19 +1062,19 @@ mod tests {
         // Variable names starting with `ZED_` that are not valid should be
         // reported.
         let label = "test unknown variables".to_string();
-        let command = "$ZED_UNKNOWN".to_string();
+        let command = "$ZERMINAL_UNKNOWN".to_string();
         let task = TaskTemplate {
             label,
             command,
             ..TaskTemplate::default()
         };
 
-        assert_eq!(task.unknown_variables(), vec!["ZED_UNKNOWN".to_string()]);
+        assert_eq!(task.unknown_variables(), vec!["ZERMINAL_UNKNOWN".to_string()]);
 
         // Variable names starting with `ZED_CUSTOM_` should never be reported,
         // as those are dynamically provided by extensions.
         let label = "test custom variables".to_string();
-        let command = "$ZED_CUSTOM_UNKNOWN".to_string();
+        let command = "$ZERMINAL_CUSTOM_UNKNOWN".to_string();
         let task = TaskTemplate {
             label,
             command,
@@ -1093,11 +1093,11 @@ mod tests {
             ..TaskTemplate::default()
         };
 
-        assert_eq!(task.unknown_variables(), vec!["ZED_UNKNOWN".to_string()]);
+        assert_eq!(task.unknown_variables(), vec!["ZERMINAL_UNKNOWN".to_string()]);
 
         // Valid variable names are not reported.
         let label = "test custom variables".to_string();
-        let command = "$ZED_FILE".to_string();
+        let command = "$ZERMINAL_FILE".to_string();
         let task = TaskTemplate {
             label,
             command,
@@ -1109,11 +1109,11 @@ mod tests {
     #[test]
     fn test_git_variables_resolution() {
         let task = TaskTemplate {
-            label: "Show $ZED_GIT_SHA_SHORT in $ZED_GIT_REPOSITORY_NAME".to_string(),
+            label: "Show $ZERMINAL_GIT_SHA_SHORT in $ZERMINAL_GIT_REPOSITORY_NAME".to_string(),
             command: "git".to_string(),
-            args: vec!["show".to_string(), "$ZED_GIT_SHA".to_string()],
-            cwd: Some("$ZED_GIT_REPOSITORY_PATH".to_string()),
-            env: HashMap::from_iter([("COMMIT".to_string(), "$ZED_GIT_SHA".to_string())]),
+            args: vec!["show".to_string(), "$ZERMINAL_GIT_SHA".to_string()],
+            cwd: Some("$ZERMINAL_GIT_REPOSITORY_PATH".to_string()),
+            env: HashMap::from_iter([("COMMIT".to_string(), "$ZERMINAL_GIT_SHA".to_string())]),
             ..TaskTemplate::default()
         };
         let sha = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string();

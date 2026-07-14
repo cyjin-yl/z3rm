@@ -103,14 +103,14 @@ class JudgeEnvironmentTests(unittest.TestCase):
     def test_proxy_environment_from_judge_config(self) -> None:
         judge = config.get_judge("deepseek-v4-pro")
         env = rejudge.proxy_environment(judge)
-        self.assertEqual(env["ZED_JUDGE_UPSTREAM"], judge.upstream)
-        self.assertEqual(env["ZED_JUDGE_AUTH_ENV"], judge.auth_env)
-        self.assertEqual(env["ZED_JUDGE_MAX_TOKENS"], str(judge.max_tokens))
+        self.assertEqual(env["ZERMINAL_JUDGE_UPSTREAM"], judge.upstream)
+        self.assertEqual(env["ZERMINAL_JUDGE_AUTH_ENV"], judge.auth_env)
+        self.assertEqual(env["ZERMINAL_JUDGE_MAX_TOKENS"], str(judge.max_tokens))
 
     def test_proxy_environment_omits_unset_max_tokens(self) -> None:
         judge = config.get_judge("leaderboard")
         env = rejudge.proxy_environment(judge)
-        self.assertNotIn("ZED_JUDGE_MAX_TOKENS", env)
+        self.assertNotIn("ZERMINAL_JUDGE_MAX_TOKENS", env)
 
     def test_verifier_environment_points_at_proxy(self) -> None:
         env = rejudge.verifier_environment("some/model", 8089)

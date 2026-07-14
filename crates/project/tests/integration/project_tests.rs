@@ -1207,7 +1207,7 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
     // later assert that the `Event::Toast` even is emitted.
     fs.save(
         path!("/dir/.zed/tasks.json").as_ref(),
-        &r#"[{ "label": "test $ZED_FOO", "command": "echo" }]"#.into(),
+        &r#"[{ "label": "test $ZERMINAL_FOO", "command": "echo" }]"#.into(),
         Default::default(),
     )
     .await
@@ -1223,7 +1223,7 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
                 link: Some(ToastLink { url, .. }),
             } => {
                 assert!(notification_id.starts_with("local-tasks-"));
-                assert!(message.contains("ZED_FOO"));
+                assert!(message.contains("ZERMINAL_FOO"));
                 assert_eq!(*url, "https://zed.dev/docs/tasks");
                 *saw_toast.borrow_mut() = true;
             }
@@ -1251,7 +1251,7 @@ async fn test_fallback_to_single_worktree_tasks(cx: &mut gpui::TestAppContext) {
             ".zed": {
                 "tasks.json": r#"[{
                     "label": "test worktree root",
-                    "command": "echo $ZED_WORKTREE_ROOT"
+                    "command": "echo $ZERMINAL_WORKTREE_ROOT"
                 }]"#,
             },
             "a": {

@@ -228,9 +228,9 @@ let
             ../assets/fonts/ibm-plex-sans
           ];
         };
-        ZED_UPDATE_EXPLANATION = "Zed has been installed using Nix. Auto-updates have thus been disabled.";
+        ZERMINAL_UPDATE_EXPLANATION = "Zed has been installed using Nix. Auto-updates have thus been disabled.";
         RELEASE_VERSION = version;
-        ZED_COMMIT_SHA = lib.optionalString (commitSha != null) "${commitSha}";
+        ZERMINAL_COMMIT_SHA = lib.optionalString (commitSha != null) "${commitSha}";
         LK_CUSTOM_WEBRTC = pkgs.callPackage ./livekit-libwebrtc/package.nix { };
         PROTOC = "${protobuf}/bin/protoc";
 

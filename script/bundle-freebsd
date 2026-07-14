@@ -23,9 +23,9 @@ while getopts 'h' flag; do
     esac
 done
 
-export ZED_BUNDLE=true
+export ZERMINAL_BUNDLE=true
 
-channel=$(<crates/zed/RELEASE_CHANNEL)
+channel=$(<crates/zerminal/RELEASE_CHANNEL)
 target_dir="${CARGO_TARGET_DIR:-target}"
 
 version="$(script/get-crate-version zed)"

@@ -438,7 +438,7 @@ impl LanguageModelRegistry {
 
     pub fn default_model(&self) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("ZERMINAL_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -462,7 +462,7 @@ impl LanguageModelRegistry {
 
     pub fn inline_assistant_model(&self) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("ZERMINAL_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -473,7 +473,7 @@ impl LanguageModelRegistry {
 
     pub fn commit_message_model(&self, cx: &App) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("ZERMINAL_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -485,7 +485,7 @@ impl LanguageModelRegistry {
 
     pub fn thread_summary_model(&self, cx: &App) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("ZERMINAL_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 

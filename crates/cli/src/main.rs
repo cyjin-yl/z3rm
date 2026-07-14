@@ -498,7 +498,7 @@ fn run() -> Result<()> {
 
     // Must happen before clap — SSH invokes cli.exe directly as SSH_ASKPASS
     // and passes the socket path via env var to avoid argument parsing.
-    if let Ok(socket) = std::env::var("ZED_ASKPASS_SOCKET") {
+    if let Ok(socket) = std::env::var("ZERMINAL_ASKPASS_SOCKET") {
         askpass::main_from_args(&socket, std::env::args().skip(1));
         return Ok(());
     }
@@ -567,7 +567,7 @@ fn run() -> Result<()> {
 
         let status = std::process::Command::new("sh")
             .arg(&script_path)
-            .env("ZED_CHANNEL", &*release_channel::RELEASE_CHANNEL_NAME)
+            .env("ZERMINAL_CHANNEL", &*release_channel::RELEASE_CHANNEL_NAME)
             .status()
             .context("Failed to execute uninstall script")?;
 
@@ -925,7 +925,7 @@ mod linux {
                     format!("{} ", *release_channel::RELEASE_CHANNEL_NAME)
                 },
                 option_env!("RELEASE_VERSION").unwrap_or_default(),
-                match option_env!("ZED_COMMIT_SHA") {
+                match option_env!("ZERMINAL_COMMIT_SHA") {
                     Some(commit_sha) => format!(" {commit_sha} "),
                     None => "".to_string(),
                 },
@@ -1026,8 +1026,8 @@ mod flatpak {
     use std::process::Command;
     use std::{env, process};
 
-    const EXTRA_LIB_ENV_NAME: &str = "ZED_FLATPAK_LIB_PATH";
-    const NO_ESCAPE_ENV_NAME: &str = "ZED_FLATPAK_NO_ESCAPE";
+    const EXTRA_LIB_ENV_NAME: &str = "ZERMINAL_FLATPAK_LIB_PATH";
+    const NO_ESCAPE_ENV_NAME: &str = "ZERMINAL_FLATPAK_NO_ESCAPE";
 
     /// Adds bundled libraries to LD_LIBRARY_PATH if running under flatpak
     pub fn ld_extra_libs() {
@@ -1049,7 +1049,7 @@ mod flatpak {
         if let Some(flatpak_dir) = get_flatpak_dir() {
             let mut args = vec!["/usr/bin/flatpak-spawn".into(), "--host".into()];
             args.append(&mut get_xdg_env_args());
-            args.push("--env=ZED_UPDATE_EXPLANATION=Please use flatpak to update zed".into());
+            args.push("--env=ZERMINAL_UPDATE_EXPLANATION=Please use flatpak to update zed".into());
             args.push(
                 format!(
                     "--env={EXTRA_LIB_ENV_NAME}={}",
@@ -1082,7 +1082,7 @@ mod flatpak {
             && args.zed.is_none()
         {
             args.zed = Some("/app/libexec/zed-editor".into());
-            unsafe { env::set_var("ZED_UPDATE_EXPLANATION", "Please use flatpak to update zed") };
+            unsafe { env::set_var("ZERMINAL_UPDATE_EXPLANATION", "Please use flatpak to update zed") };
         }
         args
     }
@@ -1172,7 +1172,7 @@ mod windows {
                     format!("{} ", *release_channel::RELEASE_CHANNEL_NAME)
                 },
                 option_env!("RELEASE_VERSION").unwrap_or_default(),
-                match option_env!("ZED_COMMIT_SHA") {
+                match option_env!("ZERMINAL_COMMIT_SHA") {
                     Some(commit_sha) => format!(" {commit_sha} "),
                     None => "".to_string(),
                 },

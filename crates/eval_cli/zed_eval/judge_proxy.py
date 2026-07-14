@@ -29,10 +29,10 @@ JUDGE_PROXY_SCRIPT = """\
 import json, os, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-UPSTREAM = os.environ.get("ZED_JUDGE_UPSTREAM", "https://api.anthropic.com/v1").rstrip("/")
-PORT = int(os.environ.get("ZED_JUDGE_PROXY_PORT", "8089"))
-AUTH_ENV = os.environ.get("ZED_JUDGE_AUTH_ENV")
-MAX_TOKENS_FLOOR = int(os.environ.get("ZED_JUDGE_MAX_TOKENS", "0"))
+UPSTREAM = os.environ.get("ZERMINAL_JUDGE_UPSTREAM", "https://api.anthropic.com/v1").rstrip("/")
+PORT = int(os.environ.get("ZERMINAL_JUDGE_PROXY_PORT", "8089"))
+AUTH_ENV = os.environ.get("ZERMINAL_JUDGE_AUTH_ENV")
+MAX_TOKENS_FLOOR = int(os.environ.get("ZERMINAL_JUDGE_MAX_TOKENS", "0"))
 
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 # on open pipes.
 JUDGE_PROXY_ENSURE_SCRIPT = """\
 #!/bin/bash
-if ! (exec 3<>/dev/tcp/127.0.0.1/${ZED_JUDGE_PROXY_PORT:-8089}) 2>/dev/null; then
+if ! (exec 3<>/dev/tcp/127.0.0.1/${ZERMINAL_JUDGE_PROXY_PORT:-8089}) 2>/dev/null; then
     nohup python3 /usr/local/lib/zed_judge_proxy.py \\
         >>/tmp/zed-judge-proxy.log 2>&1 </dev/null &
     sleep 1

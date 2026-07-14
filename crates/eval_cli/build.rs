@@ -11,5 +11,5 @@ fn main() {
         .trim()
         .trim_matches('"');
     println!("cargo:rerun-if-changed=../zerminal/Cargo.toml");
-    println!("cargo:rustc-env=ZED_PKG_VERSION={}", version);
+    println!("cargo:rustc-env=ZERMINAL_PKG_VERSION={}", version);
 }

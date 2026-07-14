@@ -183,22 +183,22 @@ class ZedAgent(BaseInstalledAgent):
         lsp_installs = [
             (
                 "basedpyright",
-                'DIR="$ZED_DATA_DIR/languages/basedpyright"; '
+                'DIR="$ZERMINAL_DATA_DIR/languages/basedpyright"; '
                 'mkdir -p "$DIR" && npm install --prefix "$DIR" --save-exact basedpyright',
             ),
             (
                 "typescript-language-server",
-                'DIR="$ZED_DATA_DIR/languages/typescript-language-server"; '
+                'DIR="$ZERMINAL_DATA_DIR/languages/typescript-language-server"; '
                 'mkdir -p "$DIR" && npm install --prefix "$DIR" --save-exact typescript typescript-language-server',
             ),
             (
                 "vtsls",
-                'DIR="$ZED_DATA_DIR/languages/vtsls"; '
+                'DIR="$ZERMINAL_DATA_DIR/languages/vtsls"; '
                 'mkdir -p "$DIR" && npm install --prefix "$DIR" --save-exact @vtsls/language-server typescript',
             ),
             (
                 "tailwindcss-language-server",
-                'DIR="$ZED_DATA_DIR/languages/tailwindcss-language-server"; '
+                'DIR="$ZERMINAL_DATA_DIR/languages/tailwindcss-language-server"; '
                 'mkdir -p "$DIR" && npm install --prefix "$DIR" --save-exact @tailwindcss/language-server',
             ),
         ]
@@ -208,7 +208,7 @@ class ZedAgent(BaseInstalledAgent):
                 await self.exec_as_agent(
                     environment,
                     command=(
-                        'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zed"; '
+                        'ZERMINAL_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zerminal"; '
                         + cmd
                     ),
                 )
@@ -223,8 +223,8 @@ class ZedAgent(BaseInstalledAgent):
                 environment,
                 command=(
                     "set -euo pipefail; "
-                    'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zed"; '
-                    'ESLINT_DIR="$ZED_DATA_DIR/languages/eslint/vscode-eslint-2.4.4"; '
+                    'ZERMINAL_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zerminal"; '
+                    'ESLINT_DIR="$ZERMINAL_DATA_DIR/languages/eslint/vscode-eslint-2.4.4"; '
                     'mkdir -p "$ESLINT_DIR"; '
                     'curl -fsSL "https://github.com/zed-industries/vscode-eslint/archive/refs/tags/release/2.4.4.tar.gz" '
                     '| tar -xz -C "$ESLINT_DIR"; '
@@ -314,10 +314,10 @@ class ZedAgent(BaseInstalledAgent):
     def _get_api_env(self) -> dict[str, str]:
         env = provider_api_env(self.model_name)
         add_openai_compatible_provider_env(
-            env, self._extra_env.get("ZED_OPENAI_COMPATIBLE_PROVIDERS")
+            env, self._extra_env.get("ZERMINAL_OPENAI_COMPATIBLE_PROVIDERS")
         )
         add_anthropic_available_models_env(
-            env, self._extra_env.get("ZED_ANTHROPIC_AVAILABLE_MODELS")
+            env, self._extra_env.get("ZERMINAL_ANTHROPIC_AVAILABLE_MODELS")
         )
         return env
 
@@ -412,7 +412,7 @@ class ZedAgent(BaseInstalledAgent):
         env = self._get_api_env()
 
         add_zed_eval_env(
-            env, self._extra_env, exclude={"ZED_EVAL_INSTRUCTION_SUFFIX_FILE"}
+            env, self._extra_env, exclude={"ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE"}
         )
 
         workdir = await self._detect_workdir(environment)
@@ -427,7 +427,7 @@ class ZedAgent(BaseInstalledAgent):
             parts.append(f"--model {shlex.quote(self.model_name)}")
 
         instruction_suffix_file = self._extra_env.get(
-            "ZED_EVAL_INSTRUCTION_SUFFIX_FILE"
+            "ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE"
         )
         if instruction_suffix_file:
             parts.append(

@@ -343,7 +343,7 @@ For reusable setups, create a `.zed/debug.json` file in your project root. This 
   {
     "label": "Python Active File",
     "adapter": "Debugpy",
-    "program": "$ZED_FILE",
+    "program": "$ZERMINAL_FILE",
     "request": "launch"
   }
 ]
@@ -377,7 +377,7 @@ requirements.txt
     "adapter": "Debugpy",
     "request": "launch",
     "module": "app",
-    "cwd": "$ZED_WORKTREE_ROOT",
+    "cwd": "$ZERMINAL_WORKTREE_ROOT",
     "env": {
       "FLASK_APP": "app",
       "FLASK_DEBUG": "1"

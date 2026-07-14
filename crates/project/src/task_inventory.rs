@@ -1164,9 +1164,9 @@ mod tests {
 
     fn greeting_template() -> TaskTemplate {
         TaskTemplate {
-            label: "echo $ZED_CUSTOM_GREETING".to_string(),
+            label: "echo $ZERMINAL_CUSTOM_GREETING".to_string(),
             command: "echo".to_string(),
-            args: vec!["$ZED_CUSTOM_GREETING".to_string()],
+            args: vec!["$ZERMINAL_CUSTOM_GREETING".to_string()],
             ..TaskTemplate::default()
         }
     }

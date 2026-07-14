@@ -835,7 +835,7 @@ impl ConfigureMode {
         });
 
         let cwd = cx.new(|cx| {
-            InputField::new(window, cx, "Ex: $ZED_WORKTREE_ROOT")
+            InputField::new(window, cx, "Ex: $ZERMINAL_WORKTREE_ROOT")
                 .label("Working Directory")
                 .tab_stop(true)
                 .tab_index(2)
@@ -1615,7 +1615,7 @@ pub(crate) fn resolve_path(path: &mut String) {
         *path = trimmed_path.replacen('~', &home, 1);
     } else if let Some(strip_path) = path.strip_prefix(&format!(".{}", std::path::MAIN_SEPARATOR)) {
         *path = format!(
-            "$ZED_WORKTREE_ROOT{}{}",
+            "$ZERMINAL_WORKTREE_ROOT{}{}",
             std::path::MAIN_SEPARATOR,
             &strip_path
         );

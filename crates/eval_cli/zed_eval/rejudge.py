@@ -124,11 +124,11 @@ def proxy_environment(judge: config.JudgeConfig) -> dict[str, str]:
     (`judge.auth_env`, e.g. BASETEN_API_KEY) must already be present in the
     process environment via the mounted LLM-providers secret."""
     env = {
-        "ZED_JUDGE_UPSTREAM": judge.upstream,
-        "ZED_JUDGE_AUTH_ENV": judge.auth_env,
+        "ZERMINAL_JUDGE_UPSTREAM": judge.upstream,
+        "ZERMINAL_JUDGE_AUTH_ENV": judge.auth_env,
     }
     if judge.max_tokens is not None:
-        env["ZED_JUDGE_MAX_TOKENS"] = str(judge.max_tokens)
+        env["ZERMINAL_JUDGE_MAX_TOKENS"] = str(judge.max_tokens)
     return env
 
 
@@ -164,7 +164,7 @@ class JudgeProxy:
         self._script_path.write_text(JUDGE_PROXY_SCRIPT)
         env = os.environ.copy()
         env.update(proxy_environment(self._judge))
-        env["ZED_JUDGE_PROXY_PORT"] = str(self._port)
+        env["ZERMINAL_JUDGE_PROXY_PORT"] = str(self._port)
         self._process = subprocess.Popen(
             [sys.executable, str(self._script_path)],
             env=env,

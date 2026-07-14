@@ -1700,19 +1700,19 @@ mod tests {
             [
                 (
                     "vitest file test".into(),
-                    Some("$ZED_CUSTOM_TYPESCRIPT_VITEST_PACKAGE_PATH".into()),
+                    Some("$ZERMINAL_CUSTOM_TYPESCRIPT_VITEST_PACKAGE_PATH".into()),
                 ),
                 (
-                    "vitest test $ZED_SYMBOL".into(),
-                    Some("$ZED_CUSTOM_TYPESCRIPT_VITEST_PACKAGE_PATH".into()),
+                    "vitest test $ZERMINAL_SYMBOL".into(),
+                    Some("$ZERMINAL_CUSTOM_TYPESCRIPT_VITEST_PACKAGE_PATH".into()),
                 ),
                 (
                     "mocha file test".into(),
-                    Some("$ZED_CUSTOM_TYPESCRIPT_MOCHA_PACKAGE_PATH".into()),
+                    Some("$ZERMINAL_CUSTOM_TYPESCRIPT_MOCHA_PACKAGE_PATH".into()),
                 ),
                 (
-                    "mocha test $ZED_SYMBOL".into(),
-                    Some("$ZED_CUSTOM_TYPESCRIPT_MOCHA_PACKAGE_PATH".into()),
+                    "mocha test $ZERMINAL_SYMBOL".into(),
+                    Some("$ZERMINAL_CUSTOM_TYPESCRIPT_MOCHA_PACKAGE_PATH".into()),
                 ),
                 (
                     "root/package.json > test".into(),

@@ -196,7 +196,7 @@ This means:
   },
   {
     "label": "test current file",
-    "command": "./gradlew test --tests $ZED_STEM"
+    "command": "./gradlew test --tests $ZERMINAL_STEM"
   }
 ]
 ```

@@ -1,2 +1,2 @@
-ZED_ENVIRONMENT=production
+ZERMINAL_ENVIRONMENT=production
 RUST_LOG=info

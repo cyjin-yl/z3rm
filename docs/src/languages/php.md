@@ -147,7 +147,7 @@ The PHP extension provides a debug adapter for PHP via Xdebug. There are several
     "adapter": "Xdebug",
     "request": "launch",
     "program": "vendor/bin/phpunit",
-    "args": ["--filter", "$ZED_SYMBOL"]
+    "args": ["--filter", "$ZERMINAL_SYMBOL"]
   }
 ]
 ```

@@ -651,7 +651,7 @@ jobs:
     - name: run_bundling::bundle_windows::bundle_windows
       run: script/bundle-windows.ps1 -Architecture aarch64
       shell: pwsh
-      working-directory: ${{ env.ZED_WORKSPACE }}
+      working-directory: ${{ env.ZERMINAL_WORKSPACE }}
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
@@ -699,7 +699,7 @@ jobs:
     - name: run_bundling::bundle_windows::bundle_windows
       run: script/bundle-windows.ps1 -Architecture x86_64
       shell: pwsh
-      working-directory: ${{ env.ZED_WORKSPACE }}
+      working-directory: ${{ env.ZERMINAL_WORKSPACE }}
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:

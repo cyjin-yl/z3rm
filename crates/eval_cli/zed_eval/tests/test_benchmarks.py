@@ -76,13 +76,13 @@ class HarnessCommandTests(unittest.TestCase):
         )
         self.assertTrue(any(arg.startswith("EVAL_MODEL=") for arg in verifier_env))
         self.assertTrue(
-            any(arg.startswith("ZED_JUDGE_UPSTREAM=") for arg in verifier_env)
+            any(arg.startswith("ZERMINAL_JUDGE_UPSTREAM=") for arg in verifier_env)
         )
         self.assertTrue(
-            any(arg.startswith("ZED_JUDGE_AUTH_ENV=") for arg in verifier_env)
+            any(arg.startswith("ZERMINAL_JUDGE_AUTH_ENV=") for arg in verifier_env)
         )
-        self.assertIn("ZED_JUDGE_MAX_TOKENS=8192", verifier_env)
-        self.assertFalse(any(arg.startswith("ZED_JUDGE_") for arg in agent_env))
+        self.assertIn("ZERMINAL_JUDGE_MAX_TOKENS=8192", verifier_env)
+        self.assertFalse(any(arg.startswith("ZERMINAL_JUDGE_") for arg in agent_env))
 
     def test_deepswe_uses_pier_path_without_cli_allowlist(self) -> None:
         command = harness_command.build_harness_command(
@@ -114,14 +114,14 @@ class HarnessCommandTests(unittest.TestCase):
             make_run_request(
                 "swe-atlas-rf",
                 extra_env={
-                    "ZED_EVAL_INSTRUCTION_SUFFIX_FILE": "/data/prompts/checklist.md"
+                    "ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE": "/data/prompts/checklist.md"
                 },
             ),
             "/tmp/jobs",
         )
 
         self.assertIn(
-            "ZED_EVAL_INSTRUCTION_SUFFIX_FILE=/data/prompts/checklist.md",
+            "ZERMINAL_EVAL_INSTRUCTION_SUFFIX_FILE=/data/prompts/checklist.md",
             option_values(command, "--ae"),
         )
 

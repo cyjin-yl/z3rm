@@ -7240,12 +7240,12 @@ mod tests {
                         &serde_json::to_string(&json!([
                             // Tagged global task that should be scheduled from the Git graph context menu.
                             {
-                                "label": "Git Show $ZED_GIT_SHA_SHORT",
+                                "label": "Git Show $ZERMINAL_GIT_SHA_SHORT",
                                 "command": "git",
-                                "args": ["show", "$ZED_GIT_SHA"],
-                                "cwd": "$ZED_GIT_REPOSITORY_PATH",
+                                "args": ["show", "$ZERMINAL_GIT_SHA"],
+                                "cwd": "$ZERMINAL_GIT_REPOSITORY_PATH",
                                 "env": {
-                                    "REPOSITORY": "$ZED_GIT_REPOSITORY_NAME",
+                                    "REPOSITORY": "$ZERMINAL_GIT_REPOSITORY_NAME",
                                 },
                                 "tags": [GIT_COMMAND_TASK_TAG],
                             },
@@ -7258,9 +7258,9 @@ mod tests {
                             // Tagged task that still should not appear because Git graph task contexts
                             // do not provide editor-specific variables.
                             {
-                                "label": "Print File $ZED_FILE",
+                                "label": "Print File $ZERMINAL_FILE",
                                 "command": "echo",
-                                "args": ["$ZED_FILE"],
+                                "args": ["$ZERMINAL_FILE"],
                                 "tags": [GIT_COMMAND_TASK_TAG],
                             },
                         ]))
@@ -7393,10 +7393,10 @@ mod tests {
                     Some(
                         &serde_json::to_string(&json!([
                             {
-                                "label": "Check out $ZED_GIT_REF",
+                                "label": "Check out $ZERMINAL_GIT_REF",
                                 "command": "git",
-                                "args": ["checkout", "$ZED_GIT_REF"],
-                                "cwd": "$ZED_GIT_REPOSITORY_PATH",
+                                "args": ["checkout", "$ZERMINAL_GIT_REF"],
+                                "cwd": "$ZERMINAL_GIT_REPOSITORY_PATH",
                                 "tags": [GIT_COMMAND_TASK_TAG],
                             },
                         ]))

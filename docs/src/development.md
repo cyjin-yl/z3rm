@@ -35,19 +35,19 @@ If you need to test something out using the real system keychain in a
 development build, run Zed with the following environment variable set:
 
 ```
-ZED_DEVELOPMENT_USE_KEYCHAIN=1
+ZERMINAL_DEVELOPMENT_USE_KEYCHAIN=1
 ```
 
 ## Performance Measurements
 
 Zed includes a frame time measurement system that can be used to profile how long it takes to render each frame. This is particularly useful when comparing rendering performance between different versions or when optimizing frame rendering code.
 
-### Using ZED_MEASUREMENTS
+### Using ZERMINAL_MEASUREMENTS
 
-To enable performance measurements, set the `ZED_MEASUREMENTS` environment variable:
+To enable performance measurements, set the `ZERMINAL_MEASUREMENTS` environment variable:
 
 ```sh
-export ZED_MEASUREMENTS=1
+export ZERMINAL_MEASUREMENTS=1
 ```
 
 When enabled, Zed will print frame rendering timing information to stderr, showing how long each frame takes to render.
@@ -59,7 +59,7 @@ Here's a typical workflow for comparing frame rendering performance between diff
 1. **Enable measurements:**
 
    ```sh
-   export ZED_MEASUREMENTS=1
+   export ZERMINAL_MEASUREMENTS=1
    ```
 
 2. **Test the first version:**

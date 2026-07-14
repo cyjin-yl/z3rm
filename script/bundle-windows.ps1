@@ -57,7 +57,7 @@ if ($Help) {
 
 Push-Location -Path crates/zed
 $channel = Get-Content "RELEASE_CHANNEL"
-$env:ZED_RELEASE_CHANNEL = $channel
+$env:ZERMINAL_RELEASE_CHANNEL = $channel
 $env:RELEASE_CHANNEL = $channel
 Pop-Location
 
@@ -67,7 +67,7 @@ function CheckEnvironmentVariables {
     }
 
     $requiredVars = @(
-        'ZED_WORKSPACE', 'RELEASE_VERSION', 'ZED_RELEASE_CHANNEL',
+        'ZERMINAL_WORKSPACE', 'RELEASE_VERSION', 'ZERMINAL_RELEASE_CHANNEL',
         'AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET',
         'ACCOUNT_NAME', 'CERT_PROFILE_NAME', 'ENDPOINT',
         'FILE_DIGEST', 'TIMESTAMP_DIGEST', 'TIMESTAMP_SERVER'
@@ -86,7 +86,7 @@ function PrepareForBundle {
         Remove-Item -Path "$innoDir" -Recurse -Force
     }
     New-Item -Path "$innoDir" -ItemType Directory -Force
-    Copy-Item -Path "$env:ZED_WORKSPACE\crates\zed\resources\windows\*" -Destination "$innoDir" -Recurse -Force
+    Copy-Item -Path "$env:ZERMINAL_WORKSPACE\crates\zerminal\resources\windows\*" -Destination "$innoDir" -Recurse -Force
     New-Item -Path "$innoDir\make_appx" -ItemType Directory -Force
     New-Item -Path "$innoDir\appx" -ItemType Directory -Force
     New-Item -Path "$innoDir\bin" -ItemType Directory -Force
@@ -133,7 +133,7 @@ function BuildRemoteServer {
         & "$innoDir\sign.ps1" $remoteServerSrc
     }
 
-    $remoteServerDst = "$env:ZED_WORKSPACE\target\zed-remote-server-windows-$Architecture.zip"
+    $remoteServerDst = "$env:ZERMINAL_WORKSPACE\target\zed-remote-server-windows-$Architecture.zip"
     Write-Output "Compressing remote_server to $remoteServerDst"
     Compress-Archive -Path $remoteServerSrc -DestinationPath $remoteServerDst -Force
 
@@ -149,7 +149,7 @@ function ZipZedAndItsFriendsDebug {
         ".\$CargoOutDir\remote_server.pdb"
     )
 
-    Compress-Archive -Path $items -DestinationPath ".\$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip" -Force
+    Compress-Archive -Path $items -DestinationPath ".\$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZERMINAL_RELEASE_CHANNEL.dbg.zip" -Force
 }
 
 
@@ -183,13 +183,13 @@ function UploadToSentry {
 function MakeAppx {
     switch ($channel) {
         "stable" {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest.xml"
+            $manifestFile = "$env:ZERMINAL_WORKSPACE\crates\explorer_command_injector\AppxManifest.xml"
         }
         "preview" {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest-Preview.xml"
+            $manifestFile = "$env:ZERMINAL_WORKSPACE\crates\explorer_command_injector\AppxManifest-Preview.xml"
         }
         default {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest-Nightly.xml"
+            $manifestFile = "$env:ZERMINAL_WORKSPACE\crates\explorer_command_injector\AppxManifest-Nightly.xml"
         }
     }
     Copy-Item -Path "$manifestFile" -Destination "$innoDir\make_appx\AppxManifest.xml"
@@ -319,7 +319,7 @@ function BuildInstaller {
     $definitions = @{
         "AppId"          = $appId
         "AppIconName"    = $appIconName
-        "OutputDir"      = "$env:ZED_WORKSPACE\target"
+        "OutputDir"      = "$env:ZERMINAL_WORKSPACE\target"
         "AppSetupName"   = $appSetupName
         "AppName"        = $appName
         "AppDisplayName" = $appDisplayName
@@ -330,7 +330,7 @@ function BuildInstaller {
         "ShellNameShort" = $appShellNameShort
         "AppUserId"      = $appUserId
         "Version"        = "$env:RELEASE_VERSION"
-        "SourceDir"      = "$env:ZED_WORKSPACE"
+        "SourceDir"      = "$env:ZERMINAL_WORKSPACE"
         "AppxFullName"   = $appAppxFullName
     }
 
@@ -361,9 +361,9 @@ function BuildInstaller {
 }
 
 ParseZedWorkspace
-$innoDir = "$env:ZED_WORKSPACE\inno\$Architecture"
-$debugArchive = "$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip"
-$debugStoreKey = "$env:ZED_RELEASE_CHANNEL/zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip"
+$innoDir = "$env:ZERMINAL_WORKSPACE\inno\$Architecture"
+$debugArchive = "$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZERMINAL_RELEASE_CHANNEL.dbg.zip"
+$debugStoreKey = "$env:ZERMINAL_RELEASE_CHANNEL/zed-$env:RELEASE_VERSION-$env:ZERMINAL_RELEASE_CHANNEL.dbg.zip"
 
 CheckEnvironmentVariables
 PrepareForBundle
@@ -386,7 +386,7 @@ if ($buildSuccess) {
     Write-Output "Build successful"
     if ($Install) {
         Write-Output "Installing Zed..."
-        Start-Process -FilePath "$env:ZED_WORKSPACE/target/ZedEditorUserSetup-x64-$env:RELEASE_VERSION.exe"
+        Start-Process -FilePath "$env:ZERMINAL_WORKSPACE/target/ZedEditorUserSetup-x64-$env:RELEASE_VERSION.exe"
     }
     exit 0
 }

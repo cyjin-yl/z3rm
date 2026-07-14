@@ -80,19 +80,19 @@ const FLUSH_INTERVAL: Duration = Duration::from_secs(1);
 #[cfg(not(debug_assertions))]
 const FLUSH_INTERVAL: Duration = Duration::from_secs(60 * 5);
 static ZED_CLIENT_CHECKSUM_SEED: LazyLock<Option<Vec<u8>>> = LazyLock::new(|| {
-    option_env!("ZED_CLIENT_CHECKSUM_SEED")
+    option_env!("ZERMINAL_CLIENT_CHECKSUM_SEED")
         .map(|s| s.as_bytes().into())
         .or_else(|| {
-            env::var("ZED_CLIENT_CHECKSUM_SEED")
+            env::var("ZERMINAL_CLIENT_CHECKSUM_SEED")
                 .ok()
                 .map(|s| s.as_bytes().into())
         })
 });
 
 pub static MINIDUMP_ENDPOINT: LazyLock<Option<String>> = LazyLock::new(|| {
-    option_env!("ZED_MINIDUMP_ENDPOINT")
+    option_env!("ZERMINAL_MINIDUMP_ENDPOINT")
         .map(str::to_string)
-        .or_else(|| env::var("ZED_MINIDUMP_ENDPOINT").ok())
+        .or_else(|| env::var("ZERMINAL_MINIDUMP_ENDPOINT").ok())
 });
 
 static DOTNET_PROJECT_FILES_REGEX: LazyLock<Regex> = LazyLock::new(|| {

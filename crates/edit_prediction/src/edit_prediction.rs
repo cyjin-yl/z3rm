@@ -124,7 +124,7 @@ const EDIT_HISTORY_DIFF_SIZE_LIMIT: usize = 2048 * 3; // ~2048 tokens or ~50% of
 const COLLABORATOR_EDIT_LOCALITY_CONTEXT_TOKENS: usize = 512;
 const GIT_CHANGED_FILE_SETS_COMMIT_LIMIT: usize = 100;
 const LAST_CHANGE_GROUPING_TIME: Duration = Duration::from_secs(1);
-const ZED_PREDICT_DATA_COLLECTION_CHOICE: &str = "zed_predict_data_collection_choice";
+const ZED_PREDICT_DATA_COLLECTION_CHOICE: &str = "zerminal_predict_data_collection_choice";
 const REJECT_REQUEST_DEBOUNCE: Duration = Duration::from_secs(15);
 const REQUEST_TIMEOUT_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -1040,10 +1040,10 @@ impl EditPredictionStore {
     }
 
     fn zeta2_raw_config_from_env() -> Option<Zeta2RawConfig> {
-        let version_str = env::var("ZED_ZETA_FORMAT").ok()?;
+        let version_str = env::var("ZERMINAL_ZETA_FORMAT").ok()?;
         let format = ZetaFormat::parse(&version_str).ok()?;
-        let model_id = env::var("ZED_ZETA_MODEL").ok();
-        let environment = env::var("ZED_ZETA_ENVIRONMENT").ok();
+        let model_id = env::var("ZERMINAL_ZETA_MODEL").ok();
+        let environment = env::var("ZERMINAL_ZETA_ENVIRONMENT").ok();
         Some(Zeta2RawConfig {
             model_id,
             environment,

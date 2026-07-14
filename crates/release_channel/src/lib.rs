@@ -12,7 +12,7 @@ const ZED_DOCS_URL: &str = "https://zed.dev/docs";
 /// stable | dev | nightly | preview
 pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| {
     if cfg!(debug_assertions) {
-        env::var("ZED_RELEASE_CHANNEL")
+        env::var("ZERMINAL_RELEASE_CHANNEL")
             .unwrap_or_else(|_| include_str!("../../zed/RELEASE_CHANNEL").trim().to_string())
     } else {
         include_str!("../../zed/RELEASE_CHANNEL").trim().to_string()
@@ -87,7 +87,7 @@ impl AppVersion {
         build_id: Option<&str>,
         commit_sha: Option<AppCommitSha>,
     ) -> Version {
-        let mut version: Version = if let Ok(from_env) = env::var("ZED_APP_VERSION") {
+        let mut version: Version = if let Ok(from_env) = env::var("ZERMINAL_APP_VERSION") {
             from_env.parse().expect("invalid ZED_APP_VERSION")
         } else {
             pkg_version.parse().expect("invalid version in Cargo.toml")

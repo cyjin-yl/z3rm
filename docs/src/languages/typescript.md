@@ -270,8 +270,8 @@ Given an externally-run web server (e.g., with `npx serve` or `npx live-server`)
     "type": "chrome",
     "request": "launch",
     "url": "http://localhost:5500",
-    "program": "$ZED_FILE",
-    "webRoot": "${ZED_WORKTREE_ROOT}",
+    "program": "$ZERMINAL_FILE",
+    "webRoot": "${ZERMINAL_WORKTREE_ROOT}",
     "build": {
       "command": "npx",
       "args": ["tsc"]

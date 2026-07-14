@@ -62,7 +62,7 @@ Use these forms on `#[gpui::test(arguments)]`:
 
 - `RUST_BACKTRACE=1` or `RUST_BACKTRACE=full` — show panic backtraces.
 - `RUST_LOG=<filter>` — enable logs when the test initializes logging.
-- `ZED_HEADLESS=1` — forces GPUI platform guessing toward headless mode; useful for tests that otherwise interact with platform/window setup.
+- `ZERMINAL_HEADLESS=1` — forces GPUI platform guessing toward headless mode; useful for tests that otherwise interact with platform/window setup.
 
 Prefer env vars over editing the test when narrowing a reproduction.
 
