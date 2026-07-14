@@ -2,7 +2,7 @@ mod components;
 mod page_data;
 pub mod pages;
 
-use agent_skills::SkillIndex;
+// use agent_skills::SkillIndex;  // removed-crate: agent_skills
 use anyhow::{Context as _, Result};
 // use cloud_api_types::OrganizationConfiguration;  // removed-crate: cloud_api_types
 use editor::{Editor, EditorEvent};
@@ -6075,9 +6075,9 @@ pub mod test {
 
     #[gpui::test]
     async fn test_skills_page_scope_switch_updates_displayed_skills(cx: &mut gpui::TestAppContext) {
-        use agent_skills::{
+// use agent_skills::{
             ProjectSkillGroup, Skill, SkillScopeId, SkillSource, load_skills_from_directory,
-        };
+        };  // removed-crate: agent_skills
         use project::Project;
         use serde_json::json;
         use std::path::Path;

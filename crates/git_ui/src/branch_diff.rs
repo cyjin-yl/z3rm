@@ -5,7 +5,7 @@ use crate::{
         self, CompareWithBranch, DeployBranchDiff, ReviewDiff, render_send_review_to_agent_button,
     },
 };
-use agent_settings::AgentSettings;
+// use agent_settings::AgentSettings;  // removed-crate: agent_settings
 use anyhow::{Context as _, Result, anyhow};
 use editor::{
     Addon, Editor, EditorEvent, RestoreOnlyDiffHunkDelegate, SplittableEditor,

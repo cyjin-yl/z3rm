@@ -15,8 +15,8 @@ pub mod visual_tests;
 #[cfg(target_os = "windows")]
 pub(crate) mod windows_only_instance;
 
-use agent_settings::{UserAgentsMdState, init_user_agents_md};
-use agent_ui::AgentDiffToolbar;
+// use agent_settings::{UserAgentsMdState, init_user_agents_md};  // removed-crate: agent_settings
+// use agent_ui::AgentDiffToolbar;  // removed-crate: agent_ui
 use anyhow::Context as _;
 pub use app_menus::*;
 use assets::Assets;
@@ -2727,7 +2727,7 @@ mod tests {
     use languages::{markdown_lang, rust_lang};
     use pretty_assertions::{assert_eq, assert_ne};
     use project::{Project, ProjectPath};
-    use prompt_store::PromptBuilder;
+// use prompt_store::PromptBuilder;  // removed-crate: prompt_store
     use semver::Version;
     use serde_json::json;
     use settings::{SaturatingBool, SettingsStore, watch_config_file};

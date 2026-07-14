@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use agent_settings::AgentSettings;
+// use agent_settings::AgentSettings;  // removed-crate: agent_settings
 use gpui::{ReadGlobal as _, ScrollHandle, prelude::*};
 use http_proxy::HostPattern;
 use settings::{Settings as _, SettingsStore};

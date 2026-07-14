@@ -85,7 +85,7 @@ pub use display_map::{
     ChunkRenderer, ChunkRendererContext, DisplayPoint, FoldPlaceholder, HighlightKey,
     NavigationOverlayKey, SemanticTokenHighlight,
 };
-pub use edit_prediction::make_suggestion_styles;
+// pub use edit_prediction::make_suggestion_styles;  // removed-crate: edit_prediction
 pub(crate) use edit_prediction::{
     EditDisplayMode, EditPrediction, EditPredictionPreview, EditPredictionSettings,
     EditPredictionState, MenuEditPredictionsPolicy, RegisteredEditPredictionDelegate,
@@ -94,8 +94,8 @@ pub(crate) use edit_prediction::{
 pub(crate) use edit_prediction::{
     EditPredictionKeybindAction, EditPredictionKeybindSurface, edit_prediction_edit_text,
 };
-pub use edit_prediction_types::Direction;
-pub use edit_prediction_types::EditPredictionRequestTrigger;
+// pub use edit_prediction_types::Direction;  // removed-crate: edit_prediction_types
+// pub use edit_prediction_types::EditPredictionRequestTrigger;  // removed-crate: edit_prediction_types
 pub use editor_settings::{
     CompletionDetailAlignment, CompletionMenuItemKind, CurrentLineHighlight, DiffViewStyle,
     DocumentColorsRenderMode, EditorSettings, EditorSettingsScrollbarProxy, ScrollBeyondLastLine,
@@ -148,10 +148,10 @@ use dap::TelemetrySpawnLocation;
 use display_map::*;
 use document_colors::LspColorData;
 use document_links::LspDocumentLinks;
-use edit_prediction_types::{
+// use edit_prediction_types::{
     EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
     EditPredictionGranularity, SuggestionDisplayType,
-};
+};  // removed-crate: edit_prediction_types
 use editor_settings::{GoToDefinitionFallback, Minimap as MinimapSettings};
 use element::{LineWithInvisibles, PositionMap, layout_line};
 use futures::{

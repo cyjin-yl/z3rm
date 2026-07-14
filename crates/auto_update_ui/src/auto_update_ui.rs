@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use agent_skills::GLOBAL_SKILLS_DIR_DISPLAY;
+// use agent_skills::GLOBAL_SKILLS_DIR_DISPLAY;  // removed-crate: agent_skills
 use auto_update::{AutoUpdater, release_notes_url};
 use client::zed_urls;
 use db::kvp::Dismissable;
@@ -10,7 +10,7 @@ use gpui::{
     prelude::*,
 };
 use markdown_preview::markdown_preview_view::{MarkdownPreviewMode, MarkdownPreviewView};
-use prompt_store::rules_to_skills_migration;
+// use prompt_store::rules_to_skills_migration;  // removed-crate: prompt_store
 use release_channel::{AppVersion, ReleaseChannel};
 use semver::Version;
 use serde::Deserialize;

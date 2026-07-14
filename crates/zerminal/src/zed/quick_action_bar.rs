@@ -1,7 +1,7 @@
 mod preview;
 mod repl_menu;
 
-use agent_settings::AgentSettings;
+// use agent_settings::AgentSettings;  // removed-crate: agent_settings
 use editor::actions::{
     AddSelectionAbove, AddSelectionBelow, CodeActionSource, DuplicateLineDown, GoToDiagnostic,
     GoToHunk, GoToPreviousDiagnostic, GoToPreviousHunk, MoveLineDown, MoveLineUp, SelectAll,

@@ -2,11 +2,11 @@
 /// The tests in this file assume that server_cx is running on Windows too.
 /// We neead to find a way to test Windows-Non-Windows interactions.
 use crate::headless_project::HeadlessProject;
-use agent::{
+// use agent::{
     AgentTool, NativeAgent, NativeAgentConnection, ReadFileTool, ReadFileToolInput, SkillTool,
     SkillToolInput, SkillToolOutput, Templates, ThreadStore, ToolCallEventStream, ToolInput,
     skill_body_resolver_for_project, skills_resolver_for_project,
-};
+};  // removed-crate: agent
 use client::{Client, UserStore};
 use clock::FakeSystemClock;
 use collections::{HashMap, HashSet};
@@ -3016,7 +3016,7 @@ async fn test_remote_agent_fs_tool_calls(cx: &mut TestAppContext, server_cx: &mu
 
 #[gpui::test]
 async fn test_adding_remote_skill(cx: &mut TestAppContext, server_cx: &mut TestAppContext) {
-    use acp_thread::AgentConnection as _;
+// use acp_thread::AgentConnection as _;  // removed-crate: acp_thread
 
     let fs = FakeFs::new(server_cx.executor());
     fs.insert_tree(

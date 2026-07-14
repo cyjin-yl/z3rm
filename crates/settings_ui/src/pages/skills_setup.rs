@@ -1,4 +1,4 @@
-use agent_skills::{Skill, SkillIndex, encode_skill_share_link};
+// use agent_skills::{Skill, SkillIndex, encode_skill_share_link};  // removed-crate: agent_skills
 use fs::RemoveOptions;
 use gpui::{App, ClipboardItem, ScrollHandle, SharedString, prelude::*};
 

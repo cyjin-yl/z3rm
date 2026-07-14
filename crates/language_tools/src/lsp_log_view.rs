@@ -1,5 +1,5 @@
 use collections::VecDeque;
-use edit_prediction::EditPredictionStore;
+// use edit_prediction::EditPredictionStore;  // removed-crate: edit_prediction
 use editor::{Editor, EditorEvent, MultiBufferOffset, actions::MoveToEnd, scroll::Autoscroll};
 use gpui::{
     Anchor, App, Context, Entity, EventEmitter, FocusHandle, Focusable, IntoElement, ParentElement,

@@ -12,7 +12,7 @@ use crate::{branch_picker, picker_prompt, render_remote_button};
 use crate::{
     git_panel_settings::GitPanelSettings, git_status_icon, repository_selector::RepositorySelector,
 };
-use agent_settings::{AgentSettings, UserAgentsMd};
+// use agent_settings::{AgentSettings, UserAgentsMd};  // removed-crate: agent_settings
 use anyhow::Context as _;
 use askpass::AskPassDelegate;
 use client::zed_urls;
@@ -63,7 +63,7 @@ use project::{
     },
     project_settings::{GitPathStyle, ProjectSettings},
 };
-use prompt_store::RULES_FILE_NAMES;
+// use prompt_store::RULES_FILE_NAMES;  // removed-crate: prompt_store
 use proto::RpcError;
 use serde::{Deserialize, Serialize};
 use settings::{

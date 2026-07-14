@@ -1,9 +1,9 @@
 use action_log::DiffStats;
 #[cfg(test)]
-use agent_ui::TerminalId;
-use agent_ui::{
+// use agent_ui::TerminalId;  // removed-crate: agent_ui
+// use agent_ui::{
     terminal_thread_metadata_store::TerminalThreadMetadata, thread_metadata_store::ThreadMetadata,
-};
+};  // removed-crate: agent_ui
 use gpui::{
     Action as _, DismissEvent, Entity, EventEmitter, FocusHandle, Focusable, Modifiers,
     ModifiersChangedEvent, Render, ScrollHandle, SharedString, prelude::*,

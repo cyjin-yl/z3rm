@@ -1,7 +1,7 @@
-use edit_prediction_types::{
+// use edit_prediction_types::{
     EditPredictionDelegate, EditPredictionIconSet, EditPredictionRequestTrigger,
     PredictedCursorPosition,
-};
+};  // removed-crate: edit_prediction_types
 use futures::StreamExt;
 use gpui::{
     Entity, Focusable, KeyBinding, KeybindingKeystroke, Keystroke, Modifiers, NoAction, Pixels,

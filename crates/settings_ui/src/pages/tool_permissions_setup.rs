@@ -1,5 +1,5 @@
-use agent::{AgentTool, TerminalTool, ToolPermissionDecision};
-use agent_settings::AgentSettings;
+// use agent::{AgentTool, TerminalTool, ToolPermissionDecision};  // removed-crate: agent
+// use agent_settings::AgentSettings;  // removed-crate: agent_settings
 use gpui::{
     Focusable, HighlightStyle, ReadGlobal, ScrollHandle, StyledText, TextStyleRefinement, point,
     prelude::*,

@@ -2007,8 +2007,8 @@ fn run_agent_thread_view_test(
     cx: &mut VisualTestAppContext,
     update_baseline: bool,
 ) -> Result<TestResult> {
-    use agent::{AgentTool, ToolInput};
-    use agent_ui::AgentPanel;
+// use agent::{AgentTool, ToolInput};  // removed-crate: agent
+// use agent_ui::AgentPanel;  // removed-crate: agent_ui
 
     // Create a temporary directory with the test image
     // Canonicalize to resolve symlinks (on macOS, /var -> /private/var)
@@ -2313,7 +2313,7 @@ fn run_tool_permissions_visual_tests(
     cx: &mut VisualTestAppContext,
     _update_baseline: bool,
 ) -> Result<TestResult> {
-    use agent_settings::{AgentSettings, CompiledRegex, ToolPermissions, ToolRules};
+// use agent_settings::{AgentSettings, CompiledRegex, ToolPermissions, ToolRules};  // removed-crate: agent_settings
     use collections::HashMap;
     use settings::ToolPermissionMode;
     use zed_actions::OpenSettingsAt;

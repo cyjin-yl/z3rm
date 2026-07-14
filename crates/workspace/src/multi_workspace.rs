@@ -20,7 +20,7 @@ use util::ResultExt;
 use util::path_list::PathList;
 use zed_actions::agents_sidebar::ToggleThreadSwitcher;
 
-use agent_settings::AgentSettings;
+// use agent_settings::AgentSettings;  // removed-crate: agent_settings
 use settings::SidebarDockPosition;
 use ui::{ContextMenu, right_click_menu};
 

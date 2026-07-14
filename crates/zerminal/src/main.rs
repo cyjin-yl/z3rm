@@ -14,7 +14,7 @@ const _: () = assert!(
      Forks: update APP_NAME in crates/paths/src/paths.rs when renaming the binary.",
 );
 
-use agent_ui::AgentPanel;
+// use agent_ui::AgentPanel;  // removed-crate: agent_ui
 use anyhow::{Context as _, Result};
 use clap::Parser;
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
@@ -38,7 +38,7 @@ use gpui_tokio::Tokio;
 use language::LanguageRegistry;
 use onboarding::{FIRST_OPEN, show_onboarding_view};
 use project_panel::ProjectPanel;
-use prompt_store::PromptBuilder;
+// use prompt_store::PromptBuilder;  // removed-crate: prompt_store
 use remote::RemoteConnectionOptions;
 use reqwest_client::ReqwestClient;
 
