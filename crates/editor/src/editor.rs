@@ -78,9 +78,10 @@ pub use stubs::{
     ContextMenuOrigin, CursorPopoverType, DiagnosticRenderer, Direction, DocumentHighlight, EditDisplayMode,
     EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
     EditPredictionGranularity, EditPredictionPreview, EditPredictionRequestTrigger,
-    EditPredictionSettings, EditPredictionState, GlobalDiagnosticRenderer, Hover, HoverLink,
+    EditPredictionSettings, EditPredictionState, FileTarget, GlobalDiagnosticRenderer, Hover, HoverLink,
     HoverState, HoveredLinkState, Inlay, InlayContent, InlayHint, InlayHintLabel, InlayHintLabelPart,
     InlayHintLabelPartTooltip, InlayHintTooltip, InlayId, InlayHighlight, InlaySplice, InlineDiagnostic,
+    LinkTarget,
     InlineValueCache, InvalidationStrategy, LanguageServerToQuery, LinkedEditingRanges,
     LocationLink, LspAction, LspFormatTarget, LspInlayHintData, MenuEditPredictionsPolicy,
     OpenLspBufferHandle, ParticipantIndex, PrepareRenameResponse, ProjectExt, ProjectLspStoreExt,
@@ -1799,6 +1800,14 @@ impl Editor {
     /// Stub: has active edit prediction (edit prediction 模块已删除)
     pub fn has_active_edit_prediction(&self) -> bool {
         false
+    }
+
+    /// Stub: take active edit prediction (edit prediction 模块已删除)
+    pub fn take_active_edit_prediction(
+        &mut self,
+        _discard_prediction: bool,
+        _cx: &mut Context<Self>,
+    ) {
     }
 
     /// Stub: refresh code actions for selection (code actions 模块已删除)
@@ -5251,7 +5260,7 @@ impl Editor {
                         &buffer_snapshot,
                         cx,
                     )
-                    .next()
+                    .into_iter().next()
                     .and_then(|(bp, _)| {
                         let breakpoint_row = buffer_snapshot
                             .summary_for_anchor::<text::PointUtf16>(&bp.position)
@@ -5307,6 +5316,7 @@ impl Editor {
                 state: BreakpointState::Enabled,
                 condition: None,
                 hit_condition: None,
+                log_point: None,
             });
 
             self.add_edit_breakpoint_block(
@@ -10404,7 +10414,7 @@ impl SemanticsProvider for WeakEntity<Project> {
         cx: &mut App,
     ) -> Option<Task<Result<Option<Vec<LocationLink>>>>> {
         self.update(cx, |project, cx| match kind {
-            GotoDefinitionKind::Symbol => project.definitions(buffer, position, cx),
+            GotoDefinitionKind::Symbol => project.definitions(buffer, position, kind, cx),
             GotoDefinitionKind::Declaration => project.declarations(buffer, position, cx),
             GotoDefinitionKind::Type => project.type_definitions(buffer, position, cx),
             GotoDefinitionKind::Implementation => project.implementations(buffer, position, cx),

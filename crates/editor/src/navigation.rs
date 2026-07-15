@@ -1623,12 +1623,13 @@ impl Editor {
         let definitions: Vec<_> = definitions
             .into_iter()
             .filter_map(|def| match def {
-                HoverLink::Text(link) => Some(Task::ready(anyhow::Ok(Some(link.target)))),
+                HoverLink::Text(_) => Some(Task::ready(anyhow::Ok(None))),
                 HoverLink::LspLocation(lsp_location, server_id) => {
                     let computation =
                         self.compute_target_location(lsp_location, server_id, window, cx);
                     Some(cx.background_spawn(computation))
                 }
+                HoverLink::InlayHighlight(_) => None,
                 HoverLink::Url(url) => {
                     first_url_or_file = Some(Either::Left(url));
                     None
@@ -2297,7 +2298,7 @@ impl Editor {
                             .filter(|location| {
                                 hover_links::exclude_link_to_position(&buffer, &head, location, cx)
                             })
-                            .map(HoverLink::Text)
+                            .map(|ll| HoverLink::Text(LinkTarget { target: ll }))
                             .collect::<Vec<_>>(),
                         nav_entry,
                         split,

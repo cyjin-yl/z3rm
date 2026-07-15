@@ -125,6 +125,15 @@ impl std::fmt::Debug for LocationLink {
     }
 }
 
+/// Stub: navigation kind (from editor::GotoDefinitionKind)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GotoDefinitionKind {
+    Symbol,
+    Declaration,
+    Type,
+    Implementation,
+}
+
 #[derive(Clone, Debug)]
 pub struct ResolvedPath {
     pub path: PathBuf,
@@ -333,6 +342,26 @@ pub mod debugger {
         }
 
         impl gpui::EventEmitter<SessionEvent> for Session {}
+
+        impl Session {
+            pub fn any_stopped_thread(&self) -> Option<usize> {
+                None
+            }
+        }
+    }
+
+    pub mod dap_store {
+        use super::session::Session;
+        use gpui::Entity;
+
+        #[derive(Default)]
+        pub struct DapStore;
+
+        impl DapStore {
+            pub fn sessions(&self) -> std::slice::Iter<'_, Entity<Session>> {
+                [].iter()
+            }
+        }
     }
 }
 
@@ -663,7 +692,7 @@ impl Project {
 
     pub fn save_buffers(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<()>> {
         Task::ready(Ok(()))
@@ -680,7 +709,7 @@ impl Project {
 
     pub fn reload_buffers(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
         _reload: bool,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<ProjectTransaction>> {
@@ -705,9 +734,19 @@ impl Project {
         Task::ready(Ok(None))
     }
 
+    pub fn definitions(
+        &mut self,
+        _buffer: &Entity<language::Buffer>,
+        _position: text::Anchor,
+        _kind: GotoDefinitionKind,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Option<Vec<LocationLink>>>> {
+        Task::ready(Ok(None))
+    }
+
     pub fn declarations(
         &mut self,
-        _buffer: Entity<language::Buffer>,
+        _buffer: &Entity<language::Buffer>,
         _position: text::Anchor,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<Vec<Location>>> {
@@ -716,7 +755,7 @@ impl Project {
 
     pub fn type_definitions(
         &mut self,
-        _buffer: Entity<language::Buffer>,
+        _buffer: &Entity<language::Buffer>,
         _position: text::Anchor,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<Vec<Location>>> {
@@ -725,7 +764,7 @@ impl Project {
 
     pub fn implementations(
         &mut self,
-        _buffer: Entity<language::Buffer>,
+        _buffer: &Entity<language::Buffer>,
         _position: text::Anchor,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<Vec<Location>>> {
@@ -743,7 +782,7 @@ impl Project {
 
     pub fn apply_code_action_kind(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
         _kind: lsp::CodeActionKind,
         _only: bool,
         _cx: &mut gpui::Context<Self>,
@@ -761,8 +800,8 @@ impl Project {
 
     pub fn restart_language_servers_for_buffers(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
-        _server_ids: std::collections::HashSet<LanguageServerId>,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
+        _server_ids: collections::HashSet<LanguageServerId>,
         _restart: bool,
         _cx: &mut gpui::Context<Self>,
     ) {
@@ -770,16 +809,15 @@ impl Project {
 
     pub fn stop_language_servers_for_buffers(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
-        _server_ids: std::collections::HashSet<LanguageServerId>,
-        _stop: bool,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
+        _server_ids: collections::HashSet<LanguageServerId>,
         _cx: &mut gpui::Context<Self>,
     ) {
     }
 
     pub fn cancel_language_server_work_for_buffers(
         &mut self,
-        _buffers: Vec<Entity<language::Buffer>>,
+        _buffers: collections::HashSet<Entity<language::Buffer>>,
         _cx: &mut gpui::Context<Self>,
     ) {
     }

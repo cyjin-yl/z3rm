@@ -461,14 +461,20 @@ impl FileTarget {
 }
 
 #[derive(Clone, Debug)]
+pub struct LinkTarget {
+    pub target: project::LocationLink,
+}
+
+#[derive(Clone, Debug)]
 pub enum HoverLink {
     Url(String),
     InlayHighlight(LocationLink),
-    LspLocation(language::Location, lsp::LanguageServerId),
+    LspLocation(lsp::Location, lsp::LanguageServerId),
     File(FileTarget),
+    Text(LinkTarget),
 }
 
-pub fn find_file(_buffer: &Entity<Buffer>, _project: Entity<Project>, _position: text::Anchor, _cx: &mut App) -> Option<(Entity<Buffer>, FileTarget)> { None }
+pub fn find_file(_buffer: &Entity<Buffer>, _project: Option<Entity<Project>>, _position: text::Anchor, _cx: &mut gpui::AsyncWindowContext) -> Option<(Entity<Buffer>, FileTarget)> { None }
 
 pub fn find_url(_text: &str) -> Option<String> { None }
 
@@ -477,7 +483,7 @@ pub fn find_url_from_range(_text: &str, _range: std::ops::Range<usize>) -> Optio
 pub fn exclude_link_to_position(
     _buffer: &Entity<Buffer>,
     _position: &text::Anchor,
-    _location: language::Location,
+    _location: &project::LocationLink,
     _cx: &App,
 ) -> bool {
     false
@@ -736,11 +742,13 @@ impl BreakpointStore {
         &self,
         _buffer: &Entity<Buffer>,
         _range: Option<std::ops::Range<Anchor>>,
-        _buffer_snapshot: &multi_buffer::MultiBufferSnapshot,
+        _buffer_snapshot: &language::BufferSnapshot,
         _cx: &App,
-    ) -> Vec<(Anchor, Breakpoint, Option<BreakpointSessionState>)> {
+    ) -> Vec<(Breakpoint, Option<BreakpointSessionState>)> {
         Vec::new()
     }
+
+    pub fn set_active_debug_pane_id(&mut self, _pane_id: Option<usize>) {}
 
     pub fn active_position(&self) -> Option<&text::Point> {
         None
