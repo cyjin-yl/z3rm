@@ -1701,7 +1701,7 @@ impl Editor {
             self.selections_did_change(true, old_cursor_position, state.effects, window, cx);
 
             if self.should_open_signature_help_automatically(old_cursor_position, cx) {
-                self.show_signature_help_auto(window, cx);
+                let _: () = self.show_signature_help_auto::<_, _, ()>(window, cx);
             }
         }
     }

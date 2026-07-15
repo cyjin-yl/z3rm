@@ -207,8 +207,8 @@ pub mod bookmark_store {
         pub fn all_bookmark_locations(
             _store: Entity<BookmarkStore>,
             _cx: &mut gpui::AsyncApp,
-        ) -> Task<anyhow::Result<Vec<Anchor>>> {
-            Task::ready(Ok(Vec::new()))
+        ) -> Task<anyhow::Result<std::collections::HashMap<gpui::Entity<language::Buffer>, (Vec<std::ops::Range<text::Point>>)>>> {
+            Task::ready(Ok(std::collections::HashMap::new()))
         }
 
         /// Stub: toggle bookmark (bookmark 模块已删除)
@@ -682,7 +682,7 @@ impl Project {
         &mut self,
         _path: ProjectPath,
         _cx: &mut gpui::Context<Self>,
-    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+    ) -> Task<anyhow::Result<(Entity<worktree::Worktree>, Entity<language::Buffer>)>> {
         Task::ready(Err(anyhow::anyhow!("stub: open_path")))
     }
 

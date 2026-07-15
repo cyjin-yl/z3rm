@@ -1714,7 +1714,7 @@ impl Editor {
     }
 
     /// Stub: refresh runnables (runnables 模块已删除)
-    pub fn refresh_runnables(&mut self, _cx: &mut Context<Self>) {
+    pub fn refresh_runnables(&mut self, _buffer_id: Option<text::BufferId>, _window: &mut Window, _cx: &mut Context<Self>) {
     }
 
     /// Stub: splice inlays (inlay hints 模块已删除)
@@ -1727,7 +1727,7 @@ impl Editor {
     }
 
     /// Stub: update visible edit prediction (edit prediction 模块已删除)
-    pub fn update_visible_edit_prediction(&mut self, _cx: &mut Context<Self>) {
+    pub fn update_visible_edit_prediction(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
     }
 
     /// Stub: update edit prediction settings (edit prediction 模块已删除)
@@ -1811,7 +1811,7 @@ impl Editor {
     }
 
     /// Stub: refresh code actions for selection (code actions 模块已删除)
-    pub fn refresh_code_actions_for_selection(&mut self, _cx: &mut Context<Self>) {
+    pub fn refresh_code_actions_for_selection(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
     }
 
     /// Stub: linked edits for selections (linked editing 模块已删除)
@@ -10066,7 +10066,7 @@ impl Editor {
     }
 
     /// Stub: observe_pending_input
-    pub fn observe_pending_input<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+    pub fn observe_pending_input<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
         unimplemented!()
     }
 

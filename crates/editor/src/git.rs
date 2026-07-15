@@ -756,7 +756,7 @@ impl Editor {
         self.dismiss_overlays_without_comments(cx);
 
         // 只读编辑器：user_store 已删除，头像留空。
-        let user_avatar_uri: Option<SharedString> = None;
+        let user_avatar_uri: Option<SharedUri> = None;
 
         // Create anchor at the end of the last row so the block appears immediately below it
         // Use multibuffer coordinates for anchor creation

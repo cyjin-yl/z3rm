@@ -9,7 +9,7 @@ pub(crate) use header::{header_jump_data, render_buffer_header};
 use crate::{
     BUFFER_HEADER_PADDING, BlockId, ChunkRendererContext, ChunkReplacement, CodeActionSource,
     CodeActionsMenu, ComposeCompletion, ConflictsOurs, ConflictsOursMarker, ConflictsOuter, ConflictsTheirs, ConflictsTheirsMarker,
-    ContextMenuPlacement, CursorPopoverType, CursorShape, CustomBlockId, DisplayDiffHunk, DisplayPoint, DisplayRow,
+    CodeContextMenu, ContextMenuOrigin, ContextMenuPlacement, CursorPopoverType, CursorShape, CustomBlockId, DisplayDiffHunk, DisplayPoint, DisplayRow,
     EditDisplayMode, Editor, EditorMode, EditorSettings, EditorSnapshot, EditorStyle, FindAllReferences,
     FILE_HEADER_HEIGHT, FocusedBlock, GutterDimensions, HalfPageDown, HalfPageUp,
     HandleInput, HOVER_POPOVER_GAP, HoveredCursor, InlayHintRefreshReason, LineDown, LineHighlight, LineUp,
@@ -504,7 +504,7 @@ impl EditorElement {
         register_action(editor, window, Editor::show_character_palette);
         register_action(editor, window, |editor, action: &ComposeCompletion, window, cx| {
             if let Some(task) = editor.compose_completion(action, window, cx) {
-                editor.detach_and_notify_err(task, window, cx);
+                editor.detach_and_notify_err::<(), anyhow::Error>(task, window, cx);
             } else {
                 cx.propagate();
             }
@@ -1671,7 +1671,7 @@ impl EditorElement {
         let max_severity = match self
             .editor
             .read(cx)
-            .inline_diagnostics_enabled()
+            .inline_diagnostics_enabled::<bool>()
             .then(|| {
                 ProjectSettings::get_global(cx)
                     .diagnostics
@@ -1686,7 +1686,7 @@ impl EditorElement {
             None => return HashMap::default(),
         };
 
-        let active_diagnostics_group = self.editor.read(cx).active_diagnostic_group_id();
+        let active_diagnostics_group = self.editor.read(cx).active_diagnostic_group_id::<Option<u64>>();
 
         let diagnostics_by_rows = self.editor.update(cx, |editor, cx| {
             let snapshot = editor.snapshot(window, cx);
@@ -1697,7 +1697,7 @@ impl EditorElement {
                 .filter(|(_, diagnostic)| match active_diagnostics_group {
                     Some(active_diagnostics_group) => {
                         // Active diagnostics are all shown in the editor already, no need to display them inline
-                        diagnostic.group_id != active_diagnostics_group
+                        diagnostic.group_id as u64 != active_diagnostics_group
                     }
                     None => true,
                 })
@@ -1837,26 +1837,25 @@ impl EditorElement {
         }
 
         let icon_size = ui::IconSize::XSmall;
-        let mut button = self.editor.update(cx, |editor, cx| {
-            if !editor.has_available_code_actions_for_selection() {
+        let mut button = self.editor.update(cx, |editor, cx| -> Option<AnyElement> {
+            if !editor.has_available_code_actions_for_selection::<bool>() {
                 return None;
             }
             let active = editor
                 .context_menu
                 .borrow()
                 .as_ref()
-                .and_then(|menu| {
+                .is_some_and(|menu| {
                     if let crate::CodeContextMenu::CodeActions(CodeActionsMenu {
                         deployed_from,
                         ..
                     }) = menu
                     {
-                        deployed_from.as_ref()
+                        matches!(deployed_from, ContextMenuOrigin::GutterIndicator(..))
                     } else {
-                        None
+                        false
                     }
-                })
-                .is_some_and(|source| matches!(source, CodeActionSource::Indicator(..)));
+                });
             Some(editor.render_inline_code_actions(icon_size, display_point.row(), active, cx))
         })?;
 
@@ -2562,17 +2561,13 @@ impl EditorElement {
                 // TODO: add edit button on the right side of each row in the context menu
                 if let Some(crate::CodeContextMenu::CodeActions(CodeActionsMenu {
                     deployed_from,
-                    actions,
                     ..
                 })) = editor.context_menu.borrow().as_ref()
                 {
-                    actions
-                        .tasks()
-                        .map(|tasks| tasks.position.to_display_point(gutter.snapshot).row())
-                        .or_else(|| match deployed_from {
-                            Some(CodeActionSource::Indicator(row)) => Some(*row),
-                            _ => None,
-                        })
+                    match deployed_from {
+                        ContextMenuOrigin::GutterIndicator(row) => Some(*row),
+                        ContextMenuOrigin::Cursor => None,
+                    }
                 } else {
                     None
                 };
@@ -2584,9 +2579,9 @@ impl EditorElement {
                         *display_row,
                         |cx, _| {
                             editor
-                                .render_run_indicator(
+                                .render_run_indicator::<_, _, _, _, _, AnyElement>(
                                     &self.style,
-                                    Some(*display_row) == active_task_indicator_row,
+                                    Some(display_row.0) == active_task_indicator_row,
                                     breakpoints.get(&display_row).map(|(anchor, _, _)| *anchor),
                                     *display_row,
                                     cx,
@@ -3767,7 +3762,7 @@ impl EditorElement {
             if editor.edit_prediction_visible_in_cursor_popover(editor.has_active_edit_prediction())
             {
                 height_above_menu +=
-                    editor.edit_prediction_cursor_popover_height() + POPOVER_Y_PADDING;
+                    editor.edit_prediction_cursor_popover_height::<Pixels>() + POPOVER_Y_PADDING;
                 edit_prediction_popover_visible = true;
             }
 
@@ -3861,7 +3856,7 @@ impl EditorElement {
 
                 let edit_prediction = if edit_prediction_popover_visible {
                     self.editor.update(cx, move |editor, cx| {
-                        let mut element = editor.render_edit_prediction_cursor_popover(
+                        let mut element = editor.render_edit_prediction_cursor_popover::<_, _, _, _, _, _, Option<AnyElement>>(
                             min_width,
                             max_width,
                             cursor_point,
@@ -3982,7 +3977,7 @@ impl EditorElement {
             + gpui::Point {
                 x: -gutter_overshoot,
                 y: Pixels::from(
-                    gutter_row.next_row().as_f64() * ScrollPixelOffset::from(line_height)
+                    (gutter_row as f64 + 1.0) * ScrollPixelOffset::from(line_height)
                         - scroll_pixel_position.y,
                 ),
             };
@@ -4305,12 +4300,13 @@ impl EditorElement {
             return;
         }
 
+        let text_layout_details = self.editor.read(cx).text_layout_details(window, cx);
         let hover_popovers = self.editor.update(cx, |editor, cx| {
             editor.hover_state.render(
                 snapshot,
                 visible_display_row_range.clone(),
                 max_size,
-                &editor.text_layout_details(window, cx),
+                &text_layout_details,
                 window,
                 cx,
             )
@@ -8800,7 +8796,7 @@ impl Element for EditorElement {
 
                     let (edit_prediction_popover, edit_prediction_popover_origin) = self
                         .editor
-                        .update(cx, |editor, cx| {
+                        .update(cx, |editor, cx| -> (Option<AnyElement>, gpui::Point<Pixels>) {
                             editor.render_edit_prediction_popover(
                                 &text_hitbox.bounds,
                                 content_origin,
@@ -8819,8 +8815,7 @@ impl Element for EditorElement {
                                 window,
                                 cx,
                             )
-                        })
-                        .unzip();
+                        });
 
                     let mut inline_diagnostics = self.layout_inline_diagnostics(
                         &line_layouts,
@@ -8829,7 +8824,7 @@ impl Element for EditorElement {
                         content_origin,
                         scroll_position,
                         scroll_pixel_position,
-                        edit_prediction_popover_origin,
+                        Some(edit_prediction_popover_origin),
                         start_row,
                         end_row,
                         line_height,

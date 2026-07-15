@@ -22647,7 +22647,7 @@ async fn test_following_with_multiple_excerpts(cx: &mut TestAppContext) {
             Editor::from_state_proto(
                 workspace_entity,
                 ViewId {
-                    creator: CollaboratorId::PeerId(PeerId::default()),
+                    creator: CollaboratorId::PeerId(PeerId { owner_id: 0, id: 0 }),
                     id: 0,
                 },
                 &mut state_message,
@@ -22731,7 +22731,7 @@ async fn test_following_with_multiple_excerpts(cx: &mut TestAppContext) {
             Editor::from_state_proto(
                 workspace_entity,
                 ViewId {
-                    creator: CollaboratorId::PeerId(PeerId::default()),
+                    creator: CollaboratorId::PeerId(PeerId { owner_id: 0, id: 0 }),
                     id: 0,
                 },
                 &mut state_message,

@@ -3,9 +3,10 @@
 
 use std::{any::Any, sync::Arc};
 
-use gpui::{App, AnyElement, Element as _, Entity, IntoElement, Modifiers, Pixels, ScrollHandle, SharedString, Task, TextStyle, Window, div, px};
+use gpui::{App, AnyElement, Context, Element as _, Entity, IntoElement, Modifiers, Pixels, ScrollHandle, SharedString, Task, TextStyle, Window, div, px};
 use language::{Buffer, Location};
 use project::Project;
+use rpc::proto::PeerId;
 use text::{Anchor, BufferId};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -92,9 +93,8 @@ pub enum Direction {
     Prev,
     Next,
 }
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum CollaboratorId { Agent(u64), PeerId(u64) }
+pub enum CollaboratorId { Agent(u64), PeerId(PeerId) }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct ViewId(pub u64);
@@ -102,7 +102,7 @@ pub struct ViewId(pub u64);
 #[derive(Clone, Debug)]
 pub struct Collaborator {
     pub user_id: u64,
-    pub peer_id: u64,
+    pub peer_id: PeerId,
     pub replica_id: u16,
 }
 
@@ -145,8 +145,8 @@ impl ProjectCapabilityExt for Project {
 
 pub trait ProjectBufferExt {
     fn buffer_for_id(&self, _buffer_id: BufferId, _cx: &App) -> Option<Entity<Buffer>>;
-    fn create_buffer(&mut self, _language: Option<language::Language>, _has_root: bool, _cx: &mut App,
-    ) -> Task<anyhow::Result<Entity<Buffer>>>;
+    fn create_buffer(&mut self, _language: Option<language::Language>, _has_root: bool, _cx: &mut Context<Project>)
+    -> Task<anyhow::Result<Entity<Buffer>>>;
 }
 
 impl ProjectBufferExt for Project {
@@ -155,7 +155,7 @@ impl ProjectBufferExt for Project {
         &mut self,
         _language: Option<language::Language>,
         _has_root: bool,
-        _cx: &mut App,
+        _cx: &mut Context<Project>,
     ) -> Task<anyhow::Result<Entity<Buffer>>> {
         Task::ready(Err(anyhow::anyhow!("create_buffer stub")))
     }
@@ -624,7 +624,7 @@ impl InlaySplice {
 pub struct ActiveDiagnostic;
 
 impl ActiveDiagnostic {
-    pub const None: Option<Self> = None;
+    pub const None: Self = Self;
 }
 
 #[derive(Clone, Debug)]

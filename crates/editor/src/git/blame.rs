@@ -12,7 +12,7 @@ use gpui::{
     Subscription, Task, TextStyle, WeakEntity, Window,
 };
 use itertools::Itertools;
-use language::{Bias, BufferSnapshot, Edit};
+use language::{Bias, Buffer, BufferSnapshot, Edit};
 use markdown::Markdown;
 use multi_buffer::{MultiBuffer, RowInfo};
 use project::{
@@ -551,7 +551,7 @@ impl GitBlame {
                                     project.blame_buffer(&buffer, None, cx)
                                 })
                             } else {
-                                Task::ready(Ok(None))
+                                Task::ready(Ok(None::<Entity<Buffer>>))
                             };
 
                             Ok(async move {
