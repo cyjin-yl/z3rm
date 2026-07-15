@@ -32,7 +32,7 @@ z3rm and tmux have different internal models. The CLI translates tmux concepts t
 
 2. **z3rm panes are server-canonical.** tmux's pane state lives in the server too, but z3rm's grid/scrollback/layout ALL live in mux_server. `capture-pane` fetches from the server, not from any client terminal — this means it always works even when no GUI client is attached.
 
-3. **z3rm `attach` opens a GUI window** (unlike tmux which attaches to the current terminal). For pure terminal attach (like tmux), use a future terminal-mode client or nest tmux inside z3rm.
+3. **z3rm `attach` opens a GUI window** (unlike tmux which attaches to the current terminal). For pure terminal attach (like tmux), use a future terminal-mode client or nest tmux inside z3rm. **Critical:** `z3rm attach` prints a one-line stderr confirmation and exits immediately — it does NOT block like `tmux attach`. Agents that blindly run `tmux attach` and wait will get an immediate exit instead of hanging forever. All other CLI commands (`send-keys`, `capture-pane`, `ls`, etc.) also execute and return immediately. This non-blocking behavior is by design and must be consistent across all CLI commands.
 
 4. **Pane indexing:** tmux assigns pane indexes per-window. z3rm assigns pane IDs globally per-session (e.g., `w1:p1`, `w1:p2`, `w2:p3`). The CLI accepts both formats: `%N` (tmux-style per-window index) and `session:tab.pane` (z3rm-style global).
 

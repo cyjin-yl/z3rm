@@ -440,6 +440,10 @@ z3rm provides a CLI control interface for programmatic pane/session control, des
 
 This is a Day 0 feature. It is essential for CLI agent workflows and requires minimal additional code (CLI arg parsing → mux_protocol RPC translation).
 
+**Critical: CLI command non-blocking semantics.** All CLI commands — except `attach` — execute and **return immediately** with output on stdout/stderr, then exit. They are fire-and-forget RPC calls to mux_server. This is essential for agent automation: an agent running `z3rm send-keys` or `z3rm capture-pane` gets immediate text output and the process exits — it must NEVER block waiting for a terminal client to appear.
+
+**`attach` is special:** `z3rm attach` spawns a GUI window (not a terminal client). It prints a one-line confirmation to stderr (e.g., `z3rm: attached to session 'dev' in GUI window`) and exits immediately. It does NOT block like `tmux attach` does. Agents that blindly run `tmux attach` and wait will get an immediate exit instead of hanging forever. The stderr message makes it clear a GUI was opened, so agents can detect the difference from tmux.
+
 ## 4. Shadow Snapshot Engine
 
 ### 4.1 Purpose
