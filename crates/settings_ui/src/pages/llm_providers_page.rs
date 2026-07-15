@@ -3,9 +3,9 @@ use std::{collections::HashSet, sync::Arc};
 use editor::Editor;
 use gpui::{AnyView, Entity, Focusable as _, ScrollHandle, prelude::*};
 // use language_model::{
-    ApiKeyConfiguration, CreateProviderSettingsView, IconOrSvg, InlineDescription,
-    LanguageModelProvider, LanguageModelProviderId, LanguageModelRegistry, ProviderSettingsView,
-};  // removed-crate: language_model
+// ApiKeyConfiguration, CreateProviderSettingsView, IconOrSvg, InlineDescription,
+// LanguageModelProvider, LanguageModelProviderId, LanguageModelRegistry, ProviderSettingsView,
+// };  // removed-crate: language_model
 
 use settings::{
     AnthropicCompatibleAvailableModel, AnthropicCompatibleModelCapabilities,

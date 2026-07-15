@@ -8,9 +8,9 @@ use crate::{
 mod filter;
 
 // use dev_container::{
-    DevContainerConfig, DevContainerContext, find_devcontainer_configs,
-    start_dev_container_with_config,
-};  // removed-crate: dev_container
+// DevContainerConfig, DevContainerContext, find_devcontainer_configs,
+// start_dev_container_with_config,
+// };  // removed-crate: dev_container
 use editor::Editor;
 use extension_host::ExtensionStore;
 use filter::{FilterData, FilteredServer};

@@ -1596,47 +1596,14 @@ impl Editor {
             }
 
             let mut context_menu = self.context_menu.borrow_mut();
-            let completion_menu = match context_menu.as_ref() {
-                Some(CodeContextMenu::Completions(menu)) => Some(menu),
-                Some(CodeContextMenu::CodeActions(_)) => {
-                    *context_menu = None;
-                    None
-                }
-                None => None,
-            };
-            let completion_position = completion_menu.map(|menu| menu.initial_position);
+            // 只读编辑器：补全菜单已删除，直接清空任何残留的上下文菜单。
+            if matches!(context_menu.as_ref(), Some(CodeContextMenu::Completions | CodeContextMenu::CodeActions)) {
+                *context_menu = None;
+            }
             drop(context_menu);
 
-            if effects.completions
-                && let Some(completion_position) = completion_position
-            {
-                let start_offset = selection_start.to_offset(buffer);
-                let position_matches = start_offset == completion_position.to_offset(buffer);
-                let continue_showing = if let Some((snap, ..)) =
-                    buffer.point_to_buffer_offset(completion_position)
-                    && !snap.capability.editable()
-                {
-                    false
-                } else if position_matches {
-                    if self.snippet_stack.is_empty() {
-                        buffer.char_kind_before(start_offset, Some(CharScopeContext::Completion))
-                            == Some(CharKind::Word)
-                    } else {
-                        // Snippet choices can be shown even when the cursor is in whitespace.
-                        // Dismissing the menu with actions like backspace is handled by
-                        // invalidation regions.
-                        true
-                    }
-                } else {
-                    false
-                };
-
-                if continue_showing {
-                    self.open_or_update_completions_menu(None, None, false, window, cx);
-                } else {
-                    self.hide_context_menu(window, cx);
-                }
-            }
+            // 只读编辑器：补全功能已删除，忽略 effects.completions。
+            let _ = effects.completions;
 
             hide_hover(self, cx);
 

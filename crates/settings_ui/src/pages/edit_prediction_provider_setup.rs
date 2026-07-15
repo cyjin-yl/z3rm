@@ -1,9 +1,9 @@
 // use codestral::{CODESTRAL_API_URL, codestral_api_key_state, codestral_api_url};  // removed-crate: codestral
 // use edit_prediction::{
-    ApiKeyState,
-    mercury::{MERCURY_CREDENTIALS_URL, mercury_api_token},
-    open_ai_compatible::{open_ai_compatible_api_token, open_ai_compatible_api_url},
-};  // removed-crate: edit_prediction
+// ApiKeyState,
+// mercury::{MERCURY_CREDENTIALS_URL, mercury_api_token},
+// open_ai_compatible::{open_ai_compatible_api_token, open_ai_compatible_api_url},
+// };  // removed-crate: edit_prediction
 // use edit_prediction_ui::{get_available_providers, set_completion_provider};  // removed-crate: edit_prediction_ui
 use gpui::{App, Entity, ScrollHandle, TaskExt, prelude::*};
 use language::language_settings::AllLanguageSettings;
@@ -737,30 +737,7 @@ fn codestral_settings() -> Box<[SettingsPageItem]> {
     ])
 }
 
-fn render_github_copilot_provider(window: &mut Window, cx: &mut App) -> Option<impl IntoElement> {
-    let configuration_view = window.use_state(cx, |_, cx| {
-        copilot_ui::ConfigurationView::new(
-            move |cx| {
-                let app_state = AppState::global(cx);
-                copilot::GlobalCopilotAuth::try_get_or_init(app_state, cx)
-                    .is_some_and(|copilot| copilot.0.read(cx).is_authenticated())
-            },
-            copilot_ui::ConfigurationMode::EditPrediction,
-            cx,
-        )
-    });
-
-    Some(
-        v_flex()
-            .id("github-copilot")
-            .min_w_0()
-            .pt_8()
-            .gap_1p5()
-            .child(
-                SettingsSectionHeader::new("GitHub Copilot")
-                    .icon(IconName::Copilot)
-                    .no_padding(true),
-            )
-            .child(configuration_view),
-    )
+fn render_github_copilot_provider(_window: &mut Window, _cx: &mut App) -> Option<impl IntoElement> {
+    // TODO: removed-crate: copilot_ui — ConfigurationView unavailable
+    None
 }

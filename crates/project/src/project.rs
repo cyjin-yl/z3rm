@@ -9,6 +9,8 @@ pub mod search_history;
 pub mod toolchain_store;
 pub mod trusted_worktrees;
 pub mod worktree_store;
+pub mod stubs;
+pub use stubs::*;
 
 use buffer_diff::BufferDiff;
 pub use environment::ProjectEnvironmentEvent;

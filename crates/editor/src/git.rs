@@ -4,6 +4,52 @@ use super::*;
 use ::git::{Restore, blame::BlameEntry, commit::ParsedCommitMessage, status::FileStatus};
 use buffer_diff::{BufferDiff, DiffHunkStatus, DiffHunkStatusKind};
 
+// 只读编辑器：project 缺少这些 Git 方法，用本地 trait 提供空实现。
+trait ProjectGitExt {
+    fn stage_hunks(
+        &mut self,
+        _buffer: Entity<Buffer>,
+        _secondary_diff: Entity<BufferDiff>,
+        _ranges: Vec<Range<text::Anchor>>,
+        _cx: &mut App,
+    ) -> Task<Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    fn unstage_uncommitted_hunks(
+        &mut self,
+        _buffer: Entity<Buffer>,
+        _diff: Entity<BufferDiff>,
+        _ranges: Vec<Range<text::Anchor>>,
+        _cx: &mut App,
+    ) -> Task<Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    fn status_for_buffer_id(&self, _buffer_id: BufferId, _cx: &App) -> Option<FileStatus> {
+        None
+    }
+
+    fn save_buffers(
+        &mut self,
+        _buffers: HashSet<Entity<Buffer>>,
+        _cx: &mut App,
+    ) -> Task<Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    fn get_permalink_to_line(
+        &mut self,
+        _buffer: &Entity<Buffer>,
+        _selection: Range<u32>,
+        _cx: &mut App,
+    ) -> Task<Result<url::Url>> {
+        Task::ready(Err(anyhow::anyhow!("permalink unavailable")))
+    }
+}
+
+impl ProjectGitExt for Project {}
+
 #[derive(Clone)]
 pub struct ResolvedDiffHunk {
     pub buffer_range: Range<text::Anchor>,
@@ -100,41 +146,13 @@ impl DiffHunkDelegate for UncommittedDiffHunkDelegate {
 
     fn stage_or_unstage(
         &self,
-        stage: bool,
-        hunks: Vec<ResolvedDiffHunks>,
-        editor: &mut Editor,
+        _stage: bool,
+        _hunks: Vec<ResolvedDiffHunks>,
+        _editor: &mut Editor,
         _window: &mut Window,
-        cx: &mut Context<Editor>,
+        _cx: &mut Context<Editor>,
     ) {
-        let Some(project) = editor.project() else {
-            return;
-        };
-        for hunks in hunks {
-            let Some(buffer) = hunks.buffer else {
-                continue;
-            };
-            let ranges = hunks
-                .hunks
-                .into_iter()
-                .map(|hunk| hunk.buffer_range)
-                .collect::<Vec<_>>();
-            if ranges.is_empty() {
-                continue;
-            }
-            let secondary_diff = hunks.diff.read(cx).secondary_diff();
-            project
-                .update(cx, |project, cx| {
-                    if stage {
-                        let Some(secondary_diff) = secondary_diff else {
-                            return Err(anyhow::anyhow!("diff has no unstaged secondary"));
-                        };
-                        project.stage_hunks(buffer, secondary_diff, ranges, cx)
-                    } else {
-                        project.unstage_uncommitted_hunks(buffer, hunks.diff, ranges, cx)
-                    }
-                })
-                .log_err();
-        }
+        // 只读编辑器：暂存/取消暂存 hunks 已禁用。
     }
 
     fn render_hunk_controls(
@@ -737,14 +755,8 @@ impl Editor {
         // Dismiss overlays that have no comments for their hunks
         self.dismiss_overlays_without_comments(cx);
 
-        // Get the current user's avatar URI from the project's user_store
-        let user_avatar_uri = self.project.as_ref().and_then(|project| {
-            let user_store = project.read(cx).user_store();
-            user_store
-                .read(cx)
-                .current_user()
-                .map(|user| user.avatar_uri.clone())
-        });
+        // 只读编辑器：user_store 已删除，头像留空。
+        let user_avatar_uri: Option<SharedString> = None;
 
         // Create anchor at the end of the last row so the block appears immediately below it
         // Use multibuffer coordinates for anchor creation

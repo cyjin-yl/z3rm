@@ -7,7 +7,6 @@ use crate::{
     Anchor, DisplayPoint, DisplayRow, Editor, EditorEvent, EditorMode, EditorSettings,
     MultiBufferSnapshot, RowExt, SelectionEffects, SizingBehavior, ToPoint,
     display_map::{DisplaySnapshot, ToDisplayPoint},
-    hover_popover::hide_hover,
     persistence::EditorDb,
 };
 pub use autoscroll::{Autoscroll, AutoscrollStrategy};
@@ -807,11 +806,9 @@ impl Editor {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> WasScrolled {
-        hide_hover(self, cx);
         let workspace_id = self.workspace.as_ref().and_then(|workspace| workspace.1);
 
-        self.edit_prediction_preview
-            .set_previous_scroll_position(None);
+        // 只读编辑器：编辑预测预览已删除，无需记录滚动位置。
 
         let adjusted_position = if self.scroll_manager.forbid_vertical_scroll {
             let current_position = self.scroll_manager.scroll_position(&display_map, cx);

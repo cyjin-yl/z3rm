@@ -656,7 +656,7 @@ fn main() {
         });
         AppState::set_global(app_state.clone(), cx);
 
-        auto_update::init(client.clone(), cx);
+        auto_update::init(cx);
         dap_adapters::init(cx);
         auto_update_ui::init(cx);
         reliability::init(client.clone(), cx);
@@ -690,7 +690,6 @@ fn main() {
             cx,
         );
 
-        copilot_ui::init(&app_state, cx);
         language_model::init(cx);
         RefreshLlmTokenListener::register(
             app_state.client.clone(),
@@ -768,7 +767,7 @@ fn main() {
         settings_profile_selector::init(cx);
         language_tools::init(cx);
         call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
-        notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
+        notifications::init(cx);
         collab_ui::init(&app_state, cx);
         git_ui::init(cx);
         feedback::init(cx);

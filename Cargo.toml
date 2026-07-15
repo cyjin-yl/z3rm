@@ -250,9 +250,6 @@ path = "tooling/compliance"
 [workspace.dependencies.component]
 path = "crates/component"
 
-[workspace.dependencies.copilot_ui]
-path = "crates/copilot_ui"
-
 [workspace.dependencies.crashes]
 path = "crates/crashes"
 

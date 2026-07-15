@@ -296,7 +296,7 @@ pub struct FoldAtLevel(pub u32);
 #[serde(deny_unknown_fields)]
 pub struct SpawnNearestTask {
     #[serde(default)]
-    pub reveal: task::RevealStrategy,
+    pub reveal: crate::stubs::RevealStrategy,
 }
 
 #[derive(Clone, PartialEq, Action)]

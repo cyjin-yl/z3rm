@@ -2,16 +2,16 @@ use super::*;
 // use acp_thread::{AcpThread, PermissionOptions, StubAgentConnection};  // removed-crate: acp_thread
 // use agent::ThreadStore;  // removed-crate: agent
 // use agent_ui::{
-    ThreadId,
-    terminal_thread_metadata_store::{
-        TerminalThreadMetadata, TerminalThreadMetadataStore, TestTerminalMetadataDbName,
-    },
-    test_support::{
-        active_session_id, active_thread_id, open_thread_with_connection,
-        open_thread_with_custom_connection, send_message,
-    },
-    thread_metadata_store::{ThreadMetadata, WorktreePaths},
-};  // removed-crate: agent_ui
+// ThreadId,
+// terminal_thread_metadata_store::{
+// TerminalThreadMetadata, TerminalThreadMetadataStore, TestTerminalMetadataDbName,
+// },
+// test_support::{
+// active_session_id, active_thread_id, open_thread_with_connection,
+// open_thread_with_custom_connection, send_message,
+// },
+// thread_metadata_store::{ThreadMetadata, WorktreePaths},
+// };  // removed-crate: agent_ui
 use chrono::DateTime;
 use fs::{FakeFs, Fs};
 use gpui::TestAppContext;

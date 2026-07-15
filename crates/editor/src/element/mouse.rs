@@ -10,7 +10,7 @@ use gpui::{
     Window, anchored, deferred, point, px,
 };
 use multi_buffer::MultiBufferRow;
-use project::DisableAiSettings;
+use crate::stubs::DisableAiSettings;
 use settings::Settings;
 use sum_tree::Bias;
 use text::SelectionGoal;

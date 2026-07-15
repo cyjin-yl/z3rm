@@ -48,9 +48,9 @@ use gpui::{
 use itertools::Itertools;
 use language::{Buffer, BufferEvent, File};
 // use language_model::{
-    CompletionIntent, ConfiguredModel, Event as LanguageModelEvent, LanguageModelRegistry,
-    LanguageModelRequest, LanguageModelRequestMessage, Role,
-};  // removed-crate: language_model
+// CompletionIntent, ConfiguredModel, Event as LanguageModelEvent, LanguageModelRegistry,
+// LanguageModelRequest, LanguageModelRequestMessage, Role,
+// };  // removed-crate: language_model
 use menu;
 use multi_buffer::ExcerptBoundaryInfo;
 use notifications::status_toast::StatusToast;

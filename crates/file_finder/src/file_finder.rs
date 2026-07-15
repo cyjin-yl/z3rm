@@ -4,10 +4,7 @@ mod file_finder_tests;
 mod multi_select_tests;
 
 use futures::future::join_all;
-// pub use open_path_prompt::OpenPathDelegate;  // removed-crate: open_path_prompt
 
-// use channel::ChannelStore;  // removed-crate: channel
-// use client::ChannelId;  // removed-crate: client
 use collections::HashMap;
 use editor::Editor;
 use file_icons::FileIcons;
@@ -19,16 +16,12 @@ use gpui::{
     WeakEntity, Window, actions, rems,
 };
 use language::{BufferSnapshot, Point};
-// use open_path_prompt::{
-    OpenPathPrompt,
-    file_finder_settings::{FileFinderSettings, FileFinderWidth},
-};  // removed-crate: open_path_prompt
 use picker::{Picker, PickerDelegate};
 use project::{
     PathMatchCandidateSet, Project, ProjectPath, WorktreeId, worktree_store::WorktreeStore,
 };
 use project_panel::project_panel_settings::ProjectPanelSettings;
-use settings::Settings;
+use settings::{RegisterSetting, Settings};
 use std::{
     borrow::Cow,
     cmp,
@@ -48,11 +41,48 @@ use util::{
     rel_path::RelPath,
 };
 use workspace::{
-    ModalView, OpenChannelNotesById, OpenOptions, OpenVisible, SplitDirection, Workspace,
+    ModalView, OpenOptions, OpenVisible, SplitDirection, Workspace,
     item::PreviewTabsSettings, notifications::NotifyResultExt, pane,
 };
 use zed_actions::search::ToggleIncludeIgnored;
 
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FileFinderWidth {
+    #[default]
+    Small,
+    Medium,
+    Large,
+    XLarge,
+    Full,
+}
+
+#[derive(Clone, Debug, RegisterSetting)]
+pub struct FileFinderSettings {
+    pub file_icons: bool,
+    pub modal_max_width: FileFinderWidth,
+    pub skip_focus_for_active_in_search: bool,
+    pub include_ignored: Option<bool>,
+}
+
+impl Settings for FileFinderSettings {
+    fn from_settings(content: &settings::SettingsContent) -> Self {
+        let cf = content.file_finder.as_ref().unwrap_or_default();
+        Self {
+            file_icons: cf.file_icons.unwrap_or(true),
+            modal_max_width: match cf.modal_max_width {
+                Some(settings_content::FileFinderWidthContent::Small) => FileFinderWidth::Small,
+                Some(settings_content::FileFinderWidthContent::Medium) => FileFinderWidth::Medium,
+                Some(settings_content::FileFinderWidthContent::Large) => FileFinderWidth::Large,
+                Some(settings_content::FileFinderWidthContent::XLarge) => FileFinderWidth::XLarge,
+                Some(settings_content::FileFinderWidthContent::Full) => FileFinderWidth::Full,
+                None => FileFinderWidth::Small,
+            },
+            skip_focus_for_active_in_search: cf.skip_focus_for_active_in_search.unwrap_or(true),
+            include_ignored: None, // Smart mode default
+        }
+    }
+}
 actions!(
     file_finder,
     [
@@ -74,8 +104,6 @@ pub struct FileFinder {
 
 pub fn init(cx: &mut App) {
     cx.observe_new(FileFinder::register).detach();
-    cx.observe_new(OpenPathPrompt::register).detach();
-    cx.observe_new(OpenPathPrompt::register_new_path).detach();
 }
 
 impl FileFinder {
@@ -294,8 +322,7 @@ impl FileFinder {
                         }
                     }
                     Match::Search(m) => project_path_for_search_match(&delegate.project, &m.0, cx),
-                    Match::CreateNew(p) => p.clone(),
-                    Match::Channel { .. } => return,
+                    Match::CreateNew(_) => return,
                 };
                 let open_task = workspace.update(cx, move |workspace, cx| {
                     workspace.split_path_preview(path, false, Some(split_direction), window, cx)
@@ -360,7 +387,6 @@ pub struct FileFinderDelegate {
     file_finder: WeakEntity<FileFinder>,
     workspace: WeakEntity<Workspace>,
     project: Entity<Project>,
-    channel_store: Option<Entity<ChannelStore>>,
     search_count: usize,
     latest_search_id: usize,
     latest_search_did_cancel: bool,
@@ -426,11 +452,6 @@ enum Match {
         panel_match: Option<ProjectPanelOrdMatch>,
     },
     Search(ProjectPanelOrdMatch),
-    Channel {
-        channel_id: ChannelId,
-        channel_name: SharedString,
-        string_match: StringMatch,
-    },
     CreateNew(ProjectPath),
 }
 
@@ -439,7 +460,7 @@ impl Match {
         match self {
             Match::History { path, .. } => Some(&path.project.path),
             Match::Search(panel_match) => Some(&panel_match.0.path),
-            Match::Channel { .. } | Match::CreateNew(_) => None,
+            Match::CreateNew(_) => None,
         }
     }
 
@@ -453,7 +474,7 @@ impl Match {
                     .read(cx)
                     .absolutize(&path_match.path),
             ),
-            Match::Channel { .. } | Match::CreateNew(_) => None,
+            Match::CreateNew(_) => None,
         }
     }
 
@@ -461,7 +482,7 @@ impl Match {
         match self {
             Match::History { panel_match, .. } => panel_match.as_ref(),
             Match::Search(panel_match) => Some(panel_match),
-            Match::Channel { .. } | Match::CreateNew(_) => None,
+            Match::CreateNew(_) => None,
         }
     }
 }
@@ -474,7 +495,7 @@ impl SelectedMatch {
     fn new(m: Match) -> Option<Self> {
         match m {
             Match::History { .. } | Match::Search(_) => Some(Self(m)),
-            Match::Channel { .. } | Match::CreateNew(_) => None,
+            Match::CreateNew(_) => None,
         }
     }
 }
@@ -667,7 +688,6 @@ impl Matches {
         match m {
             Match::History { panel_match, .. } => panel_match.as_ref().map_or(0.0, |pm| pm.0.score),
             Match::Search(pm) => pm.0.score,
-            Match::Channel { string_match, .. } => string_match.score,
             Match::CreateNew(_) => 0.0,
         }
     }
@@ -957,16 +977,10 @@ impl FileFinderDelegate {
         cx: &mut Context<FileFinder>,
     ) -> Self {
         Self::subscribe_to_updates(&project, window, cx);
-        let channel_store = if FileFinderSettings::get_global(cx).include_channels {
-            ChannelStore::try_global(cx)
-        } else {
-            None
-        };
         Self {
             file_finder,
             workspace,
             project,
-            channel_store,
             search_count: 0,
             latest_search_id: 0,
             latest_search_did_cancel: false,
@@ -1115,67 +1129,6 @@ impl FileFinderDelegate {
                 path_style,
             );
 
-            // Add channel matches
-            if let Some(channel_store) = &self.channel_store {
-                let channel_store = channel_store.read(cx);
-                let channels: Vec<_> = channel_store.channels().cloned().collect();
-                if !channels.is_empty() {
-                    let candidates = channels
-                        .iter()
-                        .enumerate()
-                        .map(|(id, channel)| StringMatchCandidate::new(id, &channel.name));
-                    let channel_query = query.path_query();
-                    let query_lower = channel_query.to_lowercase();
-                    let mut channel_matches = Vec::new();
-                    for candidate in candidates {
-                        let channel_name = candidate.string;
-                        let name_lower = channel_name.to_lowercase();
-
-                        let mut positions = Vec::new();
-                        let mut query_idx = 0;
-                        for (name_idx, name_char) in name_lower.char_indices() {
-                            if query_idx < query_lower.len() {
-                                let query_char =
-                                    query_lower[query_idx..].chars().next().unwrap_or_default();
-                                if name_char == query_char {
-                                    positions.push(name_idx);
-                                    query_idx += query_char.len_utf8();
-                                }
-                            }
-                        }
-
-                        if query_idx == query_lower.len() {
-                            let channel = &channels[candidate.id];
-                            let score = if name_lower == query_lower {
-                                1.0
-                            } else if name_lower.starts_with(&query_lower) {
-                                0.8
-                            } else {
-                                0.5 * (query_lower.len() as f64 / name_lower.len() as f64)
-                            };
-                            channel_matches.push(Match::Channel {
-                                channel_id: channel.id,
-                                channel_name: channel.name.clone(),
-                                string_match: StringMatch {
-                                    candidate_id: candidate.id,
-                                    score,
-                                    positions,
-                                    string: channel_name,
-                                },
-                            });
-                        }
-                    }
-                    for channel_match in channel_matches {
-                        match self
-                            .matches
-                            .position(&channel_match, self.currently_opened_path.as_ref())
-                        {
-                            Ok(_duplicate) => {}
-                            Err(ix) => self.matches.matches.insert(ix, channel_match),
-                        }
-                    }
-                }
-            }
 
             let query_path = query.raw_query.as_str();
             if let Ok(mut query_path) = RelPath::new(Path::new(query_path), path_style) {
@@ -1298,16 +1251,6 @@ impl FileFinderDelegate {
                     }
                 }
                 Match::Search(path_match) => self.labels_for_path_match(&path_match.0, path_style),
-                Match::Channel {
-                    channel_name,
-                    string_match,
-                    ..
-                } => (
-                    channel_name.to_string(),
-                    string_match.positions.clone(),
-                    "Channel Notes".to_string(),
-                    vec![],
-                ),
                 Match::CreateNew(project_path) => (
                     format!("Create File: {}", project_path.path.display(path_style)),
                     vec![],
@@ -1546,14 +1489,6 @@ impl FileFinderDelegate {
             return;
         };
 
-        // Channel matches always dismiss the finder.
-        if let Match::Channel { channel_id, .. } = &m {
-            let channel_id = channel_id.0;
-            let finder = self.file_finder.clone();
-            window.dispatch_action(OpenChannelNotesById { channel_id }.boxed_clone(), cx);
-            finder.update(cx, |_, cx| cx.emit(DismissEvent)).log_err();
-            return;
-        }
 
         // Focus the new item only when dismissing — this avoids stealing focus from the modal.
         // Always activate (make the tab current) so every opened file is visually reflected.
@@ -1631,7 +1566,7 @@ impl FileFinderDelegate {
                         project_path_for_search_match(workspace.project(), &path_match.0, cx);
                     split_or_open(workspace, project_path, window, cx)
                 }
-                Match::Channel { .. } => unreachable!("handled above"),
+                Match::CreateNew(_) => unreachable!("handled above"),
             }
         });
 
@@ -1699,7 +1634,7 @@ impl FileFinderDelegate {
                     path: Arc::clone(&path.project.path),
                 }),
                 Match::Search(m) => Some(project_path_for_search_match(&self.project, &m.0, cx)),
-                Match::Channel { .. } | Match::CreateNew(_) => None,
+                Match::CreateNew(_) => None,
             })
             .collect();
         if paths.is_empty() {
@@ -2084,7 +2019,6 @@ impl FileFinderDelegate {
 
         let start_icon = match path_match {
             Match::CreateNew(_) => Some(Icon::new(IconName::Plus).size(IconSize::Small)),
-            Match::Channel { .. } => Some(Icon::new(IconName::Hash).color(Color::Muted)),
             _ => maybe!({
                 if !settings.file_icons {
                     return None;
@@ -2097,7 +2031,7 @@ impl FileFinderDelegate {
         };
 
         let checkbox = checkbox.map(|checkbox| {
-            if matches!(path_match, Match::CreateNew(_) | Match::Channel { .. }) {
+            if matches!(path_match, Match::CreateNew(_)) {
                 div()
                     .flex_none()
                     .size(Checkbox::container_size())
@@ -2125,7 +2059,7 @@ impl FileFinderDelegate {
                     .size(IconSize::Small)
                     .into_any_element(),
             ),
-            Match::Search(_) | Match::Channel { .. } => Some(
+            Match::Search(_) => Some(
                 div()
                     .flex_none()
                     .size(IconSize::Small.rems())

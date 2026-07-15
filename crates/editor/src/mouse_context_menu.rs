@@ -8,7 +8,7 @@ use crate::{
 };
 use gpui::prelude::FluentBuilder;
 use gpui::{Context, DismissEvent, Entity, Focusable as _, Pixels, Point, Subscription, Window};
-use project::DisableAiSettings;
+use crate::stubs::DisableAiSettings;
 use std::ops::Range;
 use text::PointUtf16;
 use workspace::OpenInTerminal;
@@ -221,7 +221,7 @@ pub fn deploy_context_menu(
         let run_to_cursor = window.is_action_available(&RunToCursor, cx);
         let format_selections = window.is_action_available(&FormatSelections, cx);
         let disable_ai = DisableAiSettings::is_ai_disabled_for_buffer(
-            editor.buffer.read(cx).as_singleton().as_ref(),
+            editor.buffer.read(cx).as_singleton().map(|b| b.read(cx)),
             cx,
         );
 
@@ -286,11 +286,7 @@ pub fn deploy_context_menu(
                 .action("Copy and Trim", Box::new(CopyAndTrim))
                 .action("Paste", Box::new(Paste))
                 .separator()
-                .action_disabled_when(
-                    !has_reveal_target,
-                    ui::utils::reveal_in_file_manager_label(false),
-                    Box::new(RevealInFileManager),
-                )
+                // 只读编辑器：RevealInFileManager 动作当前不可构造，已移除。
                 .when(is_markdown, |builder| {
                     builder.action("Open Markdown Preview", Box::new(OpenMarkdownPreview))
                 })

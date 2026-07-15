@@ -228,13 +228,7 @@ fn register_backward_compatible_actions(editor: &mut Editor, cx: &mut Context<Ed
     // We renamed some of these actions to not be copilot-specific, but that
     // would have not been backwards-compatible. So here we are re-registering
     // the actions with the old names to not break people's keymaps.
-    editor
-        .register_action(cx.listener(
-            |editor, _: &copilot::Suggest, window: &mut Window, cx: &mut Context<Editor>| {
-                editor.show_edit_prediction(&Default::default(), window, cx);
-            },
-        ))
-        .detach();
+    // TODO: removed-crate: copilot — copilot::Suggest action unavailable
 }
 
 fn assign_edit_prediction_provider(
@@ -250,25 +244,10 @@ fn assign_edit_prediction_provider(
 
     match provider_config {
         None => {
-            editor.set_edit_prediction_provider::<ZedEditPredictionDelegate>(None, window, cx);
+            // TODO: removed-crate: edit_prediction — ZedEditPredictionDelegate unavailable
         }
         Some(EditPredictionProviderConfig::Copilot) => {
-            let ep_store = edit_prediction::EditPredictionStore::global(client, &user_store, cx);
-            let Some(project) = editor.project().cloned() else {
-                return;
-            };
-            let copilot =
-                ep_store.update(cx, |this, cx| this.start_copilot_for_project(&project, cx));
-
-            if let Some(copilot) = copilot {
-                if let Some(buffer) = singleton_buffer {
-                    copilot.update(cx, |copilot, cx| {
-                        copilot.register_buffer(&buffer, cx);
-                    });
-                }
-                let provider = cx.new(|_| CopilotEditPredictionDelegate::new(copilot));
-                editor.set_edit_prediction_provider(Some(provider), window, cx);
-            }
+            // TODO: removed-crate: copilot, edit_prediction — CopilotEditPredictionDelegate unavailable
         }
         Some(EditPredictionProviderConfig::Codestral) => {
             let http_client = client.http_client();

@@ -950,54 +950,11 @@ impl DisplayMap {
     /// by mapping them through the appropriate excerpts.
     pub(super) fn set_lsp_folding_ranges(
         &mut self,
-        buffer_id: BufferId,
-        ranges: Vec<LspFoldingRange>,
-        cx: &mut Context<Self>,
+        _buffer_id: BufferId,
+        _ranges: Vec<LspFoldingRange>,
+        _cx: &mut Context<Self>,
     ) {
-        let snapshot = self.buffer.read(cx).snapshot(cx);
-
-        let old_ids = self
-            .lsp_folding_crease_ids
-            .remove(&buffer_id)
-            .unwrap_or_default();
-        if !old_ids.is_empty() {
-            self.crease_map.remove(old_ids, &snapshot);
-        }
-
-        if ranges.is_empty() {
-            return;
-        }
-
-        let base_placeholder = self.fold_placeholder.clone();
-        let creases = ranges.into_iter().filter_map(|folding_range| {
-            let mb_range =
-                snapshot.buffer_anchor_range_to_anchor_range(folding_range.range.clone())?;
-            let placeholder = if let Some(collapsed_text) = folding_range.collapsed_text {
-                FoldPlaceholder {
-                    render: Arc::new({
-                        let collapsed_text = collapsed_text.clone();
-                        move |fold_id, _fold_range, cx: &mut gpui::App| {
-                            use gpui::{Element as _, ParentElement as _};
-                            FoldPlaceholder::fold_element(fold_id, cx)
-                                .child(collapsed_text.clone())
-                                .into_any()
-                        }
-                    }),
-                    constrain_width: false,
-                    merge_adjacent: base_placeholder.merge_adjacent,
-                    type_tag: base_placeholder.type_tag,
-                    collapsed_text: Some(collapsed_text),
-                }
-            } else {
-                base_placeholder.clone()
-            };
-            Some(Crease::simple(mb_range, placeholder))
-        });
-
-        let new_ids = self.crease_map.insert(creases, &snapshot);
-        if !new_ids.is_empty() {
-            self.lsp_folding_crease_ids.insert(buffer_id, new_ids);
-        }
+        // 只读编辑器：LSP 折叠范围已禁用，不再插入折痕。
     }
 
     /// Removes all LSP folding-range creases for a single buffer.

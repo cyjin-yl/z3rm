@@ -62,10 +62,8 @@ use multi_buffer::{
     MultiBufferRow, RowInfo, ToOffset,
 };
 
-use project::{
-    debugger::breakpoint_store::{Breakpoint, BreakpointSessionState},
-    project_settings::ProjectSettings,
-};
+use crate::stubs::{Breakpoint, BreakpointSessionState};
+use project::project_settings::ProjectSettings;
 use settings::{
     GitGutterSetting, GitHunkStyleSetting, IndentGuideBackgroundColoring, IndentGuideColoring,
     Settings,
@@ -91,10 +89,8 @@ use ui::utils::ensure_minimum_contrast;
 use ui::{ButtonLike, POPOVER_Y_PADDING, Tooltip, prelude::*, scrollbars::ShowScrollbar};
 use unicode_segmentation::UnicodeSegmentation;
 use util::{ResultExt, debug_panic};
-use workspace::{
-    CollaboratorId, ItemHandle, Workspace,
-    item::{Item, ItemBufferKind},
-};
+use crate::stubs::CollaboratorId;
+use workspace::{ItemHandle, Workspace, item::{Item, ItemBufferKind}};
 
 /// Determines what kinds of highlights should be applied to a lines background.
 #[derive(Clone, Copy, Default)]
@@ -275,9 +271,6 @@ impl EditorElement {
                 (action)(editor, window, cx)
             }
         });
-
-        crate::rust_analyzer_ext::apply_related_actions(editor, window, cx);
-        crate::clangd_ext::apply_related_actions(editor, window, cx);
 
         register_action(editor, window, Editor::open_context_menu);
         register_action(editor, window, Editor::move_left);

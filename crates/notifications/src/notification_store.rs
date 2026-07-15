@@ -1,16 +1,11 @@
-use anyhow::{Context as _, Result};
-// use channel::ChannelStore;  // removed-crate: channel
-// use client::{ChannelId, Client, UserStore};  // removed-crate: client
-use futures_lite::stream::StreamExt;
-use gpui::{App, AppContext as _, AsyncApp, Context, Entity, EventEmitter, Global, Task};
-use rpc::{Notification, TypedEnvelope, proto};
-use std::{ops::Range, sync::Arc};
+use gpui::{App, AppContext as _, Context, Entity, EventEmitter, Global, Task};
+use rpc::{Notification, proto};
 use sum_tree::{Bias, Dimensions, SumTree};
 use time::OffsetDateTime;
-use util::ResultExt;
+use std::ops::Range;
 
-pub fn init(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut App) {
-    let notification_store = cx.new(|cx| NotificationStore::new(client, user_store, cx));
+pub fn init(cx: &mut App) {
+    let notification_store = cx.new(|cx| NotificationStore::new(cx));
     cx.set_global(GlobalNotificationStore(notification_store));
 }
 
@@ -19,13 +14,8 @@ struct GlobalNotificationStore(Entity<NotificationStore>);
 impl Global for GlobalNotificationStore {}
 
 pub struct NotificationStore {
-    client: Arc<Client>,
-    user_store: Entity<UserStore>,
-    channel_store: Entity<ChannelStore>,
     notifications: SumTree<NotificationEntry>,
     loaded_all_notifications: bool,
-    _watch_connection_status: Task<Option<()>>,
-    _subscriptions: Vec<client::Subscription>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -72,36 +62,10 @@ impl NotificationStore {
         cx.global::<GlobalNotificationStore>().0.clone()
     }
 
-    pub fn new(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut Context<Self>) -> Self {
-        let mut connection_status = client.status();
-        let watch_connection_status = cx.spawn(async move |this, cx| {
-            while let Some(status) = connection_status.next().await {
-                let this = this.upgrade()?;
-                match status {
-                    client::Status::Connected { .. } => {
-                        if let Some(task) = this.update(cx, |this, cx| this.handle_connect(cx)) {
-                            task.await.log_err()?;
-                        }
-                    }
-                    _ => {
-                        this.update(cx, |this, cx| this.handle_disconnect(cx));
-                    }
-                }
-            }
-            Some(())
-        });
-
+    pub fn new(cx: &mut Context<Self>) -> Self {
         Self {
-            channel_store: ChannelStore::global(cx),
             notifications: Default::default(),
             loaded_all_notifications: false,
-            _watch_connection_status: watch_connection_status,
-            _subscriptions: vec![
-                client.add_message_handler(cx.weak_entity(), Self::handle_new_notification),
-                client.add_message_handler(cx.weak_entity(), Self::handle_delete_notification),
-            ],
-            user_store,
-            client,
         }
     }
 
@@ -137,155 +101,24 @@ impl NotificationStore {
         None
     }
 
-    pub fn load_more_notifications(
-        &self,
-        clear_old: bool,
-        cx: &mut Context<Self>,
-    ) -> Option<Task<Result<()>>> {
-        if self.loaded_all_notifications && !clear_old {
-            return None;
-        }
+    // load_more_notifications removed: requires client to fetch from server
+    // fn load_more_notifications(&self, clear_old: bool, cx: &mut Context<Self>) -> Option<Task<Result<()>>> { … }
 
-        let before_id = if clear_old {
-            None
-        } else {
-            self.notifications.first().map(|entry| entry.id)
-        };
-        let request = self.client.request(proto::GetNotifications { before_id });
-        Some(cx.spawn(async move |this, cx| {
-            let this = this
-                .upgrade()
-                .context("Notification store was dropped while loading notifications")?;
+    // handle_connect removed: requires client connection status
+    // fn handle_connect(&mut self, cx: &mut Context<Self>) -> Option<Task<Result<()>>> { … }
 
-            let response = request.await?;
-            this.update(cx, |this, _| this.loaded_all_notifications = response.done);
-            Self::add_notifications(
-                this,
-                response.notifications,
-                AddNotificationsOptions {
-                    is_new: false,
-                    clear_old,
-                    includes_first: response.done,
-                },
-                cx,
-            )
-            .await?;
-            Ok(())
-        }))
-    }
+    // handle_disconnect removed: requires client connection status
+    // fn handle_disconnect(&mut self, cx: &mut Context<Self>) { … }
 
-    fn handle_connect(&mut self, cx: &mut Context<Self>) -> Option<Task<Result<()>>> {
-        self.notifications = Default::default();
-        cx.notify();
-        self.load_more_notifications(true, cx)
-    }
 
-    fn handle_disconnect(&mut self, cx: &mut Context<Self>) {
-        cx.notify()
-    }
+    // handle_new_notification removed: requires client message handler
+    // async fn handle_new_notification(this, envelope, cx) -> Result<()> { … }
 
-    async fn handle_new_notification(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::AddNotification>,
-        mut cx: AsyncApp,
-    ) -> Result<()> {
-        Self::add_notifications(
-            this,
-            envelope.payload.notification.into_iter().collect(),
-            AddNotificationsOptions {
-                is_new: true,
-                clear_old: false,
-                includes_first: false,
-            },
-            &mut cx,
-        )
-        .await
-    }
+    // handle_delete_notification removed: requires client message handler
+    // async fn handle_delete_notification(this, envelope, cx) -> Result<()> { … }
 
-    async fn handle_delete_notification(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::DeleteNotification>,
-        mut cx: AsyncApp,
-    ) -> Result<()> {
-        this.update(&mut cx, |this, cx| {
-            this.splice_notifications([(envelope.payload.notification_id, None)], false, cx);
-        });
-        Ok(())
-    }
-
-    async fn add_notifications(
-        this: Entity<Self>,
-        notifications: Vec<proto::Notification>,
-        options: AddNotificationsOptions,
-        cx: &mut AsyncApp,
-    ) -> Result<()> {
-        let mut user_ids = Vec::new();
-
-        let notifications = notifications
-            .into_iter()
-            .filter_map(|message| {
-                Some(NotificationEntry {
-                    id: message.id,
-                    is_read: message.is_read,
-                    timestamp: OffsetDateTime::from_unix_timestamp(message.timestamp as i64)
-                        .ok()?,
-                    notification: Notification::from_proto(&message)?,
-                    response: message.response,
-                })
-            })
-            .collect::<Vec<_>>();
-        if notifications.is_empty() {
-            return Ok(());
-        }
-
-        for entry in &notifications {
-            match entry.notification {
-                Notification::ChannelInvitation { inviter_id, .. } => {
-                    user_ids.push(inviter_id);
-                }
-                Notification::ContactRequest {
-                    sender_id: requester_id,
-                } => {
-                    user_ids.push(requester_id);
-                }
-                Notification::ContactRequestAccepted {
-                    responder_id: contact_id,
-                } => {
-                    user_ids.push(contact_id);
-                }
-            }
-        }
-
-        let user_store = this.read_with(cx, |this, _| this.user_store.clone());
-
-        user_store
-            .update(cx, |store, cx| store.get_users(user_ids, cx))
-            .await?;
-        this.update(cx, |this, cx| {
-            if options.clear_old {
-                cx.emit(NotificationEvent::NotificationsUpdated {
-                    old_range: 0..this.notifications.summary().count,
-                    new_count: 0,
-                });
-                this.notifications = SumTree::default();
-                this.loaded_all_notifications = false;
-            }
-
-            if options.includes_first {
-                this.loaded_all_notifications = true;
-            }
-
-            this.splice_notifications(
-                notifications
-                    .into_iter()
-                    .map(|notification| (notification.id, Some(notification))),
-                options.is_new,
-                cx,
-            );
-        });
-
-        Ok(())
-    }
+    // add_notifications removed: was only called by client message handlers and load_more_notifications which require client
+    // async fn add_notifications(this, notifications, options, cx) -> Result<()> { … }
 
     fn splice_notifications(
         &mut self,
@@ -350,27 +183,11 @@ impl NotificationStore {
 
     pub fn respond_to_notification(
         &mut self,
-        notification: Notification,
-        response: bool,
-        cx: &mut Context<Self>,
+        _notification: Notification,
+        _response: bool,
+        _cx: &mut Context<Self>,
     ) {
-        match notification {
-            Notification::ContactRequest { sender_id } => {
-                self.user_store
-                    .update(cx, |store, cx| {
-                        store.respond_to_contact_request(sender_id, response, cx)
-                    })
-                    .detach();
-            }
-            Notification::ChannelInvitation { channel_id, .. } => {
-                self.channel_store
-                    .update(cx, |store, cx| {
-                        store.respond_to_channel_invite(ChannelId(channel_id), response, cx)
-                    })
-                    .detach();
-            }
-            _ => {}
-        }
+        // respond_to_notification removed: requires user_store and channel_store
     }
 }
 

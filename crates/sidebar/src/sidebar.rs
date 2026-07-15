@@ -6,21 +6,21 @@ mod thread_switcher;
 use agent_client_protocol::schema::v1 as acp;
 // use agent_settings::AgentSettings;  // removed-crate: agent_settings
 // use agent_ui::terminal_thread_metadata_store::{
-    TerminalThreadMetadata, TerminalThreadMetadataStore, terminal_title_prefix,
-};  // removed-crate: agent_ui
+// TerminalThreadMetadata, TerminalThreadMetadataStore, terminal_title_prefix,
+// };  // removed-crate: agent_ui
 // use agent_ui::thread_metadata_store::{
-    ThreadMetadata, ThreadMetadataStore, WorktreePaths, worktree_info_from_thread_paths,
-};  // removed-crate: agent_ui
+// ThreadMetadata, ThreadMetadataStore, WorktreePaths, worktree_info_from_thread_paths,
+// };  // removed-crate: agent_ui
 // use agent_ui::threads_archive_view::{
-    ThreadsArchiveView, ThreadsArchiveViewEvent, format_history_entry_timestamp,
-    fuzzy_match_positions,
-};  // removed-crate: agent_ui
+// ThreadsArchiveView, ThreadsArchiveViewEvent, format_history_entry_timestamp,
+// fuzzy_match_positions,
+// };  // removed-crate: agent_ui
 // use agent_ui::{
-    AcpThreadImportOnboarding, Agent, AgentPanel, AgentPanelEvent, AgentThreadSource,
-    ArchiveSelectedThread, CrossChannelImportOnboarding, DEFAULT_THREAD_TITLE, NewTerminalThread,
-    NewThread, RenameSelectedThread, TerminalId, ThreadId, ThreadImportModal,
-    ThreadTitleRegenerationResult, channels_with_threads, import_threads_from_other_channels,
-};  // removed-crate: agent_ui
+// AcpThreadImportOnboarding, Agent, AgentPanel, AgentPanelEvent, AgentThreadSource,
+// ArchiveSelectedThread, CrossChannelImportOnboarding, DEFAULT_THREAD_TITLE, NewTerminalThread,
+// NewThread, RenameSelectedThread, TerminalId, ThreadId, ThreadImportModal,
+// ThreadTitleRegenerationResult, channels_with_threads, import_threads_from_other_channels,
+// };  // removed-crate: agent_ui
 // use agent_ui::{MessageEditorEvent, StateChange, thread_worktree_archive};  // removed-crate: agent_ui
 use chrono::{DateTime, Utc};
 use editor::Editor;

@@ -34,6 +34,8 @@ use crate::{
     BUFFER_HEADER_PADDING, DisplayRow, Editor, EditorSettings, EditorSnapshot, FILE_HEADER_HEIGHT,
     GutterDimensions, JumpData, MULTI_BUFFER_EXCERPT_HEADER_HEIGHT, OpenExcerpts, Point, RowExt,
     SelectionEffects, StickyHeaderExcerpt, ToPoint, ToggleFold, ToggleFoldAll,
+};
+use crate::{
     display_map::ToDisplayPoint,
     scroll::{Autoscroll, ScrollOffset, ScrollPixelOffset},
 };
@@ -667,7 +669,7 @@ pub(crate) fn render_buffer_header(
     let include_root = editor_read
         .project
         .as_ref()
-        .map(|project| project.read(cx).visible_worktrees(cx).count() > 1)
+        .map(|project| project.read(cx).worktrees(cx).count() > 1)
         .unwrap_or_default();
     let file = buffer.file();
     let can_open_excerpts = file.is_none_or(|file| file.can_open());
@@ -1042,13 +1044,7 @@ pub(crate) fn render_buffer_header(
                             menu.entry(
                                 "Reveal In Project Panel",
                                 Some(Box::new(RevealInProjectPanel::default())),
-                                window.handler_for(&editor, move |editor, _, cx| {
-                                    if let Some(project) = &mut editor.project {
-                                        project.update(cx, |_, cx| {
-                                            cx.emit(project::Event::RevealInProjectPanel(entry_id))
-                                        });
-                                    }
-                                }),
+                                window.handler_for(&editor, move |_editor, _, _cx| {}),
                             )
                         })
                         .when_some(parent_abs_path, |menu, parent_abs_path| {

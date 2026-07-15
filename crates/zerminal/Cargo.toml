@@ -57,9 +57,6 @@ workspace = true
 [dependencies.component]
 workspace = true
 
-[dependencies.copilot_ui]
-workspace = true
-
 [dependencies.crashes]
 workspace = true
 

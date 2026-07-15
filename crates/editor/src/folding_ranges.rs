@@ -9,74 +9,11 @@ use crate::{Editor, LSP_REQUEST_DEBOUNCE_TIMEOUT};
 impl Editor {
     pub(super) fn refresh_folding_ranges(
         &mut self,
-        for_buffer: Option<BufferId>,
+        _for_buffer: Option<BufferId>,
         _window: &Window,
-        cx: &mut Context<Self>,
+        _cx: &mut Context<Self>,
     ) {
-        if !self.lsp_data_enabled() || !self.use_document_folding_ranges {
-            return;
-        }
-        let Some(project) = self.project.as_ref().map(|p| p.downgrade()) else {
-            return;
-        };
-
-        let buffers_to_query = self
-            .visible_buffers(cx)
-            .into_iter()
-            .filter(|buffer| self.is_lsp_relevant(buffer.read(cx).file(), cx))
-            .chain(for_buffer.and_then(|id| self.buffer.read(cx).buffer(id)))
-            .filter(|buffer| {
-                let id = buffer.read(cx).remote_id();
-                (for_buffer.is_none_or(|target| target == id))
-                    && self.registered_buffers.contains_key(&id)
-                    && LanguageSettings::for_buffer(buffer.read(cx), cx)
-                        .document_folding_ranges
-                        .enabled()
-            })
-            .unique_by(|buffer| buffer.read(cx).remote_id())
-            .collect::<Vec<_>>();
-
-        self.refresh_folding_ranges_task = cx.spawn(async move |editor, cx| {
-            cx.background_executor()
-                .timer(LSP_REQUEST_DEBOUNCE_TIMEOUT)
-                .await;
-
-            let Some(tasks) = editor
-                .update(cx, |_, cx| {
-                    let project = project.upgrade()?;
-                    Some(project.read(cx).lsp_store().update(cx, |lsp_store, cx| {
-                        buffers_to_query
-                            .into_iter()
-                            .map(|buffer| {
-                                let buffer_id = buffer.read(cx).remote_id();
-                                let task = lsp_store.fetch_folding_ranges(&buffer, cx);
-                                async move { (buffer_id, task.await) }
-                            })
-                            .collect::<Vec<_>>()
-                    }))
-                })
-                .ok()
-                .flatten()
-            else {
-                return;
-            };
-
-            let results = join_all(tasks).await;
-            if results.is_empty() {
-                return;
-            }
-
-            editor
-                .update(cx, |editor, cx| {
-                    editor.display_map.update(cx, |display_map, cx| {
-                        for (buffer_id, ranges) in results {
-                            display_map.set_lsp_folding_ranges(buffer_id, ranges, cx);
-                        }
-                    });
-                    cx.notify();
-                })
-                .ok();
-        });
+        // 只读编辑器：LSP 折叠范围已禁用。
     }
 
     pub fn document_folding_ranges_enabled(&self, cx: &ui::App) -> bool {

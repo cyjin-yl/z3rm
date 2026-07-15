@@ -1,6 +1,22 @@
 use super::*;
+use crate::stubs::parse_zed_link;
 
 impl Editor {
+    pub fn text_layout_details(
+        &mut self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> movement::TextLayoutDetails {
+        movement::TextLayoutDetails {
+            text_system: window.text_system().clone(),
+            editor_style: self.style(cx).clone(),
+            rem_size: window.rem_size(),
+            scroll_anchor: self.scroll_manager.shared_scroll_anchor(cx),
+            visible_rows: self.visible_line_count(),
+            vertical_scroll_margin: self.scroll_manager.vertical_scroll_margin,
+        }
+    }
+
     pub fn move_left(&mut self, _: &MoveLeft, window: &mut Window, cx: &mut Context<Self>) {
         self.change_selections(Default::default(), window, cx, |s| {
             s.move_with(&mut |map, selection| {
@@ -1114,50 +1130,8 @@ impl Editor {
         self.go_to_definition_of_kind(GotoDefinitionKind::Type, true, window, cx)
     }
 
-    pub fn open_url(&mut self, _: &OpenUrl, window: &mut Window, cx: &mut Context<Self>) {
-        let selection = self.selections.newest_anchor();
-        let head = selection.head();
-        let tail = selection.tail();
-
-        let Some((buffer, start_position)) =
-            self.buffer.read(cx).text_anchor_for_position(head, cx)
-        else {
-            return;
-        };
-
-        let end_position = if head != tail {
-            let Some((_, pos)) = self.buffer.read(cx).text_anchor_for_position(tail, cx) else {
-                return;
-            };
-            Some(pos)
-        } else {
-            None
-        };
-
-        let url_finder = cx.spawn_in(window, async move |_editor, cx| {
-            let url = if let Some(end_pos) = end_position {
-                find_url_from_range(&buffer, start_position..end_pos, cx)
-            } else {
-                find_url(&buffer, start_position, cx).map(|(_, url)| url)
-            };
-
-            if let Some(url) = url {
-                cx.update(|window, cx| {
-                    if parse_zed_link(&url, cx).is_some() {
-                        window.dispatch_action(
-                            Box::new(zed_actions::OpenZedUrl { url: url.into() }),
-                            cx,
-                        );
-                    } else {
-                        cx.open_url(&url);
-                    }
-                })?;
-            }
-
-            anyhow::Ok(())
-        });
-
-        url_finder.detach();
+    pub fn open_url(&mut self, _: &OpenUrl, _window: &mut Window, _cx: &mut Context<Self>) {
+        // 只读编辑器下禁用 URL 打开。
     }
 
     pub fn open_selected_filename(

@@ -3,10 +3,10 @@
 /// We neead to find a way to test Windows-Non-Windows interactions.
 use crate::headless_project::HeadlessProject;
 // use agent::{
-    AgentTool, NativeAgent, NativeAgentConnection, ReadFileTool, ReadFileToolInput, SkillTool,
-    SkillToolInput, SkillToolOutput, Templates, ThreadStore, ToolCallEventStream, ToolInput,
-    skill_body_resolver_for_project, skills_resolver_for_project,
-};  // removed-crate: agent
+// AgentTool, NativeAgent, NativeAgentConnection, ReadFileTool, ReadFileToolInput, SkillTool,
+// SkillToolInput, SkillToolOutput, Templates, ThreadStore, ToolCallEventStream, ToolInput,
+// skill_body_resolver_for_project, skills_resolver_for_project,
+// };  // removed-crate: agent
 // use client::{Client, UserStore};  // removed-crate: client
 use clock::FakeSystemClock;
 use collections::{HashMap, HashSet};

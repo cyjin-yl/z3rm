@@ -1,5 +1,4 @@
 use anyhow::{Context as _, Result};
-// use client::Client;  // removed-crate: client
 use db::kvp::KeyValueStore;
 use futures_lite::StreamExt;
 use gpui::{
@@ -176,7 +175,7 @@ impl AutoUpdateStatus {
 pub struct AutoUpdater {
     status: AutoUpdateStatus,
     current_version: Version,
-    client: Arc<Client>,
+    http_client: Arc<HttpClientWithUrl>,
     pending_poll: Option<Task<Option<()>>>,
     quit_subscription: Option<gpui::Subscription>,
     update_check_type: UpdateCheckType,
@@ -258,7 +257,7 @@ struct GlobalAutoUpdate(Option<Entity<AutoUpdater>>);
 
 impl Global for GlobalAutoUpdate {}
 
-pub fn init(client: Arc<Client>, cx: &mut App) {
+pub fn init(cx: &mut App) {
     cx.observe_new(|workspace: &mut Workspace, _window, _cx| {
         workspace.register_action(|_, action, window, cx| check(action, window, cx));
 
@@ -269,8 +268,10 @@ pub fn init(client: Arc<Client>, cx: &mut App) {
     .detach();
 
     let version = release_channel::AppVersion::global(cx);
+    let http_client = cx.http_client();
+    let http_client_with_url = HttpClientWithUrl::new(http_client, "https://zed.dev", None);
     let auto_updater = cx.new(|cx| {
-        let updater = AutoUpdater::new(version, client, cx);
+        let updater = AutoUpdater::new(version, Arc::new(http_client_with_url), cx);
 
         let poll_for_updates = ReleaseChannel::try_global(cx)
             .map(|channel| channel.poll_for_updates())
@@ -347,7 +348,7 @@ pub fn release_notes_url(cx: &mut App) -> Option<String> {
             current_version.build = semver::BuildMetadata::EMPTY;
             let release_channel = release_channel.dev_name();
             let path = format!("/releases/{release_channel}/{current_version}");
-            auto_updater.client.http_client().build_url(&path)
+            auto_updater.http_client.build_url(&path)
         }
         ReleaseChannel::Nightly => {
             "https://github.com/zed-industries/zed/commits/nightly/".to_string()
@@ -423,14 +424,11 @@ impl AutoUpdater {
         cx.default_global::<GlobalAutoUpdate>().0.clone()
     }
 
-    fn new(current_version: Version, client: Arc<Client>, cx: &mut Context<Self>) -> Self {
-        // On windows, executable files cannot be overwritten while they are
-        // running, so we must wait to overwrite the application until quitting
-        // or restarting. When quitting the app, we spawn the auto update helper
-        // to finish the auto update process after Zed exits. When restarting
-        // the app after an update, we use `set_restart_path` to run the auto
-        // update helper instead of the app, so that it can overwrite the app
-        // and then spawn the new binary.
+    fn new(
+        current_version: Version,
+        http_client: Arc<HttpClientWithUrl>,
+        cx: &mut Context<Self>,
+    ) -> Self {
         #[cfg(target_os = "windows")]
         let quit_subscription = Some(cx.on_app_quit(|_, _| finalize_auto_update_on_quit()));
         #[cfg(not(target_os = "windows"))]
@@ -444,7 +442,7 @@ impl AutoUpdater {
         Self {
             status: AutoUpdateStatus::Idle,
             current_version,
-            client,
+            http_client,
             pending_poll: None,
             quit_subscription,
             update_check_type: UpdateCheckType::Automatic,
@@ -594,7 +592,7 @@ impl AutoUpdater {
         let version_path = platform_dir.join(format!("{}.gz", release.version));
         smol::fs::create_dir_all(&platform_dir).await.ok();
 
-        let client = this.read_with(cx, |this, _| this.client.http_client());
+        let client = this.read_with(cx, |this, _| this.http_client.clone());
 
         if smol::fs::metadata(&version_path).await.is_err() {
             log::info!(
@@ -648,17 +646,9 @@ impl AutoUpdater {
         arch: &str,
         cx: &mut AsyncApp,
     ) -> Result<ReleaseAsset> {
-        let client = this.read_with(cx, |this, _| this.client.clone());
+        let http_client = this.read_with(cx, |this, _| this.http_client.clone());
 
-        let (system_id, metrics_id, is_staff) = if client.telemetry().metrics_enabled() {
-            (
-                client.telemetry().system_id(),
-                client.telemetry().metrics_id(),
-                client.telemetry().is_staff(),
-            )
-        } else {
-            (None, None, None)
-        };
+        let (system_id, metrics_id, is_staff): (Option<String>, Option<String>, Option<bool>) = (None, None, None);
 
         let version = if let Some(mut version) = version {
             version.pre = semver::Prerelease::EMPTY;
@@ -667,7 +657,6 @@ impl AutoUpdater {
         } else {
             "latest".to_string()
         };
-        let http_client = client.http_client();
 
         let path = format!("/releases/{}/{}/asset", release_channel.dev_name(), version,);
         let url = http_client.build_zed_cloud_url_with_query(
@@ -706,7 +695,7 @@ impl AutoUpdater {
         let (client, installed_version, previous_status, release_channel) =
             this.read_with(cx, |this, cx| {
                 (
-                    this.client.http_client(),
+                    this.http_client.clone(),
                     this.current_version.clone(),
                     this.status.clone(),
                     ReleaseChannel::try_global(cx).unwrap_or(ReleaseChannel::Stable),

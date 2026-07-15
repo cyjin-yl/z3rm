@@ -12,11 +12,12 @@
 //!
 //! If you're looking to improve Vim mode, you should check out Vim crate that wraps Editor and overrides its behavior.
 pub mod actions;
+mod stubs;
+
 pub mod blink_manager;
 mod bracket_colorization;
-mod clangd_ext;
-pub mod code_context_menus;
-mod code_lens;
+pub mod breadcrumbs;
+pub mod dap;
 pub mod display_map;
 mod document_colors;
 mod document_links;
@@ -27,19 +28,11 @@ mod fold;
 mod folding_ranges;
 mod git;
 mod highlight_matching_bracket;
-pub mod hover_links;
-pub mod hover_popover;
 mod indent_guides;
-mod inlays;
 pub mod items;
-mod jsx_tag_auto_close;
-mod linked_editing_ranges;
-mod lsp_ext;
 mod mouse_context_menu;
 pub mod movement;
 mod persistence;
-mod runnables;
-mod rust_analyzer_ext;
 pub mod scroll;
 mod selections_collection;
 pub mod semantic_tokens;
@@ -48,54 +41,49 @@ pub mod split_editor_view;
 
 mod bookmarks;
 #[cfg(test)]
-mod code_completion_tests;
-#[cfg(test)]
-mod edit_prediction_tests;
-#[cfg(test)]
 mod editor_block_comment_tests;
 #[cfg(test)]
 mod editor_tests;
-mod signature_help;
 #[cfg(any(test, feature = "test-support"))]
 pub mod test;
 
 mod clipboard;
-mod code_actions;
-mod completions;
 mod config;
-mod diagnostics;
-mod edit_prediction;
-mod input;
-mod markdown_actions;
 mod navigation;
-mod rewrap;
 mod selection;
 
 pub(crate) use actions::*;
 pub use clipboard::ClipboardSelection;
-pub use code_actions::CodeActionProvider;
 use collections::TypeIdHashMap;
-pub use completions::CompletionProvider;
-#[cfg(test)]
-pub(crate) use completions::snippet_candidate_suffixes;
-pub(crate) use completions::split_words;
-use diagnostics::{ActiveDiagnostic, GlobalDiagnosticRenderer, InlineDiagnostic};
-pub use diagnostics::{DiagnosticRenderer, set_diagnostic_renderer};
+pub use stubs::{
+    AvailableCodeAction, Breakpoint, BreakpointEditAction, BreakpointSessionState, BreakpointState,
+    BreakpointStore, BreakpointStoreEvent, BreakpointWithPosition, BufferSemanticTokens,
+    CacheInlayHints, CodeActionProvider, CodeContextMenu, Collaborator, CollaboratorId,
+    Completion, CompletionDisplayOptions, CompletionDocumentation, CompletionGroup,
+    CompletionIntent, CompletionProvider, CompletionResponse, CompletionSource, CompletionsMenu,
+    ContextMenuOrigin, DiagnosticRenderer, Direction, DocumentHighlight, EditDisplayMode,
+    EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
+    EditPredictionGranularity, EditPredictionPreview, EditPredictionRequestTrigger,
+    EditPredictionSettings, EditPredictionState, GlobalDiagnosticRenderer, Hover, HoverLink,
+    HoverState, HoveredLinkState, InlayHint, InlayHintLabel, InlayHintLabelPart,
+    InlayHintLabelPartTooltip, InlayHintTooltip, InlayId, InlaySplice, InlineDiagnostic,
+    InlineValueCache, InvalidationStrategy, LanguageServerToQuery, LocationLink, LspAction,
+    LspFormatTarget, LspInlayHintData, MenuEditPredictionsPolicy, OpenLspBufferHandle,
+    ParticipantIndex, PrepareRenameResponse, ProjectExt, ProjectLspStoreExt, RevealInFileManager,
+    RunnableData, RunnableTasks, ResolvedTasks, Session, SessionEvent, SignatureHelpHiddenBy,
+    SignatureHelpState, Snippet, SuggestionDisplayType, TaskVariables, TelemetrySpawnLocation,
+    VariableName, ViewId, VimModeSetting, make_suggestion_styles, set_diagnostic_renderer,
+};
+pub(crate) use stubs::{
+    ActiveDiagnostic, CodeLensState, CompletionId, CompletionGroup as _, DiagnosticRenderer as _,
+    InlayHintRefreshReason, InlayHintSettings, ProjectBufferExt, ProjectCapabilityExt,
+    SignatureHelpPopover, find_file, find_url, find_url_from_range, hide_hover, hover_at,
+    hover_markdown_style, inlay_hint_settings, parse_zed_link, send_telemetry, split_words,
+};
 pub use display_map::{
     ChunkRenderer, ChunkRendererContext, DisplayPoint, FoldPlaceholder, HighlightKey,
     NavigationOverlayKey, SemanticTokenHighlight,
 };
-// pub use edit_prediction::make_suggestion_styles;  // removed-crate: edit_prediction
-pub(crate) use edit_prediction::{
-    EditDisplayMode, EditPrediction, EditPredictionPreview, EditPredictionSettings,
-    EditPredictionState, MenuEditPredictionsPolicy, RegisteredEditPredictionDelegate,
-};
-#[cfg(test)]
-pub(crate) use edit_prediction::{
-    EditPredictionKeybindAction, EditPredictionKeybindSurface, edit_prediction_edit_text,
-};
-// pub use edit_prediction_types::Direction;  // removed-crate: edit_prediction_types
-// pub use edit_prediction_types::EditPredictionRequestTrigger;  // removed-crate: edit_prediction_types
 pub use editor_settings::{
     CompletionDetailAlignment, CompletionMenuItemKind, CurrentLineHighlight, DiffViewStyle,
     DocumentColorsRenderMode, EditorSettings, EditorSettingsScrollbarProxy, ScrollBeyondLastLine,
@@ -116,12 +104,8 @@ use git::{
     DiffReviewDragState, DiffReviewOverlay, InlineBlamePopover, update_uncommitted_diff_for_buffer,
 };
 pub(crate) use git::{DisplayDiffHunk, PhantomDiffReviewIndicator};
-pub use hover_popover::hover_markdown_style;
-pub use inlays::Inlay;
 pub use items::MAX_TAB_TITLE_LEN;
-pub use linked_editing_ranges::LinkedEdits;
 pub use lsp::CompletionContext;
-pub use lsp_ext::lsp_tasks;
 pub use multi_buffer::{
     Anchor, AnchorRangeExt, BufferOffset, ExcerptRange, MBTextSummary, MultiBuffer,
     MultiBufferOffset, MultiBufferOffsetUtf16, MultiBufferSnapshot, PathKey, RowInfo, ToOffset,
@@ -137,11 +121,6 @@ use anyhow::{Context as _, Result, anyhow, bail};
 use blink_manager::BlinkManager;
 // use client::{Collaborator, ParticipantIndex, parse_zed_link};  // removed-crate: client
 use clock::ReplicaId;
-use code_context_menus::{
-    AvailableCodeAction, CodeActionContents, CodeActionsItem, CodeActionsMenu, CodeContextMenu,
-    CompletionsMenu, ContextMenuOrigin,
-};
-use code_lens::CodeLensState;
 use collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use convert_case::{Case, Casing};
 // use dap::TelemetrySpawnLocation;  // removed-crate: dap
@@ -149,9 +128,9 @@ use display_map::*;
 use document_colors::LspColorData;
 use document_links::LspDocumentLinks;
 // use edit_prediction_types::{
-    EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
-    EditPredictionGranularity, SuggestionDisplayType,
-};  // removed-crate: edit_prediction_types
+// EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
+// EditPredictionGranularity, SuggestionDisplayType,
+// };  // removed-crate: edit_prediction_types
 use editor_settings::{GoToDefinitionFallback, Minimap as MinimapSettings};
 use element::{LineWithInvisibles, PositionMap, layout_line};
 use futures::{
@@ -171,10 +150,7 @@ use gpui::{
     UniformListScrollHandle, WeakEntity, WeakFocusHandle, Window, div, point, prelude::*,
     pulsating_between, px, relative, size,
 };
-use hover_links::{HoverLink, HoveredLinkState, find_file};
-use hover_popover::{HoverState, hide_hover};
 use indent_guides::ActiveIndentGuidesState;
-use inlays::{InlaySplice, inlay_hints::InlayHintRefreshReason};
 use itertools::{Either, Itertools};
 use language::{
     AutoindentMode, BlockCommentConfig, BracketMatch, BracketPair, Buffer, BufferRow,
@@ -189,7 +165,6 @@ use language::{
     },
     point_from_lsp, point_to_lsp, text_diff_with_options,
 };
-use linked_editing_ranges::refresh_linked_ranges;
 use lsp::{
     CodeActionKind, CompletionItemKind, CompletionTriggerKind, InsertTextFormat, InsertTextMode,
     LanguageServerId,
@@ -204,24 +179,10 @@ use multi_buffer::{
 use parking_lot::Mutex;
 use persistence::EditorDb;
 use project::{
-    BreakpointWithPosition, CodeAction, Completion, CompletionDisplayOptions, CompletionIntent,
-    CompletionResponse, CompletionSource, DisableAiSettings, DocumentHighlight, InlayHint, InlayId,
-    InvalidationStrategy, Location, LocationLink, LspAction, PrepareRenameResponse, Project,
-    ProjectItem, ProjectPath, ProjectTransaction,
-    bookmark_store::BookmarkStore,
-    debugger::{
-        breakpoint_store::{
-            Breakpoint, BreakpointEditAction, BreakpointSessionState, BreakpointState,
-            BreakpointStore, BreakpointStoreEvent,
-        },
-        session::{Session, SessionEvent},
-    },
     git_store::GitStoreEvent,
-    lsp_store::{
-        BufferSemanticTokens, CacheInlayHints, CompletionDocumentation, FormatTrigger,
-        LspFormatTarget, OpenLspBufferHandle, RefreshForServer,
-    },
     project_settings::{DiagnosticSeverity, GoToDiagnosticSeverityFilter, ProjectSettings},
+    Location, Project, ProjectItem, ProjectPath, ProjectTransaction,
+    bookmark_store::BookmarkStore,
 };
 use rand::seq::SliceRandom;
 use regex::Regex;
@@ -263,29 +224,20 @@ use ui::{
 use ui_input::ErasedEditor;
 use util::{RangeExt, ResultExt, TryFutureExt, maybe, post_inc};
 use workspace::{
-    CollaboratorId, Item as WorkspaceItem, ItemId, ItemNavHistory, NavigationEntry, OpenInTerminal,
+    Item as WorkspaceItem, ItemId, ItemNavHistory, NavigationEntry, OpenInTerminal,
     OpenTerminal, Pane, RestoreOnStartupBehavior, SERIALIZATION_THROTTLE_TIME, SplitDirection,
-    TabBarSettings, Toast, ViewId, Workspace, WorkspaceId, WorkspaceSettings,
+    TabBarSettings, Toast, Workspace, WorkspaceId, WorkspaceSettings,
     item::{ItemBufferKind, ItemHandle, PreviewTabsSettings, SaveOptions},
     notifications::{DetachAndPromptErr, NotificationId, NotifyResultExt, NotifyTaskExt},
     searchable::SearchEvent,
 };
-pub use zed_actions::editor::RevealInFileManager;
 use zed_actions::editor::{MoveDown, MoveUp};
 
 use crate::{
-    code_context_menus::CompletionsMenuSource,
     editor_settings::MultiCursorModifier,
-    hover_links::{find_url, find_url_from_range},
-    inlays::{
-        InlineValueCache,
-        inlay_hints::{LspInlayHintData, inlay_hint_settings},
-    },
-    runnables::{ResolvedTasks, RunnableData, RunnableTasks},
     scroll::{ScrollOffset, ScrollPixelOffset},
     selections_collection::resolve_selections_wrapping_blocks,
     semantic_tokens::SemanticTokenState,
-    signature_help::{SignatureHelpHiddenBy, SignatureHelpState},
 };
 
 pub const FILE_HEADER_HEIGHT: u32 = 2;
@@ -350,10 +302,8 @@ impl Navigated {
 
 pub fn init(cx: &mut App) {
     cx.set_global(GlobalBlameRenderer(Arc::new(())));
-    cx.set_global(breadcrumbs::RenderBreadcrumbText(render_breadcrumb_text));
 
     workspace::register_project_item::<Editor>(cx);
-    workspace::FollowableViewRegistry::register::<Editor>(cx);
     workspace::register_serializable_item::<Editor>(cx);
 
     cx.observe_new(
@@ -587,8 +537,6 @@ pub fn make_inlay_hints_style(cx: &App) -> HighlightStyle {
 
     style
 }
-
-type CompletionId = usize;
 
 pub struct ContextMenuOptions {
     pub min_entries_visible: usize,
@@ -1997,174 +1945,16 @@ impl Editor {
 
         let mut project_subscriptions = Vec::new();
         if full_mode && let Some(project) = project.as_ref() {
+            // 只读 + diff 模式下，忽略项目 LSP/编辑事件。
             project_subscriptions.push(cx.subscribe_in(
                 project,
                 window,
-                |editor, _, event, window, cx| match event {
-                    project::Event::RefreshCodeLens => {
-                        editor.refresh_code_lenses(None, window, cx);
-                    }
-                    project::Event::RefreshInlayHints {
-                        server_id,
-                        request_id,
-                    } => {
-                        editor.refresh_inlay_hints(
-                            InlayHintRefreshReason::RefreshRequested {
-                                server_id: *server_id,
-                                request_id: *request_id,
-                            },
-                            cx,
-                        );
-                    }
-                    project::Event::RefreshSemanticTokens {
-                        server_id,
-                        request_id,
-                    } => {
-                        editor.refresh_semantic_tokens(
-                            None,
-                            Some(RefreshForServer {
-                                server_id: *server_id,
-                                request_id: *request_id,
-                            }),
-                            cx,
-                        );
-                    }
-                    project::Event::LanguageServerRemoved(_) => {
-                        editor.registered_buffers.clear();
-                        editor.register_visible_buffers(cx);
-                        editor.invalidate_semantic_tokens(None);
-                        editor.refresh_runnables(None, window, cx);
-                        editor.update_lsp_data(None, window, cx);
-                        editor.refresh_inlay_hints(InlayHintRefreshReason::ServerRemoved, cx);
-                    }
-                    project::Event::SnippetEdit(id, snippet_edits) => {
-                        // todo(lw): Non singletons
-                        if let Some(buffer) = editor.buffer.read(cx).as_singleton() {
-                            let snapshot = buffer.read(cx).snapshot();
-                            let focus_handle = editor.focus_handle(cx);
-                            if snapshot.remote_id() == *id && focus_handle.is_focused(window) {
-                                for (range, snippet) in snippet_edits {
-                                    let buffer_range =
-                                        language::range_from_lsp(*range).to_offset(&snapshot);
-                                    editor
-                                        .insert_snippet(
-                                            &[MultiBufferOffset(buffer_range.start)
-                                                ..MultiBufferOffset(buffer_range.end)],
-                                            snippet.clone(),
-                                            window,
-                                            cx,
-                                        )
-                                        .ok();
-                                }
-                            }
-                        }
-                    }
-                    project::Event::LanguageServerBufferRegistered { buffer_id, .. } => {
-                        let buffer_id = *buffer_id;
-                        if editor.buffer().read(cx).buffer(buffer_id).is_some() {
-                            editor.register_buffer(buffer_id, cx);
-                            editor.refresh_runnables(Some(buffer_id), window, cx);
-                            editor.update_lsp_data(Some(buffer_id), window, cx);
-                            editor.refresh_inlay_hints(InlayHintRefreshReason::NewLinesShown, cx);
-                            refresh_linked_ranges(editor, window, cx);
-                            editor.refresh_code_actions_for_selection(window, cx);
-                            editor.refresh_document_highlights(cx);
-                        }
-                    }
-
-                    project::Event::EntryRenamed(transaction, project_path, abs_path) => {
-                        let Some(workspace) = editor.workspace() else {
-                            return;
-                        };
-                        let Some(active_editor) = workspace.read(cx).active_item_as::<Self>(cx)
-                        else {
-                            return;
-                        };
-
-                        if active_editor.entity_id() == cx.entity_id() {
-                            let entity_id = cx.entity_id();
-                            workspace.update(cx, |this, cx| {
-                                this.panes_mut()
-                                    .iter_mut()
-                                    .filter(|pane| pane.entity_id() != entity_id)
-                                    .for_each(|p| {
-                                        p.update(cx, |pane, _| {
-                                            pane.nav_history_mut().rename_item(
-                                                entity_id,
-                                                project_path.clone(),
-                                                abs_path.clone().into(),
-                                            );
-                                        })
-                                    });
-                            });
-
-                            Self::open_transaction_for_hidden_buffers(
-                                workspace,
-                                transaction.clone(),
-                                "Rename".to_string(),
-                                window,
-                                cx,
-                            );
-                        }
-                    }
-
-                    project::Event::WorkspaceEditApplied(transaction) => {
-                        let Some(workspace) = editor.workspace() else {
-                            return;
-                        };
-                        let Some(active_editor) = workspace.read(cx).active_item_as::<Self>(cx)
-                        else {
-                            return;
-                        };
-
-                        if active_editor.entity_id() == cx.entity_id() {
-                            Self::open_transaction_for_hidden_buffers(
-                                workspace,
-                                transaction.clone(),
-                                "LSP Edit".to_string(),
-                                window,
-                                cx,
-                            );
-                        }
-                    }
-
-                    _ => {}
+                |_editor, _, _event, _window, _cx| {
+                    // Stub: 原事件处理涉及已删除的编辑模块。
                 },
             ));
-            if let Some(task_inventory) = project
-                .read(cx)
-                .task_store()
-                .read(cx)
-                .task_inventory()
-                .cloned()
-            {
-                project_subscriptions.push(cx.observe_in(
-                    &task_inventory,
-                    window,
-                    |editor, _, window, cx| {
-                        editor.refresh_runnables(None, window, cx);
-                    },
-                ));
-            };
-
-            project_subscriptions.push(cx.subscribe_in(
-                &project.read(cx).breakpoint_store(),
-                window,
-                |editor, _, event, window, cx| match event {
-                    BreakpointStoreEvent::ClearDebugLines => {
-                        editor.clear_row_highlights::<ActiveDebugLine>();
-                        editor.refresh_inline_values(cx);
-                    }
-                    BreakpointStoreEvent::SetDebugLine => {
-                        if editor.go_to_active_debug_line(window, cx) {
-                            cx.stop_propagation();
-                        }
-
-                        editor.refresh_inline_values(cx);
-                    }
-                    _ => {}
-                },
-            ));
+            // Stub: task_inventory 与 breakpoint_store 订阅在只读 + diff 模式下不需要。
+            let _ = (project, window, cx);
             let git_store = project.read(cx).git_store().clone();
             let project = project.clone();
             project_subscriptions.push(cx.subscribe(&git_store, move |this, _, event, cx| {
@@ -2520,7 +2310,7 @@ impl Editor {
                     editor.refresh_sticky_headers(&editor.snapshot(window, cx), cx);
                 }
                 EditorEvent::Edited { .. } => {
-                    let vim_mode = vim_mode_setting::VimModeSetting::try_get(cx)
+                    let vim_mode = VimModeSetting::try_get(cx)
                         .map(|vim_mode| vim_mode.0)
                         .unwrap_or(false);
                     if !vim_mode {
@@ -2560,7 +2350,7 @@ impl Editor {
             editor
                 ._subscriptions
                 .push(
-                    cx.observe_new::<project::debugger::session::Session>(move |_, _, cx| {
+                    cx.observe_new::<crate::Session>(move |_, _, cx| {
                         let session_entity = cx.entity();
                         weak_editor
                             .update(cx, |editor, cx| {
@@ -4571,7 +4361,7 @@ impl Editor {
         let mut captured_task_variables = TaskVariables::default();
         for (capture_name, value) in tasks.extra_variables.clone() {
             captured_task_variables.insert(
-                task::VariableName::Custom(capture_name.into()),
+                VariableName::Custom(capture_name.into()),
                 value.clone(),
             );
         }
@@ -10228,7 +10018,7 @@ impl Editor {
             .and_then(|e| e.to_str())
             .map(|a| a.to_string()));
 
-        let vim_mode = vim_mode_setting::VimModeSetting::try_get(cx)
+        let vim_mode = VimModeSetting::try_get(cx)
             .map(|vim_mode| vim_mode.0)
             .unwrap_or(false);
 
@@ -11163,19 +10953,28 @@ pub trait CollaborationHub {
     fn user_names(&self, cx: &App) -> HashMap<u64, SharedString>;
 }
 
+// spec: CollaborationHub implementation stubbed — project no longer has collaborator methods
+static EMPTY_COLLABORATORS: std::sync::LazyLock<HashMap<PeerId, Collaborator>> =
+    std::sync::LazyLock::new(HashMap::new);
+static EMPTY_PARTICIPANT_INDICES: std::sync::LazyLock<HashMap<u64, ParticipantIndex>> =
+    std::sync::LazyLock::new(HashMap::new);
+
 impl CollaborationHub for Entity<Project> {
     fn collaborators<'a>(&self, cx: &'a App) -> &'a HashMap<PeerId, Collaborator> {
-        self.read(cx).collaborators()
+        let _ = (self, cx);
+        // Stub: project.collaborators() no longer exists
+        &EMPTY_COLLABORATORS
     }
 
     fn user_participant_indices<'a>(&self, cx: &'a App) -> &'a HashMap<u64, ParticipantIndex> {
-        self.read(cx).user_store().read(cx).participant_indices()
+        let _ = (self, cx);
+        // Stub: user_store.participant_indices() no longer exists
+        &EMPTY_PARTICIPANT_INDICES
     }
 
     fn user_names(&self, cx: &App) -> HashMap<u64, SharedString> {
-        let this = self.read(cx);
-        let user_ids = this.collaborators().values().map(|c| c.user_id);
-        this.user_store().read(cx).participant_names(user_ids, cx)
+        let _ = (self, cx);
+        HashMap::new()
     }
 }
 

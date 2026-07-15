@@ -69,10 +69,11 @@ use util::{
     rel_path::rel_path,
     test::{TextRangeMarker, marked_text_ranges, marked_text_ranges_by, sample_text},
 };
+use crate::stubs::{CollaboratorId, EditPrediction as EditPredictionExternal, TaskVariables, ViewId};
 use workspace::{
     CloseActiveItem, CloseAllItems, CloseOtherItems, MultiWorkspace, NavigationEntry, OpenOptions,
-    ToolbarItemLocation, ViewId,
-    item::{FollowEvent, FollowableItem, Item, ItemHandle, SaveOptions},
+    ToolbarItemLocation,
+    item::{Item, ItemHandle, SaveOptions},
     register_project_item,
 };
 
@@ -11580,7 +11581,7 @@ async fn test_undo_edit_prediction_scrolls_to_edit_pos(cx: &mut TestAppContext) 
 
     cx.update(|_, cx| {
         provider.update(cx, |provider, _| {
-            provider.set_edit_prediction(Some(edit_prediction_types::EditPrediction::Local {
+            provider.set_edit_prediction(Some(EditPredictionExternal::Local {
                 id: None,
                 edits: vec![(edit_position..edit_position, "X".into())],
                 cursor_position: None,
