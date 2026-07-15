@@ -157,6 +157,10 @@ impl DisableAiSettings {
     pub fn is_ai_disabled_for_buffer(_buffer: Option<&language::Buffer>, _cx: &App) -> bool {
         false
     }
+    // 来源: spec §2.1 — settings 访问需要 get_global 方法
+    pub fn get_global(_cx: &gpui::App) -> Self {
+        Self::default()
+    }
 }
 
 // ---------------------------------------------------------------------------

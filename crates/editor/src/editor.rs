@@ -1727,7 +1727,7 @@ impl Editor {
     }
 
     /// Stub: update visible edit prediction (edit prediction 模块已删除)
-    pub fn update_visible_edit_prediction(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+    pub fn update_visible_edit_prediction(&mut self, _cx: &mut Context<Self>) {
     }
 
     /// Stub: update edit prediction settings (edit prediction 模块已删除)
@@ -1811,7 +1811,7 @@ impl Editor {
     }
 
     /// Stub: refresh code actions for selection (code actions 模块已删除)
-    pub fn refresh_code_actions_for_selection(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+    pub fn refresh_code_actions_for_selection(&mut self, _cx: &mut Context<Self>) {
     }
 
     /// Stub: linked edits for selections (linked editing 模块已删除)
@@ -2178,7 +2178,7 @@ impl Editor {
                 .detach();
             cx.on_blur(&focus_handle, window, Self::handle_blur)
                 .detach();
-            cx.observe_pending_input(&focus_handle, window, Self::observe_pending_input)
+            cx.observe_pending_input(window, Self::observe_pending_input)
                 .detach();
         }
 
@@ -2189,9 +2189,15 @@ impl Editor {
                 None
             };
 
-        let bookmark_store = None;
+        let bookmark_store = match (&mode, project.as_ref()) {
+            (EditorMode::Full { .. }, Some(project)) => Some(project.read(cx).bookmark_store()),
+            _ => None,
+        };
 
-        let breakpoint_store = None;
+        let breakpoint_store = match (&mode, project.as_ref()) {
+            (EditorMode::Full { .. }, Some(project)) => Some(project.read(cx).breakpoint_store()),
+            _ => None,
+        };
 
         let mut code_action_providers = Vec::new();
         let mut load_uncommitted_diff = None;
@@ -2229,7 +2235,7 @@ impl Editor {
             snippet_stack: InvalidationStack::default(),
             select_syntax_node_history: SelectSyntaxNodeHistory::default(),
             ime_transaction: None,
-            active_diagnostics: ActiveDiagnostic::default(),
+            active_diagnostics: ActiveDiagnostic::None,
             show_inline_diagnostics: ProjectSettings::get_global(cx).diagnostics.inline.enabled,
             inline_diagnostics_update: Task::ready(()),
             inline_diagnostics: Vec::new(),
@@ -2547,7 +2553,12 @@ impl Editor {
                     }),
                 );
 
-            // sessions() skipped - type mismatch between project::Session and crate::Session
+            for session in dap_store.read(cx).sessions().cloned().collect::<Vec<_>>() {
+                editor
+                    ._subscriptions
+                    .push(cx.subscribe(&session, Self::on_debug_session_event));
+            }
+        }
 
         // skip adding the initial selection to selection history
         editor.selection_history.mode = SelectionHistoryMode::Skipping;
