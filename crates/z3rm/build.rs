@@ -46,7 +46,7 @@ fn main() {
         std::env::var("TARGET").unwrap()
     );
 
-    let git_sha = match std::env::var("ZERMINAL_COMMIT_SHA").ok() {
+    let git_sha = match std::env::var("Z3RM_COMMIT_SHA").ok() {
         Some(git_sha) => {
             // In deterministic build environments such as Nix, we inject the commit sha into the build script.
             Some(git_sha)
@@ -67,10 +67,10 @@ fn main() {
     };
 
     if let Some(git_sha) = git_sha {
-        println!("cargo:rustc-env=ZERMINAL_COMMIT_SHA={git_sha}");
+        println!("cargo:rustc-env=Z3RM_COMMIT_SHA={git_sha}");
 
         if let Some(build_identifier) = option_env!("GITHUB_RUN_NUMBER") {
-            println!("cargo:rustc-env=ZERMINAL_BUILD_ID={build_identifier}");
+            println!("cargo:rustc-env=Z3RM_BUILD_ID={build_identifier}");
         }
 
         if let Ok(build_profile) = std::env::var("PROFILE")

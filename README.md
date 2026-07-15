@@ -1,4 +1,4 @@
-# Zerminal
+# Z3rm
 
 A high-performance GPU-rendered terminal with a built-in multiplexer, read-only file viewer with diff review, and QuickJS extension system.
 
@@ -21,4 +21,4 @@ Forked from [Zed](https://github.com/zed-industries/zed). All editor, AI, and co
 
 ## License
 
-Zerminal source code is licensed under GPL-3.0-or-later (inherited from Zed) with Apache-2.0 components where marked. New zerminal crates are Apache-2.0.
+Z3rm source code is licensed under GPL-3.0-or-later (inherited from Zed) with Apache-2.0 components where marked. New z3rm crates are Apache-2.0.

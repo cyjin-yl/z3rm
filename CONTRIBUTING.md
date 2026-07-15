@@ -1,14 +1,14 @@
-# Contributing to Zerminal
+# Contributing to Z3rm
 
-Thank you for helping make Zerminal better!
+Thank you for helping make Z3rm better!
 
-All activity in zerminal forums and repositories is subject to our Code of Conduct.
+All activity in z3rm forums and repositories is subject to our Code of Conduct.
 Contributors should sign a Contributor License Agreement before substantial
 contributions are merged.
 
 ## Contribution ideas
 
-Zerminal is a focused fork of Zed, oriented around a GPU-rendered terminal,
+Z3rm is a focused fork of Zed, oriented around a GPU-rendered terminal,
 built-in multiplexer, read-only file/diff viewer, and QuickJS extensions. We
 welcome contributions that fit that scope.
 
@@ -26,7 +26,7 @@ points.
 
 ## Sending changes
 
-The zerminal culture values working code and focused conversations over long
+The z3rm culture values working code and focused conversations over long
 discussion threads.
 
 The best way to propose a change (excluding new features) is to send a pull
@@ -111,7 +111,7 @@ When your changes affect UI, consult this checklist:
 
 **Consistency**
 
-- Does it match zerminal's design language (spacing, typography, icons)?
+- Does it match z3rm's design language (spacing, typography, icons)?
 - Are terminology, labels, and tone consistent?
 - Are interactions consistent (tabs, modals, errors)?
 
@@ -134,9 +134,9 @@ When your changes affect UI, consult this checklist:
 - Is there an intuitive way to undo/redo actions?
 - Are power features discoverable but not intrusive?
 
-## Bird's-eye view of Zerminal
+## Bird's-eye view of Z3rm
 
-Zerminal is made up of several smaller crates. Here are the ones you are most
+Z3rm is made up of several smaller crates. Here are the ones you are most
 likely to interact with:
 
 - [`gpui`](/crates/gpui) is the GPU-accelerated UI framework. **Start here if you
@@ -150,9 +150,9 @@ likely to interact with:
 - [`theme`](/crates/theme) defines the theme system.
 - [`ui`](/crates/ui) is the component library.
 - [`cli`](/crates/cli) is the command-line launcher.
-- [`zerminal`](/crates/zerminal) is the main entry crate that wires everything
+- [`z3rm`](/crates/z3rm) is the main entry crate that wires everything
   together.
 
-## Packaging Zerminal
+## Packaging Z3rm
 
 See the development docs for platform-specific packaging notes.

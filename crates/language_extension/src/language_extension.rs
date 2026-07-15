@@ -11,7 +11,7 @@ use project::Project;
 
 #[derive(Clone)]
 pub enum LspAccess {
-    /// project::LspStore 已删除，zerminal 使用 ViaWorkspaces。
+    /// project::LspStore 已删除，z3rm 使用 ViaWorkspaces。
     ViaWorkspaces(Arc<dyn Fn(&mut App) -> Result<Vec<Entity<Project>>> + Send + Sync + 'static>),
     Noop,
 }

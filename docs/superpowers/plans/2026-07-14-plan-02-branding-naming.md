@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Rename all user-visible "Zed" references to "Zerminal": binary name, APP_NAME, config/data directory names, environment variable prefixes, README.
+**Goal:** Rename all user-visible "Zed" references to "Z3rm": binary name, APP_NAME, config/data directory names, environment variable prefixes, README.
 
 **Architecture:** Layer 1 only — user-visible names. Internal `mod zed` / `use zed::` module names are Layer 2 (gradual, post-migration). This preserves cherry-pick compatibility.
 
@@ -13,37 +13,37 @@
 ### Task 1: Rename main entry crate
 
 **Files:**
-- Rename: `crates/zed/` → `crates/zerminal/`
+- Rename: `crates/zed/` → `crates/z3rm/`
 - Modify: `Cargo.toml` (workspace root)
-- Modify: `crates/zerminal/Cargo.toml`
+- Modify: `crates/z3rm/Cargo.toml`
 
 - [ ] **Step 1: Rename the crate directory**
 
 ```bash
-git mv crates/zed crates/zerminal
+git mv crates/zed crates/z3rm
 ```
 
 - [ ] **Step 2: Update crate Cargo.toml**
 
-In `crates/zerminal/Cargo.toml`, change:
+In `crates/z3rm/Cargo.toml`, change:
 ```toml
 [package]
-name = "zerminal"
+name = "z3rm"
 ```
 
 Also update `[lib]` path if needed and the `[[bin]]` section:
 ```toml
 [[bin]]
-name = "zerminal"
+name = "z3rm"
 path = "src/main.rs"
 ```
 
 - [ ] **Step 3: Update workspace Cargo.toml**
 
 In root `Cargo.toml`:
-- Change `"crates/zed"` to `"crates/zerminal"` in `members`
-- Change `default-members = ["crates/zed"]` to `default-members = ["crates/zerminal"]`
-- Change `zed = { path = "crates/zed" }` to `zerminal = { path = "crates/zerminal" }` in `[workspace.dependencies]`
+- Change `"crates/zed"` to `"crates/z3rm"` in `members`
+- Change `default-members = ["crates/zed"]` to `default-members = ["crates/z3rm"]`
+- Change `zed = { path = "crates/zed" }` to `z3rm = { path = "crates/z3rm" }` in `[workspace.dependencies]`
 
 - [ ] **Step 4: Update all workspace references to the zed crate**
 
@@ -51,13 +51,13 @@ Search for all `zed = { path = "crates/zed" }` or `path = "../zed"` references a
 
 Run: `grep -r 'crates/zed' --include='Cargo.toml' .` to find all references.
 
-Replace each with `crates/zerminal`.
+Replace each with `crates/z3rm`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add -A
-git commit -m "Rename zed crate to zerminal"
+git commit -m "Rename zed crate to z3rm"
 ```
 
 ### Task 2: Update paths crate
@@ -72,23 +72,23 @@ Run: `grep -n 'APP_NAME' crates/paths/src/paths.rs`
 - [ ] **Step 2: Update constants**
 
 ```rust
-pub const APP_NAME: &str = "Zerminal";
-pub const APP_NAME_LOWERCASE: &str = "zerminal";
+pub const APP_NAME: &str = "Z3rm";
+pub const APP_NAME_LOWERCASE: &str = "z3rm";
 ```
 
 - [ ] **Step 3: Verify the const assertion in main.rs still holds**
 
-The assertion checks `APP_NAME_LOWERCASE` matches `CARGO_BIN_NAME`. After rename, both should be `"zerminal"`.
+The assertion checks `APP_NAME_LOWERCASE` matches `CARGO_BIN_NAME`. After rename, both should be `"z3rm"`.
 
-Run: `grep -n 'APP_NAME_LOWERCASE' crates/zerminal/src/main.rs`
+Run: `grep -n 'APP_NAME_LOWERCASE' crates/z3rm/src/main.rs`
 
-The assertion should now pass because both are `"zerminal"`.
+The assertion should now pass because both are `"z3rm"`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add crates/paths/src/paths.rs
-git commit -m "Update APP_NAME to Zerminal"
+git commit -m "Update APP_NAME to Z3rm"
 ```
 
 ### Task 3: Update environment variable prefixes
@@ -101,9 +101,9 @@ git commit -m "Update APP_NAME to Zerminal"
 
 Run: `grep -rn 'ZED_' --include='*.rs' crates/ | grep -v test`
 
-- [ ] **Step 2: Rename each ZED_ prefix to ZERMINAL_**
+- [ ] **Step 2: Rename each ZED_ prefix to Z3RM_**
 
-For each occurrence, change `ZED_` to `ZERMINAL_`. Use `#[zerminal_todo("broken-ref", "rename ZED_ env var")]` on any that have complex migration dependencies.
+For each occurrence, change `ZED_` to `Z3RM_`. Use `#[z3rm_todo("broken-ref", "rename ZED_ env var")]` on any that have complex migration dependencies.
 
 Note: The `zed_env_vars` crate itself will be renamed later (Layer 2). For now, just change the env var string constants inside it.
 
@@ -111,7 +111,7 @@ Note: The `zed_env_vars` crate itself will be renamed later (Layer 2). For now, 
 
 ```bash
 git add -A
-git commit -m "Rename ZED_ environment variables to ZERMINAL_"
+git commit -m "Rename ZED_ environment variables to Z3RM_"
 ```
 
 ### Task 4: Rewrite README
@@ -122,7 +122,7 @@ git commit -m "Rename ZED_ environment variables to ZERMINAL_"
 - [ ] **Step 1: Write new README**
 
 ```markdown
-# Zerminal
+# Z3rm
 
 A high-performance GPU-rendered terminal with a built-in multiplexer, read-only file viewer with diff review, and QuickJS extension system.
 
@@ -145,14 +145,14 @@ Forked from [Zed](https://github.com/zed-industries/zed). All editor, AI, and co
 
 ## License
 
-Zerminal source code is licensed under GPL-3.0-or-later (inherited from Zed) with Apache-2.0 components where marked. New zerminal crates are Apache-2.0.
+Z3rm source code is licensed under GPL-3.0-or-later (inherited from Zed) with Apache-2.0 components where marked. New z3rm crates are Apache-2.0.
 ```
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add README.md
-git commit -m "Rewrite README for zerminal"
+git commit -m "Rewrite README for z3rm"
 ```
 
 ### Task 5: Update CONTRIBUTING.md
@@ -162,13 +162,13 @@ git commit -m "Rewrite README for zerminal"
 
 - [ ] **Step 1: Rewrite**
 
-Write a new CONTRIBUTING.md for zerminal. Remove all Zed-specific content (hiring, Zed cloud, Zed discussion links). Keep the general contribution guidelines (code style, PR format, testing).
+Write a new CONTRIBUTING.md for z3rm. Remove all Zed-specific content (hiring, Zed cloud, Zed discussion links). Keep the general contribution guidelines (code style, PR format, testing).
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add CONTRIBUTING.md
-git commit -m "Rewrite CONTRIBUTING.md for zerminal"
+git commit -m "Rewrite CONTRIBUTING.md for z3rm"
 ```
 
 ### Task 6: Update bundle identifier and platform metadata
@@ -183,7 +183,7 @@ Run: `grep -rn 'dev.zed\|dev\.zed\|Zed Industries' --include='*.plist' --include
 
 - [ ] **Step 2: Update each**
 
-Change `dev.zed.Zed` to `dev.zerminal.Zerminal`. Change `Zed Industries` to the appropriate entity.
+Change `dev.zed.Zed` to `dev.z3rm.Z3rm`. Change `Zed Industries` to the appropriate entity.
 
 - [ ] **Step 3: Commit**
 

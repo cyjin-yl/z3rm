@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Rewrite AGENTS.md for zerminal (preserve GPUI guidelines, delete Zed editor/agent specifics, add mux/terminal/extension guidelines). Create CLAUDE.md as symlink to AGENTS.md. Update .rules.
+**Goal:** Rewrite AGENTS.md for z3rm (preserve GPUI guidelines, delete Zed editor/agent specifics, add mux/terminal/extension guidelines). Create CLAUDE.md as symlink to AGENTS.md. Update .rules.
 
 **Architecture:** AGENTS.md is the single source of truth for agent guidelines. CLAUDE.md is a symlink. .rules contains high-signal traps only.
 
@@ -27,7 +27,7 @@ The new AGENTS.md must delete:
 
 The new AGENTS.md must add:
 - Mux architecture guidelines (server-canonical, grid sync, generation counter)
-- `#[zerminal_todo]` macro usage
+- `#[z3rm_todo]` macro usage
 - Extension system guidelines (QuickJS, manifest format, runtime.side)
 - Shadow snapshot constraints (single-writer thread, SeqNo ordering, WAL discipline)
 - Two-pass migration process reference
@@ -42,7 +42,7 @@ ln -sf AGENTS.md CLAUDE.md
 
 ```bash
 git add AGENTS.md CLAUDE.md
-git commit -m "Rewrite AGENTS.md for zerminal, symlink CLAUDE.md"
+git commit -m "Rewrite AGENTS.md for z3rm, symlink CLAUDE.md"
 ```
 
 ### Task 2: Update .rules
@@ -63,7 +63,7 @@ Delete:
 - PR template specifics
 
 Add:
-- `#[zerminal_todo]` usage rule: every hole must be marked, fix = delete attribute
+- `#[z3rm_todo]` usage rule: every hole must be marked, fix = delete attribute
 - Server-canonical rule: client never parses PTY bytes, never holds layout authority
 - Shadow snapshot rule: WAL append before any file write, SeqNo is monotonic
 - Extension rule: core commands must work without extension host
@@ -73,7 +73,7 @@ Add:
 
 ```bash
 git add .rules
-git commit -m "Update .rules for zerminal"
+git commit -m "Update .rules for z3rm"
 ```
 
 ### Task 3: Update docs/.rules
@@ -81,15 +81,15 @@ git commit -m "Update .rules for zerminal"
 **Files:**
 - Modify: `docs/.rules`
 
-- [ ] **Step 1: Update docs rules for zerminal documentation conventions**
+- [ ] **Step 1: Update docs rules for z3rm documentation conventions**
 
-Remove any Zed-specific documentation rules. Add zerminal documentation structure rules.
+Remove any Zed-specific documentation rules. Add z3rm documentation structure rules.
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add docs/.rules
-git commit -m "Update docs/.rules for zerminal"
+git commit -m "Update docs/.rules for z3rm"
 ```
 
 ### Task 4: Remove Zed-specific factory prompts
@@ -100,7 +100,7 @@ git commit -m "Update docs/.rules for zerminal"
 
 - [ ] **Step 1: Remove Zed crash investigation prompts**
 
-These reference Zed's Sentry integration which is not applicable to zerminal.
+These reference Zed's Sentry integration which is not applicable to z3rm.
 
 ```bash
 rm -rf .factory/prompts/crash

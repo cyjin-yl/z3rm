@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Pass 1 scans the entire codebase and marks every broken reference with `#[zerminal_todo]`. Pass 2 fixes all holes category by category until count = 0.
+**Goal:** Pass 1 scans the entire codebase and marks every broken reference with `#[z3rm_todo]`. Pass 2 fixes all holes category by category until count = 0.
 
 **These plans are execution-time plans** — the specific holes, file paths, and fixes depend on what Pass 1's static analysis discovers. They cannot be pre-written with exact code. Instead, they define the process and acceptance criteria.
 
@@ -15,7 +15,7 @@
 ### Process
 
 1. **Scan scope:** Rust source (`.rs`), `Cargo.toml` (feature graph + deps), `build.rs`, CI workflows, keymaps/assets/settings schema, env var names, bundle IDs
-2. **For each broken reference:** add `#[zerminal_todo("category", "description")]` to the enclosing item (function, struct, module, use statement)
+2. **For each broken reference:** add `#[z3rm_todo("category", "description")]` to the enclosing item (function, struct, module, use statement)
 3. **Categories:**
    - `removed-crate`: references a deleted crate's path/module
    - `broken-ref`: references a pruned module/function within a retained crate
@@ -25,34 +25,34 @@
 ### Execution Method
 
 Dispatch subagents (one at a time due to concurrency limit) to scan each remaining crate. Each subagent:
-1. Runs `cargo check --features zerminal-migration -p <crate> 2>&1` 
+1. Runs `cargo check --features z3rm-migration -p <crate> 2>&1` 
 2. Parses compiler errors for unresolved imports, missing crates, etc.
-3. Adds `#[zerminal_todo]` markers at each error site
+3. Adds `#[z3rm_todo]` markers at each error site
 4. Reports: crate name, hole count, hole list
 
 ### Acceptance Criteria
 
-- `cargo check --features zerminal-migration` produces zero compiler errors (all holes are marked, code compiles with marks)
+- `cargo check --features z3rm-migration` produces zero compiler errors (all holes are marked, code compiles with marks)
 - Hole count report shows total count > 0 with per-category breakdown
-- Every hole has a descriptive `#[zerminal_todo]` with category and description
+- Every hole has a descriptive `#[z3rm_todo]` with category and description
 
 ---
 
 ## Plan 6: Pass 2 — Fix `removed-crate` Holes
 
-**Goal:** Fix every `removed-crate` hole. Fixing = deleting the `#[zerminal_todo]` attribute AND resolving the reference.
+**Goal:** Fix every `removed-crate` hole. Fixing = deleting the `#[z3rm_todo]` attribute AND resolving the reference.
 
 ### Fix Strategies (per reference type)
 
 - **`use deleted_crate::...`** → delete the import, delete or stub dependent code
-- **`DeletedType` in function signatures** → replace with `#[zerminal_todo]` stub or remove the function
+- **`DeletedType` in function signatures** → replace with `#[z3rm_todo]` stub or remove the function
 - **Feature flag conditional** → remove the `#[cfg(feature = "...")]` branch entirely
 - **Trait impl for deleted type** → delete the impl
 
 ### Acceptance Criteria
 
 - `removed-crate` category count = 0
-- `cargo check --features zerminal-migration` still compiles
+- `cargo check --features z3rm-migration` still compiles
 
 ---
 
@@ -73,7 +73,7 @@ Dispatch subagents (one at a time due to concurrency limit) to scan each remaini
 ### Acceptance Criteria
 
 - `broken-ref` category count = 0
-- `cargo check --features zerminal-migration` still compiles
+- `cargo check --features z3rm-migration` still compiles
 
 ---
 
@@ -84,6 +84,6 @@ Dispatch subagents (one at a time due to concurrency limit) to scan each remaini
 ### Acceptance Criteria
 
 - Total hole count = 0
-- `cargo check --features zerminal-migration` compiles cleanly with zero holes
+- `cargo check --features z3rm-migration` compiles cleanly with zero holes
 - `cargo check` (WITHOUT feature) compiles cleanly (no `compile_error!` triggers)
 - Migration complete. Proceed to new crate implementation.

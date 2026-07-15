@@ -1,12 +1,12 @@
 [package]
-name = "zerminal_macros_types"
+name = "z3rm_macros_types"
 version = "0.1.0"
 edition = "2024"
 publish = false
 license = "Apache-2.0"
 
 [lib]
-path = "src/zerminal_macros_types.rs"
+path = "src/z3rm_macros_types.rs"
 
 [dependencies]
 inventory = "0.3"

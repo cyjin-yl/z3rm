@@ -268,7 +268,7 @@ impl DockerExecConnection {
             ReleaseChannel::Nightly => Ok(None),
             ReleaseChannel::Dev => {
                 anyhow::bail!(
-                    "ZERMINAL_BUILD_REMOTE_SERVER is not set and no remote server exists at ({:?})",
+                    "Z3RM_BUILD_REMOTE_SERVER is not set and no remote server exists at ({:?})",
                     dst_path
                 )
             }
@@ -675,7 +675,7 @@ impl RemoteConnection for DockerExecConnection {
             docker_args.push("-e".to_string());
             docker_args.push(format!("{k}={v}"));
         }
-        for env_var in ["RUST_LOG", "RUST_BACKTRACE", "ZERMINAL_GENERATE_MINIDUMPS"] {
+        for env_var in ["RUST_LOG", "RUST_BACKTRACE", "Z3RM_GENERATE_MINIDUMPS"] {
             if let Some(value) = std::env::var(env_var).ok() {
                 docker_args.push("-e".to_string());
                 docker_args.push(format!("{env_var}={value}"));

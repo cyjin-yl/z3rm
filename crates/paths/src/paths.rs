@@ -1,4 +1,4 @@
-//! Paths to locations used by Zerminal.
+//! Paths to locations used by Z3rm.
 
 use std::env;
 use std::path::{Path, PathBuf};
@@ -15,8 +15,8 @@ pub const EDITORCONFIG_NAME: &str = ".editorconfig";
 /// and state directory paths.
 ///
 /// Forks should change this to avoid colliding with Zed's user data.
-/// 本 fork 已按 spec §8.4 改为 Zerminal，使配置/数据目录与 Zed 分离。
-pub const APP_NAME: &str = "Zerminal";
+/// 本 fork 已按 spec §8.4 改为 Z3rm，使配置/数据目录与 Zed 分离。
+pub const APP_NAME: &str = "Z3rm";
 
 /// Lowercased form of [`APP_NAME`], for use in XDG-style paths on
 /// Linux/FreeBSD and the macOS `~/.config` fallback.
@@ -54,14 +54,14 @@ static CUSTOM_DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// The resolved data directory, combining custom override or platform defaults.
 /// This is set once and cached for subsequent calls.
-/// On macOS, this is `~/Library/Application Support/Zerminal`.
-/// On Linux/FreeBSD, this is `$XDG_DATA_HOME/zerminal`.
-/// On Windows, this is `%LOCALAPPDATA%\Zerminal`.
+/// On macOS, this is `~/Library/Application Support/Z3rm`.
+/// On Linux/FreeBSD, this is `$XDG_DATA_HOME/z3rm`.
+/// On Windows, this is `%LOCALAPPDATA%\Z3rm`.
 static CURRENT_DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// The resolved config directory, combining custom override or platform defaults.
 /// This is set once and cached for subsequent calls.
-/// On macOS, this is `~/.config/zerminal`.
+/// On macOS, this is `~/.config/z3rm`.
 /// On Linux/FreeBSD, this is `$XDG_CONFIG_HOME/zed`.
 /// On Windows, this is `%APPDATA%\Zed`.
 static CONFIG_DIR: OnceLock<PathBuf> = OnceLock::new();

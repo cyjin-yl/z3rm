@@ -51,7 +51,7 @@ You can install a local build on your machine with:
 ./script/install-linux
 ```
 
-This builds `zed` and the `cli` in release mode, installs the binary at `~/.local/bin/zerminal`, and installs `.desktop` files to `~/.local/share`.
+This builds `zed` and the `cli` in release mode, installs the binary at `~/.local/bin/z3rm`, and installs `.desktop` files to `~/.local/share`.
 
 > **_Note_**: If you encounter linker errors similar to the following:
 >
@@ -91,12 +91,12 @@ This section is for distribution maintainers packaging Zed.
 Zed has two main binaries:
 
 - You will need to build `crates/cli` and make its binary available in `$PATH` with the name `zed`.
-- You will need to build `crates/zerminal` and put it at `$PATH/to/cli/../../libexec/zerminal`. For example, if you are going to put the cli at `~/.local/bin/zerminal` put zerminal at `~/.local/libexec/zerminal`. As some linux distributions (notably Arch) discourage the use of `libexec`, you can also put this binary at `$PATH/to/cli/../../lib/zerminal/zerminal` (e.g. `~/.local/lib/zerminal/zerminal`) instead.
-- If you are going to provide a `.desktop` file you can find a template in `crates/zerminal/resources/zerminal.desktop.in`, and use `envsubst` to populate it with the values required. This file should also be renamed to `$APP_ID.desktop` so that the file [follows the FreeDesktop standards](https://github.com/zed-industries/zed/issues/12707#issuecomment-2168742761). You should also make this desktop file executable (`chmod 755`).
+- You will need to build `crates/z3rm` and put it at `$PATH/to/cli/../../libexec/z3rm`. For example, if you are going to put the cli at `~/.local/bin/z3rm` put z3rm at `~/.local/libexec/z3rm`. As some linux distributions (notably Arch) discourage the use of `libexec`, you can also put this binary at `$PATH/to/cli/../../lib/z3rm/z3rm` (e.g. `~/.local/lib/z3rm/z3rm`) instead.
+- If you are going to provide a `.desktop` file you can find a template in `crates/z3rm/resources/z3rm.desktop.in`, and use `envsubst` to populate it with the values required. This file should also be renamed to `$APP_ID.desktop` so that the file [follows the FreeDesktop standards](https://github.com/zed-industries/zed/issues/12707#issuecomment-2168742761). You should also make this desktop file executable (`chmod 755`).
 - You will need to ensure that the necessary libraries are installed. You can get the current list by [inspecting the built binary](https://github.com/zed-industries/zed/blob/935cf542aebf55122ce6ed1c91d0fe8711970c82/script/bundle-linux#L65-L67) on your system.
 - For an example of a complete build script, see [script/bundle-linux](https://github.com/zed-industries/zed/blob/935cf542aebf55122ce6ed1c91d0fe8711970c82/script/bundle-linux).
-- You can disable Zed's auto updates and provide instructions for users who try to update Zed manually by building (or running) Zerminal with the environment variable `ZERMINAL_UPDATE_EXPLANATION`. For example: `ZERMINAL_UPDATE_EXPLANATION="Please use flatpak to update zerminal."`.
-- Make sure to update the contents of the `crates/zerminal/RELEASE_CHANNEL` file to 'nightly', 'preview', or 'stable', with no newline. This will cause Zed to use the credentials manager to remember a user's login.
+- You can disable Zed's auto updates and provide instructions for users who try to update Zed manually by building (or running) Z3rm with the environment variable `Z3RM_UPDATE_EXPLANATION`. For example: `Z3RM_UPDATE_EXPLANATION="Please use flatpak to update z3rm."`.
+- Make sure to update the contents of the `crates/z3rm/RELEASE_CHANNEL` file to 'nightly', 'preview', or 'stable', with no newline. This will cause Zed to use the credentials manager to remember a user's login.
 
 ### Other things to note
 

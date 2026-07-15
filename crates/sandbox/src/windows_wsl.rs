@@ -71,7 +71,7 @@ const HELPER_RESULT_PREFIX: &str = "zed-wsl-helper:";
 /// a version/channel string can't inject shell.
 ///
 /// Unlike a normal Linux install, this deliberately does **not** consult the WSL
-/// `PATH`: inside WSL `zerminal` typically resolves to the *Windows* `zerminal.exe` via
+/// `PATH`: inside WSL `z3rm` typically resolves to the *Windows* `z3rm.exe` via
 /// interop, which is not a Linux binary and so can't be the helper. It also does
 /// not use the public install script (`install.sh`), which puts `zed` on the
 /// user's `PATH` and writes desktop entries we don't want. Instead the Windows

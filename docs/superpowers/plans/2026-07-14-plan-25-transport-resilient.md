@@ -189,7 +189,7 @@ Add `Udp(UdpResilientTransport)` variant to `MuxTransport`. Transport selection 
 1. SSH to remote host
 2. Spawn remote mux_server --udp
 3. Server generates AES-256 key, binds UDP port
-4. Server prints "ZERMINAL_UDP <port> <base64-key>" over SSH stdout
+4. Server prints "Z3RM_UDP <port> <base64-key>" over SSH stdout
 5. SSH channel closes
 6. Client opens UDP to server:port with received key
 ```

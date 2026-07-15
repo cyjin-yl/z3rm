@@ -27,7 +27,7 @@ impl OpenUrlModal {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let editor = cx.new(|cx| {
             let mut editor = Editor::single_line(window, cx);
-            editor.set_placeholder_text("zerminal://...", window, cx);
+            editor.set_placeholder_text("z3rm://...", window, cx);
             editor
         });
 
@@ -53,8 +53,8 @@ impl OpenUrlModal {
             return;
         }
 
-        // Handle zerminal:// URLs internally.
-        if url.starts_with("zerminal://") || url.starts_with("zerminal-cli://") {
+        // Handle z3rm:// URLs internally.
+        if url.starts_with("z3rm://") || url.starts_with("z3rm-cli://") {
             OpenListener::global(cx).open(RawOpenRequest {
                 urls: vec![url],
                 ..Default::default()

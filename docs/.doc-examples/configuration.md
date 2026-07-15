@@ -116,9 +116,9 @@ Changes made in the Settings Editor apply across all channels.
 Zed supports deep links that open specific settings directly:
 
 ```
-zerminal://settings/theme
-zerminal://settings/vim_mode
-zerminal://settings/buffer_font_size
+z3rm://settings/theme
+z3rm://settings/vim_mode
+z3rm://settings/buffer_font_size
 ```
 
 These are useful for sharing configuration tips or linking from documentation.

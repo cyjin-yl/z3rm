@@ -133,7 +133,7 @@ Other entities can then register a callback to handle these events by doing `cx.
 
 # Mux architecture guidelines
 
-zerminal uses a server-canonical multiplexer model. The GUI client renders state; `mux_server` owns all authority.
+z3rm uses a server-canonical multiplexer model. The GUI client renders state; `mux_server` owns all authority.
 
 * **Server-canonical terminal state.** `mux_server` owns PTY fds, runs the alacritty emulator, parses DEC escape sequences, and holds scrollback. The GUI client never parses PTY bytes and never holds layout authority.（来源：spec §3.1, §15.1）
 * **One data path.** Local and remote sessions use the same framed binary protocol over a socket. There is no shared-memory fast path and no dual parsing.（来源：spec §3.1）
@@ -147,22 +147,22 @@ zerminal uses a server-canonical multiplexer model. The GUI client renders state
 
 # Migration tracking
 
-zerminal is migrating from a Zed fork. Migration holes are marked explicitly and fixed by removing the marker.
+z3rm is migrating from a Zed fork. Migration holes are marked explicitly and fixed by removing the marker.
 
-* **Mark holes with `#[zerminal_todo]`.** Use this attribute on functions, modules, or items that reference deleted crates, broken references, stubs, or disabled features.（来源：spec §8.1）
-* **Fixing a hole means deleting the attribute.** There is no separate cleanup step. When the underlying issue is resolved, remove `#[zerminal_todo]`.
+* **Mark holes with `#[z3rm_todo]`.** Use this attribute on functions, modules, or items that reference deleted crates, broken references, stubs, or disabled features.（来源：spec §8.1）
+* **Fixing a hole means deleting the attribute.** There is no separate cleanup step. When the underlying issue is resolved, remove `#[z3rm_todo]`.
 * **Categories.** Use exactly one of:
   - `removed-crate` — code depends on a crate that has been deleted.
   - `broken-ref` — a type/function reference is broken because its source was pruned.
   - `stub` — a placeholder implementation that needs real logic.
   - `disabled-feature` — functionality temporarily disabled during migration.
-* **Feature flag behavior.** Without the `zerminal-migration` feature, `#[zerminal_todo]` expands to `compile_error!`. With `--features zerminal-migration` it registers the hole and compilation succeeds.（来源：spec §8.1）
-* **Two-pass discipline.** Pass 1 scans and marks holes; Pass 2 fixes them. Verify milestones with `cargo check --features zerminal-migration`.（来源：spec §8.2）
+* **Feature flag behavior.** Without the `z3rm-migration` feature, `#[z3rm_todo]` expands to `compile_error!`. With `--features z3rm-migration` it registers the hole and compilation succeeds.（来源：spec §8.1）
+* **Two-pass discipline.** Pass 1 scans and marks holes; Pass 2 fixes them. Verify milestones with `cargo check --features z3rm-migration`.（来源：spec §8.2）
 * **`.rs.old` files must never be committed.** They are local temporary artifacts. Git history is the official backup; delete `.rs.old` files before any commit.（来源：spec §8.2）
 
 # Extension system
 
-zerminal's UI chrome is implemented as QuickJS extensions. Native GPUI chrome is the Day 0 baseline, not a fallback.
+z3rm's UI chrome is implemented as QuickJS extensions. Native GPUI chrome is the Day 0 baseline, not a fallback.
 
 * **QuickJS runtime on a dedicated OS thread.** The extension host must not run on the GPUI render thread. Extensions communicate with the UI via async channels; a hung extension freezes only itself.（来源：spec §5.2）
 * **Extensions declare their runtime side.** In `extension.toml`, set `[runtime] side = "server" | "client" | "both"`. Server-side extensions run on the remote host and access remote PTY/grid/filesystem; client-side extensions render chrome via GPUI.（来源：spec §16.8）
@@ -182,9 +182,9 @@ Shadow snapshot provides crash-safe, fine-grained filesystem versioning independ
 
 # Build guidelines
 
-* During active migration, use `cargo check --features zerminal-migration`. This lets `#[zerminal_todo]` holes compile so you can verify intermediate states.
+* During active migration, use `cargo check --features z3rm-migration`. This lets `#[z3rm_todo]` holes compile so you can verify intermediate states.
 * For final verification, use `cargo check` with no migration feature. Unfixed holes become `compile_error!`, so a clean check means migration is complete.
-* Do not use `./script/clippy` until the migration scripts are updated for zerminal.
+* Do not use `./script/clippy` until the migration scripts are updated for z3rm.
 
 # Pull request hygiene
 

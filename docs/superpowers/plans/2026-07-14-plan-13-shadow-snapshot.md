@@ -247,7 +247,7 @@ Single subscription — no double-watching.
 
 - [ ] **Step 2: Implement ignore filter**
 
-Default list + `.zerminalignore` + `.gitignore` from worktree.
+Default list + `.z3rmignore` + `.gitignore` from worktree.
 
 - [ ] **Step 3: Implement binary magic detection**
 

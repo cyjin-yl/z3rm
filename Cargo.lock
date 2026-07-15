@@ -16874,7 +16874,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524"
 
 [[package]]
-name = "zerminal"
+name = "z3rm"
 version = "1.12.0"
 dependencies = [
  "anyhow",
@@ -16968,26 +16968,26 @@ dependencies = [
  "workspace",
  "zed_actions",
  "zed_env_vars",
- "zerminal_macros",
- "zerminal_macros_types",
+ "z3rm_macros",
+ "z3rm_macros_types",
  "zlog",
  "zlog_settings",
  "ztracing",
 ]
 
 [[package]]
-name = "zerminal_macros"
+name = "z3rm_macros"
 version = "0.1.0"
 dependencies = [
  "inventory",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
- "zerminal_macros_types",
+ "z3rm_macros_types",
 ]
 
 [[package]]
-name = "zerminal_macros_types"
+name = "z3rm_macros_types"
 version = "0.1.0"
 dependencies = [
  "inventory",

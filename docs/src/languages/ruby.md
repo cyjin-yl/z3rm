@@ -313,15 +313,15 @@ To run tests in your Ruby project, you can set up custom tasks in your local `.z
 ```json [tasks]
 [
   {
-    "label": "test $ZERMINAL_RELATIVE_FILE -n /$ZERMINAL_CUSTOM_RUBY_TEST_NAME/",
+    "label": "test $Z3RM_RELATIVE_FILE -n /$Z3RM_CUSTOM_RUBY_TEST_NAME/",
     "command": "bin/rails",
     "args": [
       "test",
-      "$ZERMINAL_RELATIVE_FILE",
+      "$Z3RM_RELATIVE_FILE",
       "-n",
-      "\"$ZERMINAL_CUSTOM_RUBY_TEST_NAME\""
+      "\"$Z3RM_CUSTOM_RUBY_TEST_NAME\""
     ],
-    "cwd": "$ZERMINAL_WORKTREE_ROOT",
+    "cwd": "$Z3RM_WORKTREE_ROOT",
     "tags": ["ruby-test"]
   }
 ]
@@ -329,22 +329,22 @@ To run tests in your Ruby project, you can set up custom tasks in your local `.z
 
 ### Minitest
 
-Plain minitest does not support running tests by line number, only by name, so we need to use `$ZERMINAL_CUSTOM_RUBY_TEST_NAME` instead:
+Plain minitest does not support running tests by line number, only by name, so we need to use `$Z3RM_CUSTOM_RUBY_TEST_NAME` instead:
 
 ```json [tasks]
 [
   {
-    "label": "-Itest $ZERMINAL_RELATIVE_FILE -n /$ZERMINAL_CUSTOM_RUBY_TEST_NAME/",
+    "label": "-Itest $Z3RM_RELATIVE_FILE -n /$Z3RM_CUSTOM_RUBY_TEST_NAME/",
     "command": "bundle",
     "args": [
       "exec",
       "ruby",
       "-Itest",
-      "$ZERMINAL_RELATIVE_FILE",
+      "$Z3RM_RELATIVE_FILE",
       "-n",
-      "\"$ZERMINAL_CUSTOM_RUBY_TEST_NAME\""
+      "\"$Z3RM_CUSTOM_RUBY_TEST_NAME\""
     ],
-    "cwd": "$ZERMINAL_WORKTREE_ROOT",
+    "cwd": "$Z3RM_WORKTREE_ROOT",
     "tags": ["ruby-test"]
   }
 ]
@@ -355,10 +355,10 @@ Plain minitest does not support running tests by line number, only by name, so w
 ```json [tasks]
 [
   {
-    "label": "test $ZERMINAL_RELATIVE_FILE:$ZERMINAL_ROW",
+    "label": "test $Z3RM_RELATIVE_FILE:$Z3RM_ROW",
     "command": "bundle",
-    "args": ["exec", "rspec", "\"$ZERMINAL_RELATIVE_FILE:$ZERMINAL_ROW\""],
-    "cwd": "$ZERMINAL_WORKTREE_ROOT",
+    "args": ["exec", "rspec", "\"$Z3RM_RELATIVE_FILE:$Z3RM_ROW\""],
+    "cwd": "$Z3RM_WORKTREE_ROOT",
     "tags": ["ruby-test"]
   }
 ]
@@ -380,8 +380,8 @@ The Ruby extension provides a debug adapter for debugging Ruby code. Zed's name 
     "label": "Debug current file",
     "adapter": "rdbg",
     "request": "launch",
-    "script": "$ZERMINAL_FILE",
-    "cwd": "$ZERMINAL_WORKTREE_ROOT"
+    "script": "$Z3RM_FILE",
+    "cwd": "$Z3RM_WORKTREE_ROOT"
   }
 ]
 ```
@@ -396,7 +396,7 @@ The Ruby extension provides a debug adapter for debugging Ruby code. Zed's name 
     "request": "launch",
     "command": "./bin/rails",
     "args": ["server"],
-    "cwd": "$ZERMINAL_WORKTREE_ROOT",
+    "cwd": "$Z3RM_WORKTREE_ROOT",
     "env": {
       "RUBY_DEBUG_OPEN": "true"
     }

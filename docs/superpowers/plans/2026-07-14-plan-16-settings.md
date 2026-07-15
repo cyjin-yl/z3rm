@@ -73,7 +73,7 @@ Delete: editor settings (tab_size, soft_wrap, etc.), agent settings, AI provider
 ```json
 {
     "extensions": {
-        "directory": "~/.config/zerminal/extensions",
+        "directory": "~/.config/z3rm/extensions",
         "auto_sync_to_remote": true
     }
 }
@@ -96,7 +96,7 @@ Delete: editor settings (tab_size, soft_wrap, etc.), agent settings, AI provider
 
 - [ ] **Step 1: Client-side settings file watch**
 
-Client watches `~/.config/zerminal/settings.json`. On change → reload → apply to: font/theme/keymap/chrome/tabbar style.
+Client watches `~/.config/z3rm/settings.json`. On change → reload → apply to: font/theme/keymap/chrome/tabbar style.
 
 - [ ] **Step 2: Server-side settings file watch**
 

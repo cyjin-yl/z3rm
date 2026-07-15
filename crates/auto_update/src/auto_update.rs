@@ -277,8 +277,8 @@ pub fn init(cx: &mut App) {
             .map(|channel| channel.poll_for_updates())
             .unwrap_or(false);
 
-        if option_env!("ZERMINAL_UPDATE_EXPLANATION").is_none()
-            && env::var("ZERMINAL_UPDATE_EXPLANATION").is_err()
+        if option_env!("Z3RM_UPDATE_EXPLANATION").is_none()
+            && env::var("Z3RM_UPDATE_EXPLANATION").is_err()
             && poll_for_updates
         {
             let mut update_subscription = AutoUpdateSetting::get_global(cx)
@@ -303,9 +303,9 @@ pub fn init(cx: &mut App) {
 }
 
 pub fn check(_: &Check, window: &mut Window, cx: &mut App) {
-    if let Some(message) = option_env!("ZERMINAL_UPDATE_EXPLANATION")
+    if let Some(message) = option_env!("Z3RM_UPDATE_EXPLANATION")
         .map(ToOwned::to_owned)
-        .or_else(|| env::var("ZERMINAL_UPDATE_EXPLANATION").ok())
+        .or_else(|| env::var("Z3RM_UPDATE_EXPLANATION").ok())
     {
         drop(window.prompt(
             gpui::PromptLevel::Info,
@@ -365,7 +365,7 @@ pub fn view_release_notes(_: &ViewReleaseNotes, cx: &mut App) -> Option<()> {
 }
 
 #[cfg(not(target_os = "windows"))]
-const INSTALLER_DIR_PREFIX: &str = "zerminal-auto-update";
+const INSTALLER_DIR_PREFIX: &str = "z3rm-auto-update";
 
 #[cfg(not(target_os = "windows"))]
 struct InstallerDir(tempfile::TempDir);
@@ -393,7 +393,7 @@ impl InstallerDir {
     async fn new() -> Result<Self> {
         let installer_dir = std::env::current_exe()?
             .parent()
-            .context("No parent dir for zerminal.exe")?
+            .context("No parent dir for z3rm.exe")?
             .join("updates");
         if smol::fs::metadata(&installer_dir).await.is_ok() {
             smol::fs::remove_dir_all(&installer_dir).await?;
@@ -579,7 +579,7 @@ impl AutoUpdater {
             &this,
             release_channel,
             version,
-            "zerminal-remote-server",
+            "z3rm-remote-server",
             os,
             arch,
             cx,
@@ -596,7 +596,7 @@ impl AutoUpdater {
 
         if smol::fs::metadata(&version_path).await.is_err() {
             log::info!(
-                "downloading zerminal-remote-server {os} {arch} version {}",
+                "downloading z3rm-remote-server {os} {arch} version {}",
                 release.version
             );
             set_status("Downloading remote server", cx);
@@ -631,7 +631,7 @@ impl AutoUpdater {
         })?;
 
         let release =
-            Self::get_release_asset(&this, channel, version, "zerminal-remote-server", os, arch, cx)
+            Self::get_release_asset(&this, channel, version, "z3rm-remote-server", os, arch, cx)
                 .await?;
 
         Ok(Some(release.url))
@@ -711,7 +711,7 @@ impl AutoUpdater {
         });
 
         let fetched_release_data =
-            Self::get_release_asset(&this, release_channel, None, "zerminal", OS, ARCH, cx).await?;
+            Self::get_release_asset(&this, release_channel, None, "z3rm", OS, ARCH, cx).await?;
         let fetched_version = fetched_release_data.clone().version;
         let app_commit_sha = Ok(cx.update(|cx| AppCommitSha::try_global(cx).map(|sha| sha.full())));
         let newer_version = Self::check_if_fetched_version_is_newer(
@@ -873,8 +873,8 @@ impl AutoUpdater {
     async fn target_path(installer_dir: &InstallerDir) -> Result<PathBuf> {
         let filename = match OS {
             "macos" => anyhow::Ok("Zed.dmg"),
-            "linux" => Ok("zerminal.tar.gz"),
-            "windows" => Ok("zerminal.exe"),
+            "linux" => Ok("z3rm.tar.gz"),
+            "windows" => Ok("z3rm.exe"),
             unsupported_os => anyhow::bail!("not supported: {unsupported_os}"),
         }?;
 
@@ -1084,7 +1084,7 @@ async fn install_release_linux(
 ) -> Result<Option<PathBuf>> {
     let home_dir = PathBuf::from(env::var("HOME").context("no HOME env var set")?);
 
-    let extracted = temp_dir.path().join("zerminal");
+    let extracted = temp_dir.path().join("z3rm");
     fs::create_dir_all(&extracted)
         .await
         .context("failed to create directory into which to extract update")?;
@@ -1112,12 +1112,12 @@ async fn install_release_linux(
     } else {
         String::default()
     };
-    let app_folder_name = format!("zerminal{}.app", suffix);
+    let app_folder_name = format!("z3rm{}.app", suffix);
 
     let from = extracted.join(&app_folder_name);
     let mut to = home_dir.join(".local");
 
-    let expected_suffix = format!("{}/libexec/zerminal", app_folder_name);
+    let expected_suffix = format!("{}/libexec/z3rm", app_folder_name);
 
     if let Some(prefix) = running_app_path
         .to_str()
@@ -1249,7 +1249,7 @@ async fn cleanup_stale_installer_dirs() {
 async fn cleanup_windows() -> Result<()> {
     let parent = std::env::current_exe()?
         .parent()
-        .context("No parent dir for zerminal.exe")?
+        .context("No parent dir for z3rm.exe")?
         .to_owned();
 
     // keep in sync with crates/auto_update_helper/src/updater.rs
@@ -1276,7 +1276,7 @@ async fn install_release_windows(downloaded_installer: &Path) -> Result<Option<P
     // deleting the old one, and launching the new binary.
     let helper_path = std::env::current_exe()?
         .parent()
-        .context("No parent dir for zerminal.exe")?
+        .context("No parent dir for z3rm.exe")?
         .join("tools")
         .join("auto_update_helper.exe");
     Ok(Some(helper_path))
@@ -1422,7 +1422,7 @@ mod tests {
             }
         );
 
-        dmg_tx.send("<fake-zerminal-update>".to_owned()).unwrap();
+        dmg_tx.send("<fake-z3rm-update>".to_owned()).unwrap();
 
         let tmp_dir = Arc::new(tempdir().unwrap());
 
@@ -1430,7 +1430,7 @@ mod tests {
             let tmp_dir = tmp_dir.clone();
             cx.set_global(InstallOverride(Rc::new(move |target_path, _cx| {
                 let tmp_dir = tmp_dir.clone();
-                let dest_path = tmp_dir.path().join("zerminal");
+                let dest_path = tmp_dir.path().join("z3rm");
                 std::fs::copy(&target_path, &dest_path)?;
                 Ok(Some(dest_path))
             })));
@@ -1454,8 +1454,8 @@ mod tests {
         let will_restart = cx.expect_restart();
         cx.update(|cx| cx.restart());
         let path = will_restart.await.unwrap().unwrap();
-        assert_eq!(path, tmp_dir.path().join("zerminal"));
-        assert_eq!(std::fs::read_to_string(path).unwrap(), "<fake-zerminal-update>");
+        assert_eq!(path, tmp_dir.path().join("z3rm"));
+        assert_eq!(std::fs::read_to_string(path).unwrap(), "<fake-z3rm-update>");
     }
 
     #[gpui::test]
@@ -1480,7 +1480,7 @@ mod tests {
         });
 
         let temp_dir = tempdir().unwrap();
-        let target_path = temp_dir.path().join("zerminal-download");
+        let target_path = temp_dir.path().join("z3rm-download");
         let release = ReleaseAsset {
             version: "1.0.0".to_string(),
             url: "https://test.example/download".to_string(),
@@ -1540,7 +1540,7 @@ mod tests {
         });
 
         let temp_dir = tempdir().unwrap();
-        let target_path = temp_dir.path().join("zerminal-download");
+        let target_path = temp_dir.path().join("z3rm-download");
         let release = ReleaseAsset {
             version: "1.0.0".to_string(),
             url: "https://test.example/download".to_string(),

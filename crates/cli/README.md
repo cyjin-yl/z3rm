@@ -11,5 +11,5 @@ cargo build -p zed
 And then building and running the `cli` crate with the following parameters:
 
 ```
- cargo run -p cli -- --zerminal ./target/debug/zerminal.exe
+ cargo run -p cli -- --z3rm ./target/debug/z3rm.exe
 ```

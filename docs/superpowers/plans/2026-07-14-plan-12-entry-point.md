@@ -1,8 +1,8 @@
-# Plan 12: zerminal Entry Point
+# Plan 12: z3rm Entry Point
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Create the slimmed `crates/zerminal/src/main.rs` that replaces Zed's 72KB main.rs. Auto-spawns daemon, creates window, connects to daemon via MuxDomain.
+**Goal:** Create the slimmed `crates/z3rm/src/main.rs` that replaces Zed's 72KB main.rs. Auto-spawns daemon, creates window, connects to daemon via MuxDomain.
 
 **Architecture:** Minimal entry point. No editor/agent/collab initialization. GPUI Application → theme → settings → daemon spawn → window creation → workspace with terminal panes.
 
@@ -13,7 +13,7 @@
 ### Task 1: Strip Zed's main.rs
 
 **Files:**
-- Modify: `crates/zerminal/src/main.rs`
+- Modify: `crates/z3rm/src/main.rs`
 
 - [ ] **Step 1: Remove all editor/agent/collab/client imports**
 
@@ -32,15 +32,15 @@ Keep: `Application::new()`, `AppContext`, theme loading, settings store initiali
 ### Task 2: Implement daemon auto-spawn
 
 **Files:**
-- Create: `crates/zerminal/src/daemon.rs`
-- Modify: `crates/zerminal/src/main.rs`
+- Create: `crates/z3rm/src/daemon.rs`
+- Modify: `crates/z3rm/src/main.rs`
 
 - [ ] **Step 1: Implement `ensure_daemon_running()`**
 
 ```rust
 /// Ensures mux_server daemon is running and returns a connected MuxDomain.
 /// 1. Try connecting to default socket path.
-/// 2. If connection fails (timeout), spawn `zerminal-server --daemonize`.
+/// 2. If connection fails (timeout), spawn `z3rm-server --daemonize`.
 /// 3. Poll connect with configurable timeout (default 500ms, from settings).
 /// 4. Once connected, return MuxDomain.
 pub async fn ensure_daemon_running() -> anyhow::Result<MuxDomain> {
@@ -57,7 +57,7 @@ pub async fn ensure_daemon_running() -> anyhow::Result<MuxDomain> {
 }
 
 fn spawn_daemon() -> anyhow::Result<()> {
-    std::process::Command::new("zerminal-server")
+    std::process::Command::new("z3rm-server")
         .arg("--daemonize")
         .spawn()?;
     Ok(())
@@ -73,7 +73,7 @@ If `--session <name>` CLI arg present, use named socket path. If daemon doesn't 
 ### Task 3: Implement default session creation
 
 **Files:**
-- Modify: `crates/zerminal/src/daemon.rs`
+- Modify: `crates/z3rm/src/daemon.rs`
 
 - [ ] **Step 1: On first launch (no sessions), create default session**
 
@@ -90,7 +90,7 @@ if sessions.is_empty() {
 ### Task 4: Implement window creation
 
 **Files:**
-- Modify: `crates/zerminal/src/main.rs`
+- Modify: `crates/z3rm/src/main.rs`
 
 - [ ] **Step 1: Create GPUI window with workspace**
 
@@ -113,21 +113,21 @@ Window close handler: call `domain.detach()`. Daemon keeps running (keep_alive=t
 
 - [ ] **Step 1: Manual test**
 
-Run: `cargo run -p zerminal`
+Run: `cargo run -p z3rm`
 Expected: window opens, shell prompt appears, typing works, closing window doesn't kill shell.
 
 - [ ] **Step 2: Verify daemon persists**
 
-After closing window, run: `zerminal-server status`
+After closing window, run: `z3rm-server status`
 Expected: shows 1 session, panes alive.
 
 - [ ] **Step 3: Verify reattach**
 
-Reopen zerminal. Expected: session is reattached, panes visible.
+Reopen z3rm. Expected: session is reattached, panes visible.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add crates/zerminal/src/
+git add crates/z3rm/src/
 git commit -m "Slim main.rs: daemon auto-spawn, window creation, session attach"
 ```

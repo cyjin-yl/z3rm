@@ -4,7 +4,7 @@
 
 **Goal:** Create the `mux_server` crate — the headless daemon that owns PTYs, alacritty terminal emulators, layout tree, session state, and grid diff ring. This is the server-canonical authority for all terminal state.
 
-**Architecture:** mux_server is a standalone binary (`zerminal-server`). It binds a local socket (Unix domain socket / named pipe via `interprocess`), accepts connections from GUI clients, and serves mux_protocol messages. It runs a tokio multi-threaded runtime.
+**Architecture:** mux_server is a standalone binary (`z3rm-server`). It binds a local socket (Unix domain socket / named pipe via `interprocess`), accepts connections from GUI clients, and serves mux_protocol messages. It runs a tokio multi-threaded runtime.
 
 **Dependencies:** `mux_protocol`, `terminal` (alacritty), `gpui_tokio`, `db` (SQLite), `interprocess`, `tokio`.
 
@@ -31,7 +31,7 @@ license = "Apache-2.0"
 path = "src/mux_server.rs"
 
 [[bin]]
-name = "zerminal-server"
+name = "z3rm-server"
 path = "src/main.rs"
 
 [dependencies]
@@ -50,13 +50,13 @@ tracing = { workspace = true }
 - [ ] **Step 2: Create main.rs — daemon entry point**
 
 ```rust
-// Entry point for the zerminal-server daemon binary.
+// Entry point for the z3rm-server daemon binary.
 // Binds local socket, accepts connections, serves mux protocol.
 
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    zerminal_mux_server::run()
+    z3rm_mux_server::run()
 }
 ```
 
@@ -98,8 +98,8 @@ pub fn run() -> Result<()> {
 }
 
 fn default_socket_path() -> Result<PathBuf> {
-    // $XDG_RUNTIME_DIR/zerminal/mux.sock on Unix
-    // \\.\pipe\zerminal-mux on Windows
+    // $XDG_RUNTIME_DIR/z3rm/mux.sock on Unix
+    // \\.\pipe\z3rm-mux on Windows
     // See §16.1 for socket path strategy
     todo!("implement socket path resolution")
 }
@@ -115,7 +115,7 @@ fn bind_socket(path: &PathBuf) -> Result<interprocess::local_socket::Listener> {
 - [ ] **Step 5: Verify compilation**
 
 Run: `cargo check -p mux_server`
-Expected: PASS (with `#[zerminal_todo]` marks on `todo!()` sites, or with `--features zerminal-migration`)
+Expected: PASS (with `#[z3rm_todo]` marks on `todo!()` sites, or with `--features z3rm-migration`)
 
 ---
 
@@ -275,7 +275,7 @@ On startup: query SQLite for sessions. If non-clean-exit sessions found, offer r
 
 When no panes exist across all sessions: minimal CPU (no polling, no timers except the SQLite snapshot timer). Daemon stays alive (keep_alive = true default).
 
-- [ ] **Step 2: Implement `zerminal-server status` CLI subcommand**
+- [ ] **Step 2: Implement `z3rm-server status` CLI subcommand**
 
 Print: uptime, session count, pane count, memory usage.
 
@@ -299,7 +299,7 @@ Server emulator parses DEC-2026 markers. Defer generation bump until ESU. Unpair
 
 Client disconnect → server detects socket EOF → session marked detached → PTYs continue running. No SIGHUP sent.
 
-- [ ] **Step 2: Implement `zerminal-server kill` and `kill --session <id>`**
+- [ ] **Step 2: Implement `z3rm-server kill` and `kill --session <id>`**
 
 Graceful shutdown: send SIGHUP to all PTY children, wait for exit, clean up socket file, exit.
 

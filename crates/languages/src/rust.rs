@@ -1080,7 +1080,7 @@ async fn human_readable_package_name(
 // Output example in the root of Zed project:
 // ```sh
 // ❯ cargo pkgid zed
-// path+file:///absolute/path/to/project/zerminal/crates/zerminal#0.131.0
+// path+file:///absolute/path/to/project/z3rm/crates/z3rm#0.131.0
 // ```
 // Another variant, if a project has a custom package name or hyphen in the name:
 // ```

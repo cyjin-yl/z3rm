@@ -84,31 +84,31 @@ Tasks can be defined:
 Zed tasks act just like your shell; that also means that you can reference environmental variables via sh-esque `$VAR_NAME` syntax. A couple of additional environmental variables are set for your convenience.
 These variables allow you to pull information from the current editor and use it in your tasks. The following variables are available:
 
-- `ZERMINAL_COLUMN`: current line column
-- `ZERMINAL_ROW`: current line row
-- `ZERMINAL_FILE`: absolute path of the currently opened file (e.g. `/Users/my-user/path/to/project/src/main.rs`)
-- `ZERMINAL_FILENAME`: filename of the currently opened file (e.g. `main.rs`)
-- `ZERMINAL_DIRNAME`: absolute path of the currently opened file with file name stripped (e.g. `/Users/my-user/path/to/project/src`)
-- `ZERMINAL_RELATIVE_FILE`: path of the currently opened file, relative to `ZERMINAL_WORKTREE_ROOT` (e.g. `src/main.rs`)
-- `ZERMINAL_RELATIVE_DIR`: path of the currently opened file's directory, relative to `ZERMINAL_WORKTREE_ROOT` (e.g. `src`)
-- `ZERMINAL_STEM`: stem (filename without extension) of the currently opened file (e.g. `main`)
-- `ZERMINAL_SYMBOL`: currently selected symbol; should match the last symbol shown in a symbol breadcrumb (e.g. `mod tests > fn test_task_contexts`)
-- `ZERMINAL_SELECTED_TEXT`: currently selected text
-- `ZERMINAL_LANGUAGE`: language of the currently opened buffer (e.g. `Rust`, `Python`, `Shell Script`)
-- `ZERMINAL_WORKTREE_ROOT`: absolute path to the root of the current worktree. (e.g. `/Users/my-user/path/to/project`)
-- `ZERMINAL_MAIN_GIT_WORKTREE`: absolute path to the main git worktree's working directory. For normal checkouts this equals `ZERMINAL_WORKTREE_ROOT`; for linked git worktrees this is the original repository's working directory.
-- `ZERMINAL_CUSTOM_RUST_PACKAGE`: (Rust-specific) name of the parent package of $ZERMINAL_FILE source file.
+- `Z3RM_COLUMN`: current line column
+- `Z3RM_ROW`: current line row
+- `Z3RM_FILE`: absolute path of the currently opened file (e.g. `/Users/my-user/path/to/project/src/main.rs`)
+- `Z3RM_FILENAME`: filename of the currently opened file (e.g. `main.rs`)
+- `Z3RM_DIRNAME`: absolute path of the currently opened file with file name stripped (e.g. `/Users/my-user/path/to/project/src`)
+- `Z3RM_RELATIVE_FILE`: path of the currently opened file, relative to `Z3RM_WORKTREE_ROOT` (e.g. `src/main.rs`)
+- `Z3RM_RELATIVE_DIR`: path of the currently opened file's directory, relative to `Z3RM_WORKTREE_ROOT` (e.g. `src`)
+- `Z3RM_STEM`: stem (filename without extension) of the currently opened file (e.g. `main`)
+- `Z3RM_SYMBOL`: currently selected symbol; should match the last symbol shown in a symbol breadcrumb (e.g. `mod tests > fn test_task_contexts`)
+- `Z3RM_SELECTED_TEXT`: currently selected text
+- `Z3RM_LANGUAGE`: language of the currently opened buffer (e.g. `Rust`, `Python`, `Shell Script`)
+- `Z3RM_WORKTREE_ROOT`: absolute path to the root of the current worktree. (e.g. `/Users/my-user/path/to/project`)
+- `Z3RM_MAIN_GIT_WORKTREE`: absolute path to the main git worktree's working directory. For normal checkouts this equals `Z3RM_WORKTREE_ROOT`; for linked git worktrees this is the original repository's working directory.
+- `Z3RM_CUSTOM_RUST_PACKAGE`: (Rust-specific) name of the parent package of $Z3RM_FILE source file.
 
 To use a variable in a task, prefix it with a dollar sign (`$`):
 
 ```json [tasks]
 {
   "label": "echo current file's path",
-  "command": "echo $ZERMINAL_FILE"
+  "command": "echo $Z3RM_FILE"
 }
 ```
 
-You can also use verbose syntax that allows specifying a default if a given variable is not available: `${ZERMINAL_FILE:default_value}`
+You can also use verbose syntax that allows specifying a default if a given variable is not available: `${Z3RM_FILE:default_value}`
 
 These environmental variables can also be used in tasks' `cwd`, `args`, and `label` fields.
 
@@ -121,7 +121,7 @@ For example, instead of this (which will fail if the path has a space):
 ```json [tasks]
 {
   "label": "stat current file",
-  "command": "stat $ZERMINAL_FILE"
+  "command": "stat $Z3RM_FILE"
 }
 ```
 
@@ -131,7 +131,7 @@ Provide the following:
 {
   "label": "stat current file",
   "command": "stat",
-  "args": ["$ZERMINAL_FILE"]
+  "args": ["$Z3RM_FILE"]
 }
 ```
 
@@ -140,7 +140,7 @@ Or explicitly include escaped quotes like so:
 ```json [tasks]
 {
   "label": "stat current file",
-  "command": "stat \"$ZERMINAL_FILE\""
+  "command": "stat \"$Z3RM_FILE\""
 }
 ```
 
@@ -152,7 +152,7 @@ For example, the following task will appear in the spawn modal only if there is 
 ```json [tasks]
 {
   "label": "selected text",
-  "command": "echo \"$ZERMINAL_SELECTED_TEXT\""
+  "command": "echo \"$Z3RM_SELECTED_TEXT\""
 }
 ```
 
@@ -161,7 +161,7 @@ Set default values to such variables to have such tasks always displayed:
 ```json [tasks]
 {
   "label": "selected text with default",
-  "command": "echo \"${ZERMINAL_SELECTED_TEXT:no text selected}\""
+  "command": "echo \"${Z3RM_SELECTED_TEXT:no text selected}\""
 }
 ```
 
@@ -213,7 +213,7 @@ This could be useful for launching a terminal application that you want to use i
 // In tasks.json
 {
   "label": "start lazygit",
-  "command": "lazygit -p $ZERMINAL_WORKTREE_ROOT"
+  "command": "lazygit -p $Z3RM_WORKTREE_ROOT"
 }
 ```
 
@@ -236,7 +236,7 @@ In addition to being spawned manually, tasks can be configured to run automatica
 
 The following hooks are currently supported:
 
-- `create_worktree` — runs after Zed creates a new linked Git worktree, either directly through the CLI or from the [worktree picker](./git.md#git-worktrees). The task is spawned with `ZERMINAL_WORKTREE_ROOT` pointing at the newly created worktree and `ZERMINAL_MAIN_GIT_WORKTREE` pointing at the original repository's working directory, which makes these hooks well-suited to copying untracked files (such as `.env` files) or running per-worktree setup commands.
+- `create_worktree` — runs after Zed creates a new linked Git worktree, either directly through the CLI or from the [worktree picker](./git.md#git-worktrees). The task is spawned with `Z3RM_WORKTREE_ROOT` pointing at the newly created worktree and `Z3RM_MAIN_GIT_WORKTREE` pointing at the original repository's working directory, which makes these hooks well-suited to copying untracked files (such as `.env` files) or running per-worktree setup commands.
 
 Hook tasks are resolved from the same global and worktree-local `tasks.json` files as manually spawned tasks, and multiple tasks may register for the same hook; they all run when the hook fires. A hook task still benefits from the usual task configuration fields — `cwd`, `env`, `reveal`, `hide`, and so on — so you can control how much of the terminal UI is shown while it runs.
 
@@ -245,7 +245,7 @@ Hook tasks are resolved from the same global and worktree-local `tasks.json` fil
   {
     "label": "copy .env into new worktree",
     "command": "cp",
-    "args": ["$ZERMINAL_MAIN_GIT_WORKTREE/.env", "$ZERMINAL_WORKTREE_ROOT/.env"],
+    "args": ["$Z3RM_MAIN_GIT_WORKTREE/.env", "$Z3RM_WORKTREE_ROOT/.env"],
     "hooks": ["create_worktree"],
     "reveal": "no_focus",
     "hide": "on_success"
@@ -260,32 +260,32 @@ Tasks that define `hooks` are still available from the task modal like any other
 The Git Graph supports running custom Git command tasks from the commit context menu.
 To add a command, define a task in your global `tasks.json` file with the `git-command` tag (worktree-local tasks are not supported yet).
 When shown from a commit's context menu, the task is resolved against the selected commit and repository, and runs from the selected repository root by default.
-Right-clicking a ref label (a branch, remote ref, or tag) opens a ref-specific context menu, where the task is additionally resolved against the clicked ref via `ZERMINAL_GIT_REF`.
+Right-clicking a ref label (a branch, remote ref, or tag) opens a ref-specific context menu, where the task is additionally resolved against the clicked ref via `Z3RM_GIT_REF`.
 
 Git Graph command tasks support the Git-specific task variables below.
 These variables are provided only when resolving Git Graph command tasks.
-Other task variables, such as `ZERMINAL_FILE`, `ZERMINAL_SELECTED_TEXT`, `ZERMINAL_WORKTREE_ROOT`, and `ZERMINAL_MAIN_GIT_WORKTREE`, are not provided to Git Graph command tasks unless they use default values.
+Other task variables, such as `Z3RM_FILE`, `Z3RM_SELECTED_TEXT`, `Z3RM_WORKTREE_ROOT`, and `Z3RM_MAIN_GIT_WORKTREE`, are not provided to Git Graph command tasks unless they use default values.
 
-- `ZERMINAL_GIT_SHA`: full SHA of the selected commit.
-- `ZERMINAL_GIT_SHA_SHORT`: short SHA of the selected commit.
-- `ZERMINAL_GIT_REPOSITORY_NAME`: name of the selected Git repository.
-- `ZERMINAL_GIT_REPOSITORY_PATH`: absolute path to the selected Git repository's working directory.
-- `ZERMINAL_GIT_REF`: name of the clicked ref (a branch, remote ref, or tag). Only provided when the menu is opened from a ref label.
+- `Z3RM_GIT_SHA`: full SHA of the selected commit.
+- `Z3RM_GIT_SHA_SHORT`: short SHA of the selected commit.
+- `Z3RM_GIT_REPOSITORY_NAME`: name of the selected Git repository.
+- `Z3RM_GIT_REPOSITORY_PATH`: absolute path to the selected Git repository's working directory.
+- `Z3RM_GIT_REF`: name of the clicked ref (a branch, remote ref, or tag). Only provided when the menu is opened from a ref label.
 
 For example:
 
 ```json [tasks]
 [
   {
-    "label": "Branches containing commit: $ZERMINAL_GIT_SHA_SHORT",
+    "label": "Branches containing commit: $Z3RM_GIT_SHA_SHORT",
     "command": "git",
-    "args": ["branch", "-a", "--contains", "$ZERMINAL_GIT_SHA"],
+    "args": ["branch", "-a", "--contains", "$Z3RM_GIT_SHA"],
     "tags": ["git-command"]
   },
   {
-    "label": "Check out $ZERMINAL_GIT_REF",
+    "label": "Check out $Z3RM_GIT_REF",
     "command": "git",
-    "args": ["checkout", "$ZERMINAL_GIT_REF"],
+    "args": ["checkout", "$Z3RM_GIT_REF"],
     "tags": ["git-command"]
   }
 ]
@@ -333,7 +333,7 @@ To tag a task, add the runnable tag name to the `tags` field on the task templat
 ```json [tasks]
 {
   "label": "echo current file's path",
-  "command": "echo $ZERMINAL_FILE",
+  "command": "echo $Z3RM_FILE",
   "tags": ["rust-test"]
 }
 ```

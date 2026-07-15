@@ -95,7 +95,7 @@ Cover zellij's common operations: Alt-n (new tab), Alt-h/j/k/l (pane nav), Alt-d
 ### Task 5: Implement prefix mode
 
 **Files:**
-- Modify: `crates/zerminal/src/input.rs` (or new module)
+- Modify: `crates/z3rm/src/input.rs` (or new module)
 
 - [ ] **Step 1: Implement prefix mode state machine**
 
@@ -128,6 +128,6 @@ Change setting → reload keymap without restart.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add assets/keymaps/ crates/zerminal/src/input.rs
+git add assets/keymaps/ crates/z3rm/src/input.rs
 git commit -m "Add keymap profiles: default, tmux, zellij, screen + prefix mode"
 ```

@@ -11,7 +11,7 @@
 ### Task 1: Implement priority chain dispatcher
 
 **Files:**
-- Create: `crates/zerminal/src/input.rs`
+- Create: `crates/z3rm/src/input.rs`
 
 - [ ] **Step 1: Implement key event handler**
 
@@ -56,7 +56,7 @@ fn handle_key_event(key: &KeyEvent, cx: &mut Context<TerminalView>) -> KeyDispat
 ### Task 2: Full-screen app detection
 
 **Files:**
-- Create: `crates/zerminal/src/terminal_app.rs`
+- Create: `crates/z3rm/src/terminal_app.rs`
 
 - [ ] **Step 1: Detect alt screen, bracketed paste, mouse tracking, DECSET modes**
 
@@ -74,7 +74,7 @@ fn is_full_screen_active(domain: &MuxDomain, pane: &str) -> bool {
 ### Task 3: Prefix mode state machine
 
 **Files:**
-- Create: `crates/zerminal/src/prefix_mode.rs`
+- Create: `crates/z3rm/src/prefix_mode.rs`
 
 - [ ] **Step 1: Implement enter/exit prefix mode**
 
@@ -112,6 +112,6 @@ GPUI provides IME composition events. When IME commits text → send committed t
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/zerminal/src/input.rs crates/zerminal/src/prefix_mode.rs crates/zerminal/src/terminal_app.rs
+git add crates/z3rm/src/input.rs crates/z3rm/src/prefix_mode.rs crates/z3rm/src/terminal_app.rs
 git commit -m "Add input routing: priority chain, prefix mode, full-screen passthrough, IME"
 ```

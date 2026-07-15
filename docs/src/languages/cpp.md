@@ -157,9 +157,9 @@ You can use CodeLLDB or GDB to debug native binaries. (Make sure that your build
     "build": {
       "command": "make",
       "args": ["-j8"],
-      "cwd": "$ZERMINAL_WORKTREE_ROOT"
+      "cwd": "$Z3RM_WORKTREE_ROOT"
     },
-    "program": "$ZERMINAL_WORKTREE_ROOT/build/prog",
+    "program": "$Z3RM_WORKTREE_ROOT/build/prog",
     "request": "launch",
     "adapter": "CodeLLDB"
   }

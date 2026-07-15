@@ -134,13 +134,13 @@ Your AWS credentials need these permissions:
 
 Bedrock supports Zed-prefixed AWS environment variables so Zed does not override or consume your normal AWS credentials:
 
-- `ZERMINAL_ACCESS_KEY_ID`
-- `ZERMINAL_SECRET_ACCESS_KEY`
-- `ZERMINAL_SESSION_TOKEN`
-- `ZERMINAL_AWS_PROFILE`
-- `ZERMINAL_AWS_REGION`
-- `ZERMINAL_AWS_ENDPOINT`
-- `ZERMINAL_BEDROCK_BEARER_TOKEN`
+- `Z3RM_ACCESS_KEY_ID`
+- `Z3RM_SECRET_ACCESS_KEY`
+- `Z3RM_SESSION_TOKEN`
+- `Z3RM_AWS_PROFILE`
+- `Z3RM_AWS_REGION`
+- `Z3RM_AWS_ENDPOINT`
+- `Z3RM_BEDROCK_BEARER_TOKEN`
 
 ### Bedrock Authentication {#bedrock-authentication}
 

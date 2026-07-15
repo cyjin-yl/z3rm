@@ -188,7 +188,7 @@ The flow for this approach in detail is:
 - open each *writable* path we `--bind` and get an `O_PATH` FD (which pins the
   inode without granting read/write on its contents)
 - create an `SCM_RIGHTS` socket over which we can send the FDs
-- run `bwrap --bind /path1 /path1 ... -- zerminal --zerminal-linux-sandbox-launcher <untrusted program args>`
+- run `bwrap --bind /path1 /path1 ... -- z3rm --z3rm-linux-sandbox-launcher <untrusted program args>`
   - note: we use (potentially swapped) paths
   - we also mount the socket in the sandbox
 - the sandbox bridge reads the FDs from the socket, does the following for each
@@ -209,7 +209,7 @@ sequenceDiagram
 
     Zed->>Zed: open O_PATH FD per writable path, pinning the inode
     Zed->>Zed: create SCM_RIGHTS socket
-    Zed->>BW: exec bwrap, binding paths, then zerminal --zerminal-linux-sandbox-launcher
+    Zed->>BW: exec bwrap, binding paths, then z3rm --z3rm-linux-sandbox-launcher
     Note over Zed,BW: binds use possibly-swapped paths, socket mounted in sandbox
     Zed->>Bridge: send FDs over the SCM_RIGHTS socket
     loop each writable bind
@@ -280,7 +280,7 @@ FD is now running on Windows, but we need Linux file descriptors.
 
 To work around this, we launch `zed --wsl-sandbox-helper` in WSL, which is a
 shim that captures the FDs and sets up the socket. We download this to
-`~/.local/libexec/zerminal`, so that it does not conflict with the Windows `zerminal.exe`
+`~/.local/libexec/z3rm`, so that it does not conflict with the Windows `z3rm.exe`
 binary that WSL will inject into the Linux `$PATH` (yes the `.exe` is stripped).
 
 ### MacOS

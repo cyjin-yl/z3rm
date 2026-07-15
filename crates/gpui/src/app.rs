@@ -1392,7 +1392,7 @@ impl App {
         self.platform.open_url(url);
     }
 
-    /// Registers the given URL scheme (e.g. `zed` for `zerminal://` urls) to be
+    /// Registers the given URL scheme (e.g. `zed` for `z3rm://` urls) to be
     /// opened by the current app.
     ///
     /// On some platforms (e.g. macOS) you may be able to register URL schemes

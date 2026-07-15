@@ -464,12 +464,12 @@ mod tests {
             },
             BuildPermalinkParams::new(
                 "b2efec9824c45fcc90c9a7eb107a50d1772a60aa",
-                &repo_path("crates/zerminal/src/main.rs"),
+                &repo_path("crates/z3rm/src/main.rs"),
                 None,
             ),
         );
 
-        let expected_url = "https://github.com/zed-industries/zed/blob/b2efec9824c45fcc90c9a7eb107a50d1772a60aa/crates/zerminal/src/main.rs";
+        let expected_url = "https://github.com/zed-industries/zed/blob/b2efec9824c45fcc90c9a7eb107a50d1772a60aa/crates/z3rm/src/main.rs";
         assert_eq!(permalink.to_string(), expected_url.to_string())
     }
 

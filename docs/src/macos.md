@@ -65,11 +65,11 @@ See the [CLI Reference](./reference/cli.md) for all available options.
 3. Optionally, remove your settings and extensions:
 
 ```sh
-rm -rf ~/.config/zerminal
-rm -rf ~/Library/Application\ Support/Zerminal
-rm -rf ~/Library/Caches/Zerminal
-rm -rf ~/Library/Logs/Zerminal
-rm -rf ~/Library/Saved\ Application\ State/dev.zerminal.Zerminal.savedState
+rm -rf ~/.config/z3rm
+rm -rf ~/Library/Application\ Support/Z3rm
+rm -rf ~/Library/Caches/Z3rm
+rm -rf ~/Library/Logs/Z3rm
+rm -rf ~/Library/Saved\ Application\ State/dev.z3rm.Z3rm.savedState
 ```
 
 If you installed the CLI, remove it with:

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Remove ~90 deleted crates from the workspace. Delete their directories. Remove their entries from workspace `Cargo.toml`. This will break compilation — that is expected. All broken references will be marked with `#[zerminal_todo("removed-crate", ...)]` in Plan 5.
+**Goal:** Remove ~90 deleted crates from the workspace. Delete their directories. Remove their entries from workspace `Cargo.toml`. This will break compilation — that is expected. All broken references will be marked with `#[z3rm_todo("removed-crate", ...)]` in Plan 5.
 
 **Architecture:** Clean cut. Remove the crate directories and workspace member entries. Do NOT attempt to fix references yet — that is Pass 1 (Plan 5).
 

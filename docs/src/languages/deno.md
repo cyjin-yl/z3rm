@@ -105,8 +105,8 @@ To debug deno programs, add this to `.zed/debug.json`
     "label": "Deno",
     "request": "launch",
     "type": "pwa-node",
-    "cwd": "$ZERMINAL_WORKTREE_ROOT",
-    "program": "$ZERMINAL_FILE",
+    "cwd": "$Z3RM_WORKTREE_ROOT",
+    "program": "$Z3RM_FILE",
     "runtimeExecutable": "deno",
     "runtimeArgs": ["run", "--allow-all", "--inspect-wait"],
     "attachSimplePort": 9229
@@ -122,7 +122,7 @@ To run deno tasks like tests from the ui, add this to `.zed/tasks.json`
 [
   {
     "label": "deno test",
-    "command": "deno test -A $ZERMINAL_FILE",
+    "command": "deno test -A $Z3RM_FILE",
     "tags": ["js-test"]
   }
 ]

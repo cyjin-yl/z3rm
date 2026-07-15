@@ -8,7 +8,7 @@ For a list of available tools, [see the Tools page](./tools.md).
 
 ## Quick Start
 
-Use Zed's Settings Editor to [configure tool permissions](zerminal://settings/agent.tool_permissions), or add rules directly to your settings file:
+Use Zed's Settings Editor to [configure tool permissions](z3rm://settings/agent.tool_permissions), or add rules directly to your settings file:
 
 ```json [settings]
 {

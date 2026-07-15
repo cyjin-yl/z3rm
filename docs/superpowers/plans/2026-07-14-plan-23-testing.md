@@ -80,12 +80,12 @@ Layout tree → serialize (tmux checksummed format) → deserialize → verify i
 ### Task 5: End-to-end integration test
 
 **Files:**
-- Create: `crates/zerminal/tests/e2e.rs`
+- Create: `crates/z3rm/tests/e2e.rs`
 
 - [ ] **Step 1: Full session lifecycle test**
 
 ```
-1. Spawn daemon (zerminal-server)
+1. Spawn daemon (z3rm-server)
 2. Create session "test"
 3. Spawn pane with shell
 4. Send input "echo hello"

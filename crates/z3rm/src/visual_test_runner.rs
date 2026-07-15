@@ -48,7 +48,7 @@ fn main() {
     // This must be done before any code accesses zed_env_vars::ZED_STATELESS
     // SAFETY: We're at the start of main(), before any threads are spawned
     unsafe {
-        std::env::set_var("ZERMINAL_STATELESS", "1");
+        std::env::set_var("Z3RM_STATELESS", "1");
     }
 
     env_logger::builder()
@@ -129,7 +129,7 @@ mod constants {
     use std::time::Duration;
 
     /// Baseline images are stored relative to this file
-    pub const BASELINE_DIR: &str = "crates/zerminal/test_fixtures/visual_tests";
+    pub const BASELINE_DIR: &str = "crates/z3rm/test_fixtures/visual_tests";
 
     /// Embedded test image (Zed app icon) for visual tests.
     pub const EMBEDDED_TEST_IMAGE: &[u8] = include_bytes!("../resources/app-icon.png");

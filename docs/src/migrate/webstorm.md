@@ -200,7 +200,7 @@ What this means in practice:
   },
   {
     "label": "test current file",
-    "command": "npm test -- $ZERMINAL_FILE"
+    "command": "npm test -- $Z3RM_FILE"
   }
 ]
 ```
@@ -264,7 +264,7 @@ For more control, create a `.zed/debug.json` file:
   {
     "label": "Debug Current File",
     "adapter": "JavaScript",
-    "program": "$ZERMINAL_FILE",
+    "program": "$Z3RM_FILE",
     "request": "launch"
   },
   {

@@ -1,5 +1,5 @@
 {
-  "$schema": "zerminal://schemas/settings",
+  "$schema": "z3rm://schemas/settings",
   // The name of the Zed theme to use for the UI.
   //
   // `mode` is one of:

@@ -109,12 +109,12 @@ pub fn run(command: Commands) -> anyhow::Result<()> {
             let release_channel = *RELEASE_CHANNEL;
             match release_channel {
                 ReleaseChannel::Stable | ReleaseChannel::Preview => {
-                    println!("{}", env!("ZERMINAL_PKG_VERSION"))
+                    println!("{}", env!("Z3RM_PKG_VERSION"))
                 }
                 ReleaseChannel::Nightly | ReleaseChannel::Dev => {
                     let commit_sha =
-                        option_env!("ZERMINAL_COMMIT_SHA").unwrap_or(release_channel.dev_name());
-                    let build_id = option_env!("ZERMINAL_BUILD_ID");
+                        option_env!("Z3RM_COMMIT_SHA").unwrap_or(release_channel.dev_name());
+                    let build_id = option_env!("Z3RM_BUILD_ID");
                     if let Some(build_id) = build_id {
                         println!("{}+{}", build_id, commit_sha)
                     } else {
@@ -128,10 +128,10 @@ pub fn run(command: Commands) -> anyhow::Result<()> {
 }
 
 pub static VERSION: LazyLock<String> = LazyLock::new(|| match *RELEASE_CHANNEL {
-    ReleaseChannel::Stable | ReleaseChannel::Preview => env!("ZERMINAL_PKG_VERSION").to_owned(),
+    ReleaseChannel::Stable | ReleaseChannel::Preview => env!("Z3RM_PKG_VERSION").to_owned(),
     ReleaseChannel::Nightly | ReleaseChannel::Dev => {
-        let commit_sha = option_env!("ZERMINAL_COMMIT_SHA").unwrap_or("missing-zed-commit-sha");
-        let build_identifier = option_env!("ZERMINAL_BUILD_ID");
+        let commit_sha = option_env!("Z3RM_COMMIT_SHA").unwrap_or("missing-zed-commit-sha");
+        let build_identifier = option_env!("Z3RM_BUILD_ID");
         if let Some(build_id) = build_identifier {
             format!("{build_id}+{commit_sha}")
         } else {
@@ -572,7 +572,7 @@ pub fn execute_run(
     let pid = std::process::id();
     let id = pid.to_string();
     let should_install_crash_handler = matches!(
-        env::var("ZERMINAL_GENERATE_MINIDUMPS").as_deref(),
+        env::var("Z3RM_GENERATE_MINIDUMPS").as_deref(),
         Ok("true" | "1")
     ) || *RELEASE_CHANNEL != ReleaseChannel::Dev;
 
@@ -583,7 +583,7 @@ pub fn execute_run(
                 zed_version: VERSION.to_owned(),
                 binary: "zed-remote-server".to_string(),
                 release_channel: release_channel::RELEASE_CHANNEL_NAME.clone(),
-                commit_sha: option_env!("ZERMINAL_COMMIT_SHA").unwrap_or("no_sha").to_owned(),
+                commit_sha: option_env!("Z3RM_COMMIT_SHA").unwrap_or("no_sha").to_owned(),
             },
             {
                 let background_executor = app.background_executor();
@@ -647,10 +647,10 @@ pub fn execute_run(
             .detach();
         }
         settings::init(cx);
-        let app_commit_sha = option_env!("ZERMINAL_COMMIT_SHA").map(|s| AppCommitSha::new(s.to_owned()));
+        let app_commit_sha = option_env!("Z3RM_COMMIT_SHA").map(|s| AppCommitSha::new(s.to_owned()));
         let app_version = AppVersion::load(
-            env!("ZERMINAL_PKG_VERSION"),
-            option_env!("ZERMINAL_BUILD_ID"),
+            env!("Z3RM_PKG_VERSION"),
+            option_env!("Z3RM_BUILD_ID"),
             app_commit_sha,
         );
         release_channel::init(app_version, cx);
@@ -852,7 +852,7 @@ pub(crate) fn execute_proxy(
 
     let id = std::process::id().to_string();
     let should_install_crash_handler = matches!(
-        env::var("ZERMINAL_GENERATE_MINIDUMPS").as_deref(),
+        env::var("Z3RM_GENERATE_MINIDUMPS").as_deref(),
         Ok("true" | "1")
     ) || *RELEASE_CHANNEL != ReleaseChannel::Dev;
 
@@ -863,7 +863,7 @@ pub(crate) fn execute_proxy(
                 zed_version: VERSION.to_owned(),
                 binary: "zed-remote-proxy".to_string(),
                 release_channel: release_channel::RELEASE_CHANNEL_NAME.clone(),
-                commit_sha: option_env!("ZERMINAL_COMMIT_SHA").unwrap_or("no_sha").to_owned(),
+                commit_sha: option_env!("Z3RM_COMMIT_SHA").unwrap_or("no_sha").to_owned(),
             },
             |task| {
                 smol::spawn(task).detach();
@@ -1354,7 +1354,7 @@ fn cleanup_old_binaries_wsl() {
 fn is_new_version(version: &str) -> bool {
     semver::Version::from_str(version)
         .ok()
-        .zip(semver::Version::from_str(env!("ZERMINAL_PKG_VERSION")).ok())
+        .zip(semver::Version::from_str(env!("Z3RM_PKG_VERSION")).ok())
         .is_some_and(|(version, current_version)| version >= current_version)
 }
 

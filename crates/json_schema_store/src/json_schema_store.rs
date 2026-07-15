@@ -9,7 +9,7 @@ use project::Project;
 use settings::Settings as _;
 use util::schemars::{AllowTrailingCommas, DefaultDenyUnknownFields};
 
-const SCHEMA_URI_PREFIX: &str = "zerminal://schemas/";
+const SCHEMA_URI_PREFIX: &str = "z3rm://schemas/";
 
 const TSCONFIG_SCHEMA: &str = include_str!("schemas/tsconfig.json");
 const PACKAGE_JSON_SCHEMA: &str = include_str!("schemas/package.json");

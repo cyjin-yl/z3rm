@@ -238,7 +238,7 @@ where
 #[cfg(unix)]
 pub fn prevent_root_execution() {
     let is_root = nix::unistd::geteuid().is_root();
-    let allow_root = std::env::var("ZERMINAL_ALLOW_ROOT").is_ok_and(|val| val == "true");
+    let allow_root = std::env::var("Z3RM_ALLOW_ROOT").is_ok_and(|val| val == "true");
 
     if is_root && !allow_root {
         eprintln!(
@@ -246,7 +246,7 @@ pub fn prevent_root_execution() {
 Error: Running Zed as root or via sudo is unsupported.
        Doing so (even once) may subtly break things for all subsequent non-root usage of Zed.
        It is untested and not recommended, don't complain when things break.
-       If you wish to proceed anyways, set `ZERMINAL_ALLOW_ROOT=true` in your environment."
+       If you wish to proceed anyways, set `Z3RM_ALLOW_ROOT=true` in your environment."
         );
         std::process::exit(1);
     }
@@ -345,8 +345,8 @@ pub fn get_zed_cli_path() -> Result<PathBuf> {
         // so here ./cli is for both installed and development builds.
         &["./cli"]
     } else if cfg!(target_os = "windows") {
-        // bin/zerminal.exe is for installed builds, ./cli.exe is for development builds.
-        &["bin/zerminal.exe", "./cli.exe"]
+        // bin/z3rm.exe is for installed builds, ./cli.exe is for development builds.
+        &["bin/z3rm.exe", "./cli.exe"]
     } else if cfg!(target_os = "linux") || cfg!(target_os = "freebsd") {
         // bin is the standard, ./cli is for the target directory in development builds.
         &["../bin/zed", "./cli"]

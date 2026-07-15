@@ -2,32 +2,32 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create the `zerminal_macros` crate with the `#[zerminal_todo]` proc-macro, set up the `zerminal-migration` Cargo feature flag, and verify the macro compiles and works in both modes.
+**Goal:** Create the `z3rm_macros` crate with the `#[z3rm_todo]` proc-macro, set up the `z3rm-migration` Cargo feature flag, and verify the macro compiles and works in both modes.
 
-**Architecture:** The `#[zerminal_todo]` attribute marks migration holes. Without the `zerminal-migration` feature, it expands to `compile_error!` (blocks compilation). With `--features zerminal-migration`, it expands to `inventory::submit!` (compiles, reports count). "Fixing a hole" = "deleting the attribute."
+**Architecture:** The `#[z3rm_todo]` attribute marks migration holes. Without the `z3rm-migration` feature, it expands to `compile_error!` (blocks compilation). With `--features z3rm-migration`, it expands to `inventory::submit!` (compiles, reports count). "Fixing a hole" = "deleting the attribute."
 
 **Tech Stack:** Rust proc-macros, `inventory` crate, `syn`/`quote`/`proc-macro2`.
 
 ---
 
-### Task 1: Create `zerminal_macros` crate
+### Task 1: Create `z3rm_macros` crate
 
 **Files:**
-- Create: `crates/zerminal_macros/Cargo.toml`
-- Create: `crates/zerminal_macros/src/zerminal_macros.rs`
+- Create: `crates/z3rm_macros/Cargo.toml`
+- Create: `crates/z3rm_macros/src/z3rm_macros.rs`
 
 - [ ] **Step 1: Create Cargo.toml**
 
 ```toml
 [package]
-name = "zerminal_macros"
+name = "z3rm_macros"
 version = "0.1.0"
 edition = "2024"
 publish = false
 license = "Apache-2.0"
 
 [lib]
-path = "src/zerminal_macros.rs"
+path = "src/z3rm_macros.rs"
 
 [dependencies]
 proc-macro2 = { workspace = true }
@@ -46,12 +46,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parse, parse::ParseStream, Token, LitStr};
 
-struct ZerminalTodoArgs {
+struct Z3rmTodoArgs {
     category: LitStr,
     description: Option<LitStr>,
 }
 
-impl Parse for ZerminalTodoArgs {
+impl Parse for Z3rmTodoArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let category: LitStr = input.parse()?;
         let description = if input.peek(Token![,]) {
@@ -60,29 +60,29 @@ impl Parse for ZerminalTodoArgs {
         } else {
             None
         };
-        Ok(ZerminalTodoArgs { category, description })
+        Ok(Z3rmTodoArgs { category, description })
     }
 }
 
 /// Marks a location as an incomplete migration hole.
 ///
-/// Without `zerminal-migration` feature: expands to `compile_error!`
-/// With `zerminal-migration` feature: expands to `inventory::submit!` registration
+/// Without `z3rm-migration` feature: expands to `compile_error!`
+/// With `z3rm-migration` feature: expands to `inventory::submit!` registration
 ///
 /// "Fixing a hole" = "deleting this attribute from the code."
 #[proc_macro_attribute]
-pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
-    let args: ZerminalTodoArgs = syn::parse_macro_input!(attrs as ZerminalTodoArgs);
+pub fn z3rm_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    let args: Z3rmTodoArgs = syn::parse_macro_input!(attrs as Z3rmTodoArgs);
     let item: proc_macro2::TokenStream = item.into();
     let category = args.category.value();
     let desc = args.description.map(|d| d.value()).unwrap_or_default();
     let file = file!();
     let line = line!();
 
-    #[cfg(not(feature = "zerminal-migration"))]
+    #[cfg(not(feature = "z3rm-migration"))]
     {
         let msg = format!(
-            "zerminal_todo [{}]: {} ({}:{})",
+            "z3rm_todo [{}]: {} ({}:{})",
             category, desc, file, line
         );
         let err = quote! {
@@ -95,11 +95,11 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
         expanded.into()
     }
 
-    #[cfg(feature = "zerminal-migration")]
+    #[cfg(feature = "z3rm-migration")]
     {
         let expanded = quote! {
             inventory::submit! {
-                crate::ZerminalTodoEntry {
+                crate::Z3rmTodoEntry {
                     category: #category,
                     description: #desc,
                     file: #file,
@@ -126,12 +126,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parse, parse::ParseStream, Token, LitStr};
 
-struct ZerminalTodoArgs {
+struct Z3rmTodoArgs {
     category: LitStr,
     description: Option<LitStr>,
 }
 
-impl Parse for ZerminalTodoArgs {
+impl Parse for Z3rmTodoArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let category: LitStr = input.parse()?;
         let description = if input.peek(Token![,]) {
@@ -140,17 +140,17 @@ impl Parse for ZerminalTodoArgs {
         } else {
             None
         };
-        Ok(ZerminalTodoArgs { category, description })
+        Ok(Z3rmTodoArgs { category, description })
     }
 }
 
 /// Marks a migration hole.
-/// The calling crate must have the `zerminal-migration` feature defined.
-/// When `zerminal-migration` is NOT enabled, this expands to compile_error!.
-/// When `zerminal-migration` IS enabled, this registers an inventory entry.
+/// The calling crate must have the `z3rm-migration` feature defined.
+/// When `z3rm-migration` is NOT enabled, this expands to compile_error!.
+/// When `z3rm-migration` IS enabled, this registers an inventory entry.
 #[proc_macro_attribute]
-pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
-    let args: ZerminalTodoArgs = syn::parse_macro_input!(attrs as ZerminalTodoArgs);
+pub fn z3rm_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    let args: Z3rmTodoArgs = syn::parse_macro_input!(attrs as Z3rmTodoArgs);
     let item: proc_macro2::TokenStream = item.into();
     let category = args.category.value();
     let desc = args.description.map(|d| d.value()).unwrap_or_default();
@@ -159,12 +159,12 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
     // Generate both branches. The cfg selects at the call site.
     let compile_error_msg = format!(
-        "zerminal_todo [{}]: {} ({}:{})",
+        "z3rm_todo [{}]: {} ({}:{})",
         category, desc, file, line
     );
 
     let expanded = quote! {
-        // The calling crate's cfg(feature = "zerminal-migration") gates this.
+        // The calling crate's cfg(feature = "z3rm-migration") gates this.
         // We emit a conditional that the *consumer's* feature flag controls.
         #item
     };
@@ -184,7 +184,7 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
     // Without the feature, the build script fails.
 
     let expanded = quote! {
-        ::zerminal_macros::__do_todo!(
+        ::z3rm_macros::__do_todo!(
             #category, #desc, #file, #line, #item
         );
     };
@@ -201,7 +201,7 @@ The simplest working pattern: the proc-macro emits different token streams based
 
 The most reliable approach: **two separate attribute macros**, one that compiles and one that errors, and use `cfg_attr` to select.
 
-Actually the cleanest: emit `#[cfg_attr(not(feature = "zerminal-migration"), zerminal_macros::error)]` which is another proc-macro that always emits `compile_error!`. No — `cfg_attr` on arbitrary statements doesn't work universally.
+Actually the cleanest: emit `#[cfg_attr(not(feature = "z3rm-migration"), z3rm_macros::error)]` which is another proc-macro that always emits `compile_error!`. No — `cfg_attr` on arbitrary statements doesn't work universally.
 
 **Final correct approach:** The proc-macro emits an `inventory::submit!` unconditionally. A separate `inventory::iter` check in a test binary or build script counts holes. Without the feature, the build.rs generates `compile_error!` if count > 0. This is the approach from the spec (B+C in the grill: feature flag + inventory counter).
 
@@ -210,12 +210,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parse, parse::ParseStream, Token, LitStr, Ident};
 
-struct ZerminalTodoArgs {
+struct Z3rmTodoArgs {
     category: LitStr,
     description: Option<LitStr>,
 }
 
-impl Parse for ZerminalTodoArgs {
+impl Parse for Z3rmTodoArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let category: LitStr = input.parse()?;
         let description = if input.peek(Token![,]) {
@@ -224,16 +224,16 @@ impl Parse for ZerminalTodoArgs {
         } else {
             None
         };
-        Ok(ZerminalTodoArgs { category, description })
+        Ok(Z3rmTodoArgs { category, description })
     }
 }
 
 /// Marks a migration hole. Always emits an inventory registration.
-/// The workspace build script checks the count; without `zerminal-migration`
+/// The workspace build script checks the count; without `z3rm-migration`
 /// feature, non-zero count fails the build via compile_error in a generated module.
 #[proc_macro_attribute]
-pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
-    let args: ZerminalTodoArgs = syn::parse_macro_input!(attrs as ZerminalTodoArgs);
+pub fn z3rm_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    let args: Z3rmTodoArgs = syn::parse_macro_input!(attrs as Z3rmTodoArgs);
     let item: proc_macro2::TokenStream = item.into();
     let category = args.category.value();
     let desc = args.description.map(|d| d.value()).unwrap_or_default();
@@ -241,7 +241,7 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let line = line!();
 
     let expanded = quote! {
-        ::zerminal_macros::submit_todo!(#category, #desc, #file, #line);
+        ::z3rm_macros::submit_todo!(#category, #desc, #file, #line);
         #item
     };
 
@@ -251,7 +251,7 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 - [ ] **Step 3: Create the declarative helper macro + inventory type**
 
-Create: `crates/zerminal_macros/src/lib.rs` (the non-proc-macro crate that exports the inventory type + declarative macro)
+Create: `crates/z3rm_macros/src/lib.rs` (the non-proc-macro crate that exports the inventory type + declarative macro)
 
 Wait — a crate cannot be both a proc-macro crate and a normal lib crate. We need two crates, or we use the approach where the proc-macro crate is separate from the runtime support.
 
@@ -262,12 +262,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parse, parse::ParseStream, Token, LitStr};
 
-struct ZerminalTodoArgs {
+struct Z3rmTodoArgs {
     category: LitStr,
     description: Option<LitStr>,
 }
 
-impl Parse for ZerminalTodoArgs {
+impl Parse for Z3rmTodoArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let category: LitStr = input.parse()?;
         let description = if input.peek(Token![,]) {
@@ -276,13 +276,13 @@ impl Parse for ZerminalTodoArgs {
         } else {
             None
         };
-        Ok(ZerminalTodoArgs { category, description })
+        Ok(Z3rmTodoArgs { category, description })
     }
 }
 
 #[proc_macro_attribute]
-pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
-    let args: ZerminalTodoArgs = syn::parse_macro_input!(attrs as ZerminalTodoArgs);
+pub fn z3rm_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    let args: Z3rmTodoArgs = syn::parse_macro_input!(attrs as Z3rmTodoArgs);
     let item: proc_macro2::TokenStream = item.into();
     let category = args.category.value();
     let desc = args.description.map(|d| d.value()).unwrap_or_default();
@@ -291,7 +291,7 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         inventory::submit! {
-            ::zerminal_macros::ZerminalTodo {
+            ::z3rm_macros::Z3rmTodo {
                 category: #category,
                 description: #desc,
                 file: #file,
@@ -305,11 +305,11 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
     }
 ```
 
-Wait, this won't work either. A proc-macro crate (`proc-macro = true`) cannot export non-macro items like the `ZerminalTodo` struct. The inventory type must be in a separate non-proc-macro crate.
+Wait, this won't work either. A proc-macro crate (`proc-macro = true`) cannot export non-macro items like the `Z3rmTodo` struct. The inventory type must be in a separate non-proc-macro crate.
 
 We need:
-- `crates/zerminal_macros` (proc-macro crate) — the `#[zerminal_todo]` attribute
-- `crates/zerminal_macros_impl` (lib crate) — `ZerminalTodo` inventory type
+- `crates/z3rm_macros` (proc-macro crate) — the `#[z3rm_todo]` attribute
+- `crates/z3rm_macros_impl` (lib crate) — `Z3rmTodo` inventory type
 
 Or we can avoid this by having the proc-macro generate the inventory struct inline. But that's messy.
 
@@ -321,63 +321,63 @@ Actually, the simplest pattern: emit the `inventory::submit!` with a **phantom t
 
 Let me go with two crates:
 
-- [ ] **Step 1: Create `crates/zerminal_macros_types` (lib crate)**
+- [ ] **Step 1: Create `crates/z3rm_macros_types` (lib crate)**
 
 **Files:**
-- Create: `crates/zerminal_macros_types/Cargo.toml`
-- Create: `crates/zerminal_macros_types/src/zerminal_macros_types.rs`
+- Create: `crates/z3rm_macros_types/Cargo.toml`
+- Create: `crates/z3rm_macros_types/src/z3rm_macros_types.rs`
 
 ```toml
 [package]
-name = "zerminal_macros_types"
+name = "z3rm_macros_types"
 version = "0.1.0"
 edition = "2024"
 publish = false
 license = "Apache-2.0"
 
 [lib]
-path = "src/zerminal_macros_types.rs"
+path = "src/z3rm_macros_types.rs"
 
 [dependencies]
 inventory = "0.3"
 ```
 
 ```rust
-/// An inventory entry registered by `#[zerminal_todo]`.
+/// An inventory entry registered by `#[z3rm_todo]`.
 /// The build script collects all entries and reports counts.
-pub struct ZerminalTodo {
+pub struct Z3rmTodo {
     pub category: &'static str,
     pub description: &'static str,
     pub file: &'static str,
     pub line: u32,
 }
 
-inventory::collect!(ZerminalTodo);
+inventory::collect!(Z3rmTodo);
 ```
 
-- [ ] **Step 2: Create `crates/zerminal_macros` (proc-macro crate)**
+- [ ] **Step 2: Create `crates/z3rm_macros` (proc-macro crate)**
 
 **Files:**
-- Create: `crates/zerminal_macros/Cargo.toml`
-- Create: `crates/zerminal_macros/src/zerminal_macros.rs`
+- Create: `crates/z3rm_macros/Cargo.toml`
+- Create: `crates/z3rm_macros/src/z3rm_macros.rs`
 
 ```toml
 [package]
-name = "zerminal_macros"
+name = "z3rm_macros"
 version = "0.1.0"
 edition = "2024"
 publish = false
 license = "Apache-2.0"
 
 [lib]
-path = "src/zerminal_macros.rs"
+path = "src/z3rm_macros.rs"
 proc-macro = true
 
 [dependencies]
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true, features = ["full"] }
-zerminal_macros_types = { path = "../zerminal_macros_types" }
+z3rm_macros_types = { path = "../z3rm_macros_types" }
 inventory = "0.3"
 ```
 
@@ -386,12 +386,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parse, parse::ParseStream, Token, LitStr};
 
-struct ZerminalTodoArgs {
+struct Z3rmTodoArgs {
     category: LitStr,
     description: Option<LitStr>,
 }
 
-impl Parse for ZerminalTodoArgs {
+impl Parse for Z3rmTodoArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let category: LitStr = input.parse()?;
         let description = if input.peek(Token![,]) {
@@ -400,7 +400,7 @@ impl Parse for ZerminalTodoArgs {
         } else {
             None
         };
-        Ok(ZerminalTodoArgs { category, description })
+        Ok(Z3rmTodoArgs { category, description })
     }
 }
 
@@ -409,10 +409,10 @@ impl Parse for ZerminalTodoArgs {
 /// Always emits an `inventory::submit!` registration that the workspace
 /// build script collects and counts. "Fixing a hole" = "deleting this attribute."
 ///
-/// Usage: `#[zerminal_todo("removed-crate", "workspace no longer depends on project::worktree")]`
+/// Usage: `#[z3rm_todo("removed-crate", "workspace no longer depends on project::worktree")]`
 #[proc_macro_attribute]
-pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
-    let args: ZerminalTodoArgs = syn::parse_macro_input!(attrs as ZerminalTodoArgs);
+pub fn z3rm_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
+    let args: Z3rmTodoArgs = syn::parse_macro_input!(attrs as Z3rmTodoArgs);
     let item: proc_macro2::TokenStream = item.into();
     let category = args.category.value();
     let desc = args.description.map(|d| d.value()).unwrap_or_default();
@@ -421,7 +421,7 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         inventory::submit! {
-            zerminal_macros_types::ZerminalTodo {
+            z3rm_macros_types::Z3rmTodo {
                 category: #category,
                 description: #desc,
                 file: #file,
@@ -442,24 +442,24 @@ pub fn zerminal_todo(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 Add to `members`:
 ```
-    "crates/zerminal_macros_types",
-    "crates/zerminal_macros",
+    "crates/z3rm_macros_types",
+    "crates/z3rm_macros",
 ```
 
 Add to `[workspace.dependencies]`:
 ```toml
-zerminal_macros_types = { path = "crates/zerminal_macros_types" }
-zerminal_macros = { path = "crates/zerminal_macros" }
+z3rm_macros_types = { path = "crates/z3rm_macros_types" }
+z3rm_macros = { path = "crates/z3rm_macros" }
 ```
 
 - [ ] **Step 4: Verify crates compile**
 
-Run: `cargo check -p zerminal_macros_types -p zerminal_macros`
+Run: `cargo check -p z3rm_macros_types -p z3rm_macros`
 Expected: PASS (both crates compile)
 
-- [ ] **Step 5: Create workspace `zerminal-migration` feature flag**
+- [ ] **Step 5: Create workspace `z3rm-migration` feature flag**
 
-The feature flag lives at the workspace level. Each crate that uses `#[zerminal_todo]` must have this feature in its `Cargo.toml`.
+The feature flag lives at the workspace level. Each crate that uses `#[z3rm_todo]` must have this feature in its `Cargo.toml`.
 
 For the workspace root, add to `Cargo.toml`:
 ```toml
@@ -471,34 +471,34 @@ inventory = "0.3"
 Each consuming crate adds:
 ```toml
 [features]
-zerminal-migration = []
+z3rm-migration = []
 
 [dependencies]
-zerminal_macros = { workspace = true }
-zerminal_macros_types = { workspace = true }
+z3rm_macros = { workspace = true }
+z3rm_macros_types = { workspace = true }
 inventory = { workspace = true }
 ```
 
 - [ ] **Step 6: Create the hole-counting build script**
 
 **Files:**
-- Create: `crates/zerminal_macros_types/src/count_todos.rs`
+- Create: `crates/z3rm_macros_types/src/count_todos.rs`
 
 This is a binary that links against all consuming crates and prints the inventory count. It is compiled and run as part of the build check.
 
 ```rust
-use zerminal_macros_types::ZerminalTodo;
+use z3rm_macros_types::Z3rmTodo;
 
 fn main() {
-    let todos: Vec<_> = inventory::iter::<ZerminalTodo>().collect();
+    let todos: Vec<_> = inventory::iter::<Z3rmTodo>().collect();
 
     if todos.is_empty() {
-        println!("zerminal: no migration holes remaining.");
+        println!("z3rm: no migration holes remaining.");
         return;
     }
 
     // Group by category
-    let mut by_category: std::collections::BTreeMap<&str, Vec<&ZerminalTodo>> =
+    let mut by_category: std::collections::BTreeMap<&str, Vec<&Z3rmTodo>> =
         std::collections::BTreeMap::new();
     for todo in &todos {
         by_category.entry(todo.category).or_default().push(todo);
@@ -514,10 +514,10 @@ fn main() {
 - [ ] **Step 7: Test the macro with a dummy hole**
 
 **Files:**
-- Create: `crates/zerminal_macros_types/tests/macro_test.rs`
+- Create: `crates/z3rm_macros_types/tests/macro_test.rs`
 
 ```rust
-#[zerminal_macros::zerminal_todo("test-category", "this is a test hole")]
+#[z3rm_macros::z3rm_todo("test-category", "this is a test hole")]
 fn dummy_function() -> i32 {
     42
 }
@@ -528,22 +528,22 @@ fn test_dummy_still_works() {
 }
 ```
 
-Add to `crates/zerminal_macros_types/Cargo.toml`:
+Add to `crates/z3rm_macros_types/Cargo.toml`:
 ```toml
 [dev-dependencies]
-zerminal_macros = { path = "../zerminal_macros" }
+z3rm_macros = { path = "../z3rm_macros" }
 ```
 
 - [ ] **Step 8: Run test**
 
-Run: `cargo test -p zerminal_macros_types`
+Run: `cargo test -p z3rm_macros_types`
 Expected: PASS — the function compiles (inventory::submit! is a no-op at runtime), test passes.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add crates/zerminal_macros_types crates/zerminal_macros Cargo.toml
-git commit -m "Add zerminal_macros crate with #[zerminal_todo] migration tracking macro"
+git add crates/z3rm_macros_types crates/z3rm_macros Cargo.toml
+git commit -m "Add z3rm_macros crate with #[z3rm_todo] migration tracking macro"
 ```
 
 ---

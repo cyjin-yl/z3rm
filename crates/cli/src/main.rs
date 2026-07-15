@@ -31,7 +31,7 @@ use walkdir::WalkDir;
 
 use std::io::IsTerminal;
 
-const URL_PREFIX: [&'static str; 5] = ["zerminal://", "http://", "https://", "file://", "ssh://"];
+const URL_PREFIX: [&'static str; 5] = ["z3rm://", "http://", "https://", "file://", "ssh://"];
 
 struct Detect;
 
@@ -48,21 +48,21 @@ trait InstalledApp {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "zerminal",
+    name = "z3rm",
     disable_version_flag = true,
-    before_help = "The Zerminal CLI binary.
-This CLI is a separate binary that invokes Zerminal.
+    before_help = "The Z3rm CLI binary.
+This CLI is a separate binary that invokes Z3rm.
 
 Examples:
-    `zerminal`
-          Simply opens Zerminal
-    `zerminal --foreground`
+    `z3rm`
+          Simply opens Z3rm
+    `z3rm --foreground`
           Runs in foreground (shows all logs)
-    `zerminal path-to-your-project`
-          Open your project in Zerminal
-    `zerminal -n path-to-file `
+    `z3rm path-to-your-project`
+          Open your project in Z3rm
+    `z3rm -n path-to-file `
           Open file/folder in a new window",
-    after_help = "To read from stdin, append '-', e.g. 'ps axf | zerminal -'"
+    after_help = "To read from stdin, append '-', e.g. 'ps axf | z3rm -'"
 )]
 struct Args {
     /// Wait for all of the given paths to be opened/closed before exiting.
@@ -87,29 +87,29 @@ struct Args {
     classic: bool,
     /// Sets a custom directory for all user data (e.g., database, extensions, logs).
     /// This overrides the default platform-specific data directory location:
-    #[cfg_attr(target_os = "macos", doc = "`~/Library/Application Support/Zerminal`.")]
-    #[cfg_attr(target_os = "windows", doc = "`%LOCALAPPDATA%\\Zerminal`.")]
+    #[cfg_attr(target_os = "macos", doc = "`~/Library/Application Support/Z3rm`.")]
+    #[cfg_attr(target_os = "windows", doc = "`%LOCALAPPDATA%\\Z3rm`.")]
     #[cfg_attr(
         not(any(target_os = "windows", target_os = "macos")),
-        doc = "`$XDG_DATA_HOME/zerminal`."
+        doc = "`$XDG_DATA_HOME/z3rm`."
     )]
     #[arg(long, value_name = "DIR", value_hint = clap::ValueHint::DirPath)]
     user_data_dir: Option<String>,
-    /// The paths to open in Zerminal (space-separated).
+    /// The paths to open in Z3rm (space-separated).
     ///
     /// Use `path:line:column` syntax to open a file at the given line and column.
     #[arg(trailing_var_arg = true, value_hint = clap::ValueHint::AnyPath)]
     paths_with_position: Vec<String>,
-    /// Print Zerminal's version and the app path.
+    /// Print Z3rm's version and the app path.
     #[arg(short, long)]
     version: bool,
-    /// Run zerminal in the foreground (useful for debugging)
+    /// Run z3rm in the foreground (useful for debugging)
     #[arg(long)]
     foreground: bool,
-    /// Custom path to Zerminal.app or the zerminal binary
-    #[arg(long = "zerminal")]
+    /// Custom path to Z3rm.app or the z3rm binary
+    #[arg(long = "z3rm")]
     zed: Option<PathBuf>,
-    /// Run zerminal in dev-server mode
+    /// Run z3rm in dev-server mode
     #[arg(long)]
     dev_server_token: Option<String>,
     /// The username and WSL distribution to use when opening paths. If not specified,
@@ -124,7 +124,7 @@ struct Args {
     #[cfg(target_os = "windows")]
     #[arg(long, value_name = "USER@DISTRO")]
     wsl: Option<String>,
-    /// Not supported in Zerminal CLI, only supported on Zerminal binary
+    /// Not supported in Z3rm CLI, only supported on Z3rm binary
     /// Will attempt to give the correct command to run
     #[arg(long)]
     system_specs: bool,
@@ -498,14 +498,14 @@ fn run() -> Result<()> {
 
     // Must happen before clap — SSH invokes cli.exe directly as SSH_ASKPASS
     // and passes the socket path via env var to avoid argument parsing.
-    if let Ok(socket) = std::env::var("ZERMINAL_ASKPASS_SOCKET") {
+    if let Ok(socket) = std::env::var("Z3RM_ASKPASS_SOCKET") {
         askpass::main_from_args(&socket, std::env::args().skip(1));
         return Ok(());
     }
 
     let args = Args::parse();
 
-    // `zerminal --askpass` Makes zerminal operate in nc/netcat mode for use with askpass
+    // `z3rm --askpass` Makes z3rm operate in nc/netcat mode for use with askpass
     if let Some(socket) = &args.askpass {
         askpass::main(socket);
         return Ok(());
@@ -567,7 +567,7 @@ fn run() -> Result<()> {
 
         let status = std::process::Command::new("sh")
             .arg(&script_path)
-            .env("ZERMINAL_CHANNEL", &*release_channel::RELEASE_CHANNEL_NAME)
+            .env("Z3RM_CHANNEL", &*release_channel::RELEASE_CHANNEL_NAME)
             .status()
             .context("Failed to execute uninstall script")?;
 
@@ -576,7 +576,7 @@ fn run() -> Result<()> {
 
     let (server, server_name) =
         IpcOneShotServer::<IpcHandshake>::new().context("Handshake before Zed spawn")?;
-    let url = format!("zerminal-cli://{server_name}");
+    let url = format!("z3rm-cli://{server_name}");
 
     let open_behavior = if args.new {
         cli::OpenBehavior::AlwaysNew
@@ -597,7 +597,7 @@ fn run() -> Result<()> {
         {
             use collections::HashMap;
 
-            // On Linux, the desktop entry uses `cli` to spawn `zerminal`.
+            // On Linux, the desktop entry uses `cli` to spawn `z3rm`.
             // We need to handle env vars correctly since std::env::vars() may not contain
             // project-specific vars (e.g. those set by direnv).
             // By setting env to None here, the LSP will use worktree env vars instead,
@@ -845,14 +845,14 @@ fn prompt_open_behavior() -> Option<cli::CliBehaviorSetting> {
     let items = [
         format!(
             "Add to existing Zed window ({})",
-            blue.apply_to("zerminal --existing")
+            blue.apply_to("z3rm --existing")
         ),
-        format!("Open a new window ({})", blue.apply_to("zerminal --classic")),
+        format!("Open a new window ({})", blue.apply_to("z3rm --classic")),
     ];
 
     let prompt = format!(
         "Configure default behavior for {}\n{}",
-        blue.apply_to("zerminal <path>"),
+        blue.apply_to("z3rm <path>"),
         console::style("You can change this later in Zed settings"),
     );
 
@@ -902,7 +902,7 @@ mod linux {
                 // libexec is the standard, lib/zed is for Arch (and other non-libexec distros),
                 // ./zed is for the target directory in development builds.
                 let possible_locations =
-                    ["../libexec/zerminal", "../lib/zerminal/zerminal", "./zerminal"];
+                    ["../libexec/z3rm", "../lib/z3rm/z3rm", "./z3rm"];
                 possible_locations
                     .iter()
                     .find_map(|p| dir.join(p).canonicalize().ok().filter(|path| path != &cli))
@@ -925,7 +925,7 @@ mod linux {
                     format!("{} ", *release_channel::RELEASE_CHANNEL_NAME)
                 },
                 option_env!("RELEASE_VERSION").unwrap_or_default(),
-                match option_env!("ZERMINAL_COMMIT_SHA") {
+                match option_env!("Z3RM_COMMIT_SHA") {
                     Some(commit_sha) => format!(" {commit_sha} "),
                     None => "".to_string(),
                 },
@@ -939,7 +939,7 @@ mod linux {
                 .unwrap_or_else(|| paths::data_dir().clone());
 
             let sock_path = data_dir.join(format!(
-                "zerminal-{}.sock",
+                "z3rm-{}.sock",
                 *release_channel::RELEASE_CHANNEL_NAME
             ));
             let sock = UnixDatagram::unbound()?;
@@ -1026,8 +1026,8 @@ mod flatpak {
     use std::process::Command;
     use std::{env, process};
 
-    const EXTRA_LIB_ENV_NAME: &str = "ZERMINAL_FLATPAK_LIB_PATH";
-    const NO_ESCAPE_ENV_NAME: &str = "ZERMINAL_FLATPAK_NO_ESCAPE";
+    const EXTRA_LIB_ENV_NAME: &str = "Z3RM_FLATPAK_LIB_PATH";
+    const NO_ESCAPE_ENV_NAME: &str = "Z3RM_FLATPAK_NO_ESCAPE";
 
     /// Adds bundled libraries to LD_LIBRARY_PATH if running under flatpak
     pub fn ld_extra_libs() {
@@ -1049,7 +1049,7 @@ mod flatpak {
         if let Some(flatpak_dir) = get_flatpak_dir() {
             let mut args = vec!["/usr/bin/flatpak-spawn".into(), "--host".into()];
             args.append(&mut get_xdg_env_args());
-            args.push("--env=ZERMINAL_UPDATE_EXPLANATION=Please use flatpak to update zerminal".into());
+            args.push("--env=Z3RM_UPDATE_EXPLANATION=Please use flatpak to update z3rm".into());
             args.push(
                 format!(
                     "--env={EXTRA_LIB_ENV_NAME}={}",
@@ -1057,17 +1057,17 @@ mod flatpak {
                 )
                 .into(),
             );
-            args.push(flatpak_dir.join("bin").join("zerminal").into());
+            args.push(flatpak_dir.join("bin").join("z3rm").into());
 
             let mut is_app_location_set = false;
             for arg in &env::args_os().collect::<Vec<_>>()[1..] {
                 args.push(arg.clone());
-                is_app_location_set |= arg == "--zerminal";
+                is_app_location_set |= arg == "--z3rm";
             }
 
             if !is_app_location_set {
-                args.push("--zerminal".into());
-                args.push(flatpak_dir.join("libexec").join("zerminal").into());
+                args.push("--z3rm".into());
+                args.push(flatpak_dir.join("libexec").join("z3rm").into());
             }
 
             let error = exec::execvp("/usr/bin/flatpak-spawn", args);
@@ -1078,11 +1078,11 @@ mod flatpak {
 
     pub fn set_bin_if_no_escape(mut args: super::Args) -> super::Args {
         if env::var(NO_ESCAPE_ENV_NAME).is_ok()
-            && env::var("FLATPAK_ID").is_ok_and(|id| id.starts_with("dev.zerminal.Zerminal"))
+            && env::var("FLATPAK_ID").is_ok_and(|id| id.starts_with("dev.z3rm.Z3rm"))
             && args.zed.is_none()
         {
-            args.zed = Some("/app/libexec/zerminal".into());
-            unsafe { env::set_var("ZERMINAL_UPDATE_EXPLANATION", "Please use flatpak to update zerminal") };
+            args.zed = Some("/app/libexec/z3rm".into());
+            unsafe { env::set_var("Z3RM_UPDATE_EXPLANATION", "Please use flatpak to update z3rm") };
         }
         args
     }
@@ -1093,7 +1093,7 @@ mod flatpak {
         }
 
         if let Ok(flatpak_id) = env::var("FLATPAK_ID") {
-            if !flatpak_id.starts_with("dev.zerminal.Zerminal") {
+            if !flatpak_id.starts_with("dev.z3rm.Z3rm") {
                 return None;
             }
 
@@ -1172,7 +1172,7 @@ mod windows {
                     format!("{} ", *release_channel::RELEASE_CHANNEL_NAME)
                 },
                 option_env!("RELEASE_VERSION").unwrap_or_default(),
-                match option_env!("ZERMINAL_COMMIT_SHA") {
+                match option_env!("Z3RM_COMMIT_SHA") {
                     Some(commit_sha) => format!(" {commit_sha} "),
                     None => "".to_string(),
                 },
@@ -1237,9 +1237,9 @@ mod windows {
                 let cli = std::env::current_exe()?;
                 let dir = cli.parent().context("no parent path for cli")?;
 
-                // ../zerminal.exe is the standard, lib/zerminal is for MSYS2, ./zerminal.exe is for the target
+                // ../z3rm.exe is the standard, lib/z3rm is for MSYS2, ./z3rm.exe is for the target
                 // directory in development builds.
-                let possible_locations = ["../zerminal.exe", "../lib/zerminal/zerminal-editor.exe", "./zerminal.exe"];
+                let possible_locations = ["../z3rm.exe", "../lib/z3rm/z3rm-editor.exe", "./z3rm.exe"];
                 possible_locations
                     .iter()
                     .find_map(|p| dir.join(p).canonicalize().ok().filter(|path| path != &cli))
@@ -1383,7 +1383,7 @@ mod mac_os {
                         .parent()
                         .with_context(|| format!("Executable {executable:?} path has no parent"))?;
                     let subprocess_stdout_file = fs::File::create(
-                        executable_parent.join("zerminal_dev.log"),
+                        executable_parent.join("z3rm_dev.log"),
                     )
                     .with_context(|| format!("Log file creation in {executable_parent:?}"))?;
                     let subprocess_stdin_file =
@@ -1415,7 +1415,7 @@ mod mac_os {
             user_data_dir: Option<&str>,
         ) -> io::Result<ExitStatus> {
             let path = match self {
-                Bundle::App { app_bundle, .. } => app_bundle.join("Contents/MacOS/zerminal"),
+                Bundle::App { app_bundle, .. } => app_bundle.join("Contents/MacOS/z3rm"),
                 Bundle::LocalPath { executable, .. } => executable.clone(),
             };
 
@@ -1429,7 +1429,7 @@ mod mac_os {
 
         fn path(&self) -> PathBuf {
             match self {
-                Bundle::App { app_bundle, .. } => app_bundle.join("Contents/MacOS/zerminal"),
+                Bundle::App { app_bundle, .. } => app_bundle.join("Contents/MacOS/z3rm"),
                 Bundle::LocalPath { executable, .. } => executable.clone(),
             }
         }

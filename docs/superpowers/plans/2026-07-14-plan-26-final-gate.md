@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Verify the complete foundation compiles cleanly WITHOUT the `zerminal-migration` feature. All `#[zerminal_todo]` macros deleted. All tests pass. This is the final Day 0 gate.
+**Goal:** Verify the complete foundation compiles cleanly WITHOUT the `z3rm-migration` feature. All `#[z3rm_todo]` macros deleted. All tests pass. This is the final Day 0 gate.
 
 ---
 
@@ -10,19 +10,19 @@
 
 - [ ] **Step 1: Run with migration feature**
 
-Run: `cargo check --features zerminal-migration`
-Expected: PASS with output "zerminal: no migration holes remaining."
+Run: `cargo check --features z3rm-migration`
+Expected: PASS with output "z3rm: no migration holes remaining."
 
 - [ ] **Step 2: Run WITHOUT migration feature**
 
 Run: `cargo check`
 Expected: PASS — no `compile_error!` triggers (all macros deleted).
 
-If any `compile_error!` fires: there is a `#[zerminal_todo]` still in the codebase. Find and fix it.
+If any `compile_error!` fires: there is a `#[z3rm_todo]` still in the codebase. Find and fix it.
 
 - [ ] **Step 3: Search for any remaining macro attributes**
 
-Run: `grep -rn '#\[zerminal_todo' crates/`
+Run: `grep -rn '#\[z3rm_todo' crates/`
 Expected: zero results.
 
 ---
@@ -58,7 +58,7 @@ Measure: `cat /dev/urandom | base64 | head -c 500M` equivalent. Must sustain > 5
 
 - [ ] **Step 3: Cold start time**
 
-Measure: `time zerminal` to first shell prompt. Must be < 500ms.
+Measure: `time z3rm` to first shell prompt. Must be < 500ms.
 
 - [ ] **Step 4: Reattach time**
 
@@ -70,7 +70,7 @@ Measure: detach → reattach. Must be < 200ms to interactive.
 
 - [ ] **Step 1: Linux smoke test**
 
-Run zerminal → shell → type → split → close → reopen → reattach. All working.
+Run z3rm → shell → type → split → close → reopen → reattach. All working.
 
 - [ ] **Step 2: Windows CI runner smoke test**
 
@@ -90,4 +90,4 @@ git commit -m "Foundation complete: Day 0 — all crates, tests, SLOs verified"
 git tag v0.1.0-foundation
 ```
 
-Foundation migration complete. zerminal is a working terminal + multiplexer.
+Foundation migration complete. z3rm is a working terminal + multiplexer.

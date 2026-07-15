@@ -12,10 +12,10 @@ const ZED_DOCS_URL: &str = "https://zed.dev/docs";
 /// stable | dev | nightly | preview
 pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| {
     if cfg!(debug_assertions) {
-        env::var("ZERMINAL_RELEASE_CHANNEL")
-            .unwrap_or_else(|_| include_str!("../../zerminal/RELEASE_CHANNEL").trim().to_string())
+        env::var("Z3RM_RELEASE_CHANNEL")
+            .unwrap_or_else(|_| include_str!("../../z3rm/RELEASE_CHANNEL").trim().to_string())
     } else {
-        include_str!("../../zerminal/RELEASE_CHANNEL").trim().to_string()
+        include_str!("../../z3rm/RELEASE_CHANNEL").trim().to_string()
     }
 });
 
@@ -87,7 +87,7 @@ impl AppVersion {
         build_id: Option<&str>,
         commit_sha: Option<AppCommitSha>,
     ) -> Version {
-        let mut version: Version = if let Ok(from_env) = env::var("ZERMINAL_APP_VERSION") {
+        let mut version: Version = if let Ok(from_env) = env::var("Z3RM_APP_VERSION") {
             from_env.parse().expect("invalid ZED_APP_VERSION")
         } else {
             pkg_version.parse().expect("invalid version in Cargo.toml")
@@ -213,10 +213,10 @@ impl ReleaseChannel {
     /// This also has to match the bundle identifier for Zed on macOS.
     pub fn app_id(&self) -> &'static str {
         match self {
-            ReleaseChannel::Dev => "dev.zerminal.Zerminal-Dev",
-            ReleaseChannel::Nightly => "dev.zerminal.Zerminal-Nightly",
-            ReleaseChannel::Preview => "dev.zerminal.Zerminal-Preview",
-            ReleaseChannel::Stable => "dev.zerminal.Zerminal",
+            ReleaseChannel::Dev => "dev.z3rm.Z3rm-Dev",
+            ReleaseChannel::Nightly => "dev.z3rm.Z3rm-Nightly",
+            ReleaseChannel::Preview => "dev.z3rm.Z3rm-Preview",
+            ReleaseChannel::Stable => "dev.z3rm.Z3rm",
         }
     }
 

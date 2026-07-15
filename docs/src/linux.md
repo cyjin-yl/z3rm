@@ -1,9 +1,9 @@
 ---
-title: Zerminal on Linux
+title: Z3rm on Linux
 description: "The installation script on the download page is the fastest way to install Zed:"
 ---
 
-# Zerminal on Linux
+# Z3rm on Linux
 
 ## Standard Installation
 
@@ -16,7 +16,7 @@ curl -f https://zed.dev/install.sh | sh
 We also offer a preview build of Zed which receives updates about a week ahead of stable. You can install it with:
 
 ```sh
-curl -f https://zed.dev/install.sh | ZERMINAL_CHANNEL=preview sh
+curl -f https://zed.dev/install.sh | Z3RM_CHANNEL=preview sh
 ```
 
 The Zed installed by the script works best on systems that:
@@ -34,7 +34,7 @@ You will need to build from source for:
 - Redhat Enterprise Linux 8.x, Rocky Linux 8, AlmaLinux 8, Amazon Linux 2 on all architectures
 - Redhat Enterprise Linux 9.x, Rocky Linux 9.3, AlmaLinux 8, Amazon Linux 2023 on aarch64 (x86_x64 OK)
 
-## Other ways to install Zerminal on Linux
+## Other ways to install Z3rm on Linux
 
 Zed is open source, and [you can install from source](./development/linux.md).
 
@@ -52,7 +52,7 @@ There are several third-party Zed packages for various Linux distributions and p
 - Parabola: [`zed`](https://www.parabola.nu/packages/extra/x86_64/zed/)
 - ALT Linux (Sisyphus): [`zed`](https://packages.altlinux.org/en/sisyphus/srpms/zed/)
 - AOSC OS: [`zed`](https://packages.aosc.io/packages/zed)
-- Flathub: [`dev.zerminal.Zerminal`](https://flathub.org/apps/dev.zerminal.Zerminal)
+- Flathub: [`dev.z3rm.Z3rm`](https://flathub.org/apps/dev.z3rm.Z3rm)
 
 See [Repology](https://repology.org/project/zed-editor/versions) for a current list of Zed packages in various repositories.
 
@@ -60,7 +60,7 @@ See [Repology](https://repology.org/project/zed-editor/versions) for a current l
 
 When installing a third-party package please be aware that it may not be completely up to date and may be slightly different from the Zed we package (a common change is to rename the binary to `zedit` or `zeditor` to avoid conflicting with other packages).
 
-We'd love your help making Zerminal available for everyone. If Zerminal is not yet available for your package manager, and you would like to fix that, we have some notes on [how to do it](./development/linux.md#notes-for-packaging-zed).
+We'd love your help making Z3rm available for everyone. If Z3rm is not yet available for your package manager, and you would like to fix that, we have some notes on [how to do it](./development/linux.md#notes-for-packaging-zed).
 
 The packages in this section provide binary installs for Zed but are not official packages within the associated distributions. These packages are maintained by community members and as such a higher level of caution should be taken when installing them.
 
@@ -86,63 +86,63 @@ Then ensure that the `zed` binary in the tarball is on your path. The easiest wa
 
 ```sh
 mkdir -p ~/.local
-# extract zed to ~/.local/zerminal.app/
+# extract zed to ~/.local/z3rm.app/
 tar -xvf <path/to/download>.tar.gz -C ~/.local
 # link the zed binary to ~/.local/bin (or another directory in your $PATH)
-ln -sf ~/.local/zerminal.app/bin/zerminal ~/.local/bin/zerminal
+ln -sf ~/.local/z3rm.app/bin/z3rm ~/.local/bin/z3rm
 ```
 
 If you'd like integration with an XDG-compatible desktop environment, you will also need to install the `.desktop` file:
 
 ```sh
-install -D ~/.local/zerminal.app/share/applications/dev.zerminal.Zerminal.desktop -t ~/.local/share/applications
-sed -i "s|Icon=zerminal|Icon=$HOME/.local/zed.app/share/icons/hicolor/512x512/apps/zerminal.png|g" ~/.local/share/applications/dev.zerminal.Zerminal.desktop
-sed -i "s|Exec=zerminal|Exec=$HOME/.local/zed.app/bin/zed|g" ~/.local/share/applications/dev.zerminal.Zerminal.desktop
+install -D ~/.local/z3rm.app/share/applications/dev.z3rm.Z3rm.desktop -t ~/.local/share/applications
+sed -i "s|Icon=z3rm|Icon=$HOME/.local/zed.app/share/icons/hicolor/512x512/apps/z3rm.png|g" ~/.local/share/applications/dev.z3rm.Z3rm.desktop
+sed -i "s|Exec=z3rm|Exec=$HOME/.local/zed.app/bin/zed|g" ~/.local/share/applications/dev.z3rm.Z3rm.desktop
 ```
 
-## Uninstalling Zerminal
+## Uninstalling Z3rm
 
 ### Standard Uninstall
 
-If Zerminal was installed using the default installation script, it can be uninstalled by supplying the `--uninstall` flag to the `zerminal` shell command
+If Z3rm was installed using the default installation script, it can be uninstalled by supplying the `--uninstall` flag to the `z3rm` shell command
 
 ```sh
-zerminal --uninstall
+z3rm --uninstall
 ```
 
-If there are no errors, the shell will then prompt you whether you'd like to keep your preferences or delete them. After making a choice, you should see a message that Zerminal was successfully uninstalled.
+If there are no errors, the shell will then prompt you whether you'd like to keep your preferences or delete them. After making a choice, you should see a message that Z3rm was successfully uninstalled.
 
-In the case that the `zerminal` shell command was not found in your PATH, you can try one of the following commands
+In the case that the `z3rm` shell command was not found in your PATH, you can try one of the following commands
 
 ```sh
-$HOME/.local/bin/zerminal --uninstall
+$HOME/.local/bin/z3rm --uninstall
 ```
 
 or
 
 ```sh
-$HOME/.local/zed.app/bin/zerminal --uninstall
+$HOME/.local/zed.app/bin/z3rm --uninstall
 ```
 
 The first case might fail if a symlink was not properly established between `$HOME/.local/bin/zed` and `$HOME/.local/zed.app/bin.zed`. But the second case should work as long as Zed was installed to its default location.
 
-If Zerminal was installed to a different location, you must invoke the `zed` binary stored in that installation directory and pass the `--uninstall` flag to it in the same format as the previous commands.
+If Z3rm was installed to a different location, you must invoke the `zed` binary stored in that installation directory and pass the `--uninstall` flag to it in the same format as the previous commands.
 
 ### Package Manager
 
-If Zerminal was installed using a package manager, please consult the documentation for that package manager on how to uninstall a package.
+If Z3rm was installed using a package manager, please consult the documentation for that package manager on how to uninstall a package.
 
 ## Troubleshooting
 
 Linux works on a large variety of systems configured in many different ways. We primarily test Zed on a vanilla Ubuntu setup, as it is the most common distribution our users use. That said, we do expect it to work on a wide variety of machines.
 
-### Zerminal fails to start
+### Z3rm fails to start
 
 If you see an error like "/lib64/libc.so.6: version 'GLIBC_2.29' not found" it means that your distribution's version of glibc is too old. You can either upgrade your system, or [install Zed from source](./development/linux.md).
 
 ### Graphics issues
 
-#### Zerminal fails to open windows
+#### Z3rm fails to open windows
 
 Zed requires a GPU to run effectively. Under the hood, we use [Vulkan](https://www.vulkan.org/) to communicate with your GPU. If you are seeing problems with performance, or Zed fails to load, it is possible that Vulkan is the culprit.
 
@@ -156,7 +156,7 @@ vkcube
 
 This should output a line describing your current graphics setup and show a rotating cube. If this does not work, you should be able to fix it by installing Vulkan compatible GPU drivers, however in some cases there is no Vulkan support yet.
 
-You can find out which graphics card Zed is using by looking in the Zerminal log (`~/.local/share/zerminal/logs/Zerminal.log`) for `Using GPU: ...`.
+You can find out which graphics card Zed is using by looking in the Z3rm log (`~/.local/share/z3rm/logs/Z3rm.log`) for `Using GPU: ...`.
 
 If you see errors like `ERROR_INITIALIZATION_FAILED` or `GPU Crashed` or `ERROR_SURFACE_LOST_KHR` then you may be able to work around this by installing different drivers for your GPU, or by selecting a different GPU to run on. (See [#14225](https://github.com/zed-industries/zed/issues/14225))
 
@@ -170,13 +170,13 @@ If you are using `amdvlk`, the default open-source AMD graphics driver, you may 
 
 For more information, the [Arch guide to Vulkan](https://wiki.archlinux.org/title/Vulkan) has some good steps that translate well to most distributions.
 
-#### Forcing Zerminal to use a specific GPU
+#### Forcing Z3rm to use a specific GPU
 
 There are a few different ways to force Zed to use a specific GPU:
 
 ##### Option A
 
-You can use the `ZERMINAL_DEVICE_ID={device_id}` environment variable to specify the device ID of the GPU you wish to have Zed use.
+You can use the `Z3RM_DEVICE_ID={device_id}` environment variable to specify the device ID of the GPU you wish to have Zed use.
 
 You can obtain the device ID of your GPU by running `lspci -nn | grep VGA` which will output each GPU on one line like:
 
@@ -187,7 +187,7 @@ You can obtain the device ID of your GPU by running `lspci -nn | grep VGA` which
 where the device ID here is `2484`. This value is in hexadecimal, so to force Zed to use this specific GPU you would set the environment variable like so:
 
 ```
-ZERMINAL_DEVICE_ID=0x2484 zed
+Z3RM_DEVICE_ID=0x2484 zed
 ```
 
 Make sure to export the variable if you choose to define it globally in a `.bashrc` or similar.
@@ -214,19 +214,19 @@ zed --system-specs
 
 will print the system specs to the terminal like so. It is strongly recommended to copy the output verbatim into the issue on GitHub, as it uses markdown formatting to ensure the output is readable.
 
-Additionally, it is extremely beneficial to provide the contents of your Zed log when reporting such issues. The log is usually located at `~/.local/share/zerminal/logs/Zerminal.log`. The recommended process for producing a helpful log file is as follows:
+Additionally, it is extremely beneficial to provide the contents of your Zed log when reporting such issues. The log is usually located at `~/.local/share/z3rm/logs/Z3rm.log`. The recommended process for producing a helpful log file is as follows:
 
 ```sh
-truncate -s 0 ~/.local/share/zerminal/logs/Zerminal.log # Clear the log file
-ZERMINAL_LOG=wgpu=info zerminal .
-cat ~/.local/share/zerminal/logs/Zerminal.log
+truncate -s 0 ~/.local/share/z3rm/logs/Z3rm.log # Clear the log file
+Z3RM_LOG=wgpu=info z3rm .
+cat ~/.local/share/z3rm/logs/Z3rm.log
 # copy the output
 ```
 
 Or, if you have the Zed cli setup, you can do
 
 ```sh
-ZERMINAL_LOG=wgpu=info /path/to/zerminal/cli --foreground .
+Z3RM_LOG=wgpu=info /path/to/z3rm/cli --foreground .
 # copy the output
 ```
 
@@ -235,10 +235,10 @@ It is also highly recommended when pasting the log into a github issue, to do so
 > **_Note_**: The whitespace in the template is important, and will cause incorrect formatting if not preserved.
 
 ````
-<details><summary>Zerminal Log</summary>
+<details><summary>Z3rm Log</summary>
 
 ```
-{zerminal log contents}
+{z3rm log contents}
 ```
 
 </details>
@@ -257,9 +257,9 @@ These features are provided by XDG desktop portals, specifically:
 
 Some window managers, such as `Hyprland`, don't provide a file picker by default. See [this list](https://wiki.archlinux.org/title/XDG_Desktop_Portal#List_of_backends_and_interfaces) as a starting point for alternatives.
 
-### Zerminal isn't remembering my API keys
+### Z3rm isn't remembering my API keys
 
-### Zerminal isn't remembering my login
+### Z3rm isn't remembering my login
 
 This feature also requires XDG desktop portals, specifically:
 
@@ -270,18 +270,18 @@ Zed needs a place to securely store secrets such as your Zed login cookie or you
 
 ### Could not start inotify
 
-Zerminal relies on inotify to watch your filesystem for changes. If you cannot start inotify then Zed will not work reliably.
+Z3rm relies on inotify to watch your filesystem for changes. If you cannot start inotify then Zed will not work reliably.
 
 If you are seeing "too many open files" then first try `sysctl fs.inotify`.
 
-- You should see that max_user_instances is 128 or higher (you can change the limit with `sudo sysctl fs.inotify.max_user_instances=1024`). Zerminal needs only 1 inotify instance.
-- You should see that `max_user_watches` is 8000 or higher (you can change the limit with `sudo sysctl fs.inotify.max_user_watches=64000`). Zerminal needs one watch per directory in all your open projects + one per git repository + a handful more for settings, themes, keymaps, extensions.
+- You should see that max_user_instances is 128 or higher (you can change the limit with `sudo sysctl fs.inotify.max_user_instances=1024`). Z3rm needs only 1 inotify instance.
+- You should see that `max_user_watches` is 8000 or higher (you can change the limit with `sudo sysctl fs.inotify.max_user_watches=64000`). Z3rm needs one watch per directory in all your open projects + one per git repository + a handful more for settings, themes, keymaps, extensions.
 
 It is also possible that you are running out of file descriptors. You can check the limits with `ulimit` and update them by editing `/etc/security/limits.conf`.
 
 ### No sound or wrong output device
 
-If you're not hearing any sound in Zerminal or the audio is routed to the wrong device, it could be due to a mismatch between audio systems. Zerminal relies on ALSA, while your system may be using PipeWire or PulseAudio. To resolve this, you need to configure ALSA to route audio through PipeWire/PulseAudio.
+If you're not hearing any sound in Z3rm or the audio is routed to the wrong device, it could be due to a mismatch between audio systems. Z3rm relies on ALSA, while your system may be using PipeWire or PulseAudio. To resolve this, you need to configure ALSA to route audio through PipeWire/PulseAudio.
 
 If your system uses PipeWire:
 
@@ -386,12 +386,12 @@ Replace `192` with your desired DPI value. This affects the system globally and 
 
 ### Font rendering parameters
 
-On Linux, Zed reads `ZERMINAL_FONTS_GAMMA` and `ZERMINAL_FONTS_GRAYSCALE_ENHANCED_CONTRAST` environment variables for the values to use for font rendering.
+On Linux, Zed reads `Z3RM_FONTS_GAMMA` and `Z3RM_FONTS_GRAYSCALE_ENHANCED_CONTRAST` environment variables for the values to use for font rendering.
 
-`ZERMINAL_FONTS_GAMMA` corresponds to [getgamma](https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwriterenderingparams-getgamma) values.
+`Z3RM_FONTS_GAMMA` corresponds to [getgamma](https://learn.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwriterenderingparams-getgamma) values.
 Allowed range [1.0, 2.2], other values are clipped.
 Default: 1.8
 
-`ZERMINAL_FONTS_GRAYSCALE_ENHANCED_CONTRAST` corresponds to [getgrayscaleenhancedcontrast](https://learn.microsoft.com/en-us/windows/win32/api/dwrite_1/nf-dwrite_1-idwriterenderingparams1-getgrayscaleenhancedcontrast) values.
+`Z3RM_FONTS_GRAYSCALE_ENHANCED_CONTRAST` corresponds to [getgrayscaleenhancedcontrast](https://learn.microsoft.com/en-us/windows/win32/api/dwrite_1/nf-dwrite_1-idwriterenderingparams1-getgrayscaleenhancedcontrast) values.
 Allowed range: [0.0, ..), other values are clipped.
 Default: 1.0

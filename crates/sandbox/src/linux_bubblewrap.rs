@@ -40,7 +40,7 @@ use std::thread;
 /// the real command to (a) validate that bwrap bound the writable grants to the
 /// inodes we captured (the bind-source TOCTOU backstop) and (b) run the
 /// restricted-network HTTP bridge. See `README.md` for the design.
-const LAUNCHER_FLAG: &str = "--zerminal-linux-sandbox-launcher";
+const LAUNCHER_FLAG: &str = "--z3rm-linux-sandbox-launcher";
 /// Re-exec marker for the WSL-side helper. This runs *inside WSL* (a Linux
 /// process) and does what `Sandbox::wrap` + the validation-fd sender do
 /// in-process on native Linux: capture the writable binds' `O_PATH` fds, stand
@@ -718,7 +718,7 @@ pub fn run_launcher_if_invoked() {
     run_launcher(invocation);
 }
 
-/// A decoded in-sandbox launcher invocation (the `--zerminal-linux-sandbox-launcher`
+/// A decoded in-sandbox launcher invocation (the `--z3rm-linux-sandbox-launcher`
 /// re-exec). All fields are produced by the trusted host side and parsed before
 /// any untrusted command runs.
 struct LauncherInvocation {

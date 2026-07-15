@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Implement file logging for mux_server daemon, `zerminal-server status` CLI, and GPUI notifications for daemon problems. All Day 0.
+**Goal:** Implement file logging for mux_server daemon, `z3rm-server status` CLI, and GPUI notifications for daemon problems. All Day 0.
 
 **Dependencies:** `zlog`, `zlog_settings`, `mux_server`, `gpui`, `notifications`.
 
@@ -17,7 +17,7 @@
 
 ```rust
 fn setup_logging() -> Result<()> {
-    let log_dir = paths::log_dir();  // ~/.local/share/zerminal/logs/ or platform equivalent
+    let log_dir = paths::log_dir();  // ~/.local/share/z3rm/logs/ or platform equivalent
     std::fs::create_dir_all(&log_dir)?;
     
     zlog::init_file_logger(&log_dir.join("mux-server.log"), zlog::LevelFilter::Info)?;
@@ -45,19 +45,19 @@ Rotate at 10MB, keep 3 rotations.
 **Files:**
 - Modify: `crates/mux_server/src/main.rs`
 
-- [ ] **Step 1: Implement `zerminal-server status` subcommand**
+- [ ] **Step 1: Implement `z3rm-server status` subcommand**
 
 ```
-$ zerminal-server status
-zerminal-server v0.1.0
+$ z3rm-server status
+z3rm-server v0.1.0
 Uptime: 2h 34m
 Sessions: 2 (1 attached)
 Panes: 5
 Memory: 47 MB
-Socket: /run/user/1000/zerminal/mux.sock
+Socket: /run/user/1000/z3rm/mux.sock
 ```
 
-- [ ] **Step 2: Implement `zerminal-server kill` and `kill --session <id>`**
+- [ ] **Step 2: Implement `z3rm-server kill` and `kill --session <id>`**
 
 Graceful shutdown: SIGHUP all PTY children, wait, clean socket, exit.
 
@@ -66,7 +66,7 @@ Graceful shutdown: SIGHUP all PTY children, wait, clean socket, exit.
 ### Task 3: GPUI notifications for daemon problems
 
 **Files:**
-- Modify: `crates/zerminal/src/daemon.rs`
+- Modify: `crates/z3rm/src/daemon.rs`
 
 - [ ] **Step 1: Daemon connection loss notification**
 
@@ -91,6 +91,6 @@ Optional: if daemon has been idle (no panes) for > 1 hour → informational toas
 - [ ] **Step 3: Commit**
 
 ```bash
-git add crates/mux_server/src/main.rs crates/zerminal/src/daemon.rs
+git add crates/mux_server/src/main.rs crates/z3rm/src/daemon.rs
 git commit -m "Add daemon logging, status CLI, GPUI notifications"
 ```

@@ -262,7 +262,7 @@ JavaScript debugging is more complicated than other languages because there are 
     "label": "Debug JS file",
     "type": "node",
     "request": "launch",
-    "program": "$ZERMINAL_FILE",
+    "program": "$Z3RM_FILE",
     "skipFiles": ["<node_internals>/**"]
   }
 ]
@@ -277,8 +277,8 @@ JavaScript debugging is more complicated than other languages because there are 
     "label": "Debug app in Chrome",
     "type": "chrome",
     "request": "launch",
-    "file": "$ZERMINAL_WORKTREE_ROOT/index.html",
-    "webRoot": "$ZERMINAL_WORKTREE_ROOT",
+    "file": "$Z3RM_WORKTREE_ROOT/index.html",
+    "webRoot": "$Z3RM_WORKTREE_ROOT",
     "console": "integratedTerminal",
     "skipFiles": ["<node_internals>/**"]
   }

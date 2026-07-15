@@ -155,7 +155,7 @@ pub fn load_extensions(extensions_dir: &Path) -> Vec<LoadedExtension> {
 ### Task 4: Implement native chrome baseline
 
 **Files:**
-- Create: `crates/zerminal/src/chrome/` (or in ui crate)
+- Create: `crates/z3rm/src/chrome/` (or in ui crate)
 - Create native implementations for each chrome component
 
 - [ ] **Step 1: Implement native tab bar**
@@ -243,11 +243,11 @@ When server-side extension renders chrome → serialize VDOM → send `Extension
 ### Task 8: Implement extension CLI install
 
 **Files:**
-- Modify: `crates/zerminal/src/main.rs` (add subcommand)
+- Modify: `crates/z3rm/src/main.rs` (add subcommand)
 
-- [ ] **Step 1: Implement `zerminal extension install <path-or-url>`**
+- [ ] **Step 1: Implement `z3rm extension install <path-or-url>`**
 
-- Local path: copy directory to `~/.config/zerminal/extensions/`
+- Local path: copy directory to `~/.config/z3rm/extensions/`
 - Git URL: clone to extensions directory
 - Trigger reload of extension host
 

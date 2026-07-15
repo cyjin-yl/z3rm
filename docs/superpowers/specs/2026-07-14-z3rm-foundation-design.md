@@ -1,10 +1,10 @@
-# Zerminal Foundation Design
+# Z3rm Foundation Design
 
 > Converting a Zed editor fork into a high-performance terminal + multiplexer.
 
 ## 1. Product Definition
 
-**Zerminal** is a high-performance GPU-rendered terminal with a built-in multiplexer (tmux-class capability), a read-only file viewer with diff review, and a QuickJS extension system where all UI chrome is implemented as plugins.
+**Z3rm** is a high-performance GPU-rendered terminal with a built-in multiplexer (tmux-class capability), a read-only file viewer with diff review, and a QuickJS extension system where all UI chrome is implemented as plugins.
 
 Forked from Zed. All editor/AI/collaboration features are removed. The retained core: GPUI rendering engine, terminal emulation (alacritty-based), workspace pane management, theme/settings infrastructure, and a slimmed read-only editor for file/diff viewing.
 
@@ -12,7 +12,7 @@ Forked from Zed. All editor/AI/collaboration features are removed. The retained 
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    zerminal (GUI client)                       │
+│                    z3rm (GUI client)                       │
 │                                                               │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────────┐  │
 │  │Terminal  │ │File      │ │Settings  │ │QuickJS Extension│  │
@@ -50,7 +50,7 @@ Forked from Zed. All editor/AI/collaboration features are removed. The retained 
 | Decision | Choice | Rationale |
 |---|---|---|
 | Upstream sync strategy | Hard fork + periodic cherry-pick | Destructive changes make merge untenable; GPUI updates are manually portable |
-| Migration approach | Progressive pruning of `zed` + `workspace` crate | Reuse window/settings/theme infrastructure; mark holes with `zerminal_todo` macro |
+| Migration approach | Progressive pruning of `zed` + `workspace` crate | Reuse window/settings/theme infrastructure; mark holes with `z3rm_todo` macro |
 | Project/git depth | Lightweight project (worktree + git status only) | Support file tree sidebar + diff view for CLI agent workflows |
 | Editor | Preserve slimmed read-only editor crate | Reuse tree-sitter syntax highlighting, line numbers, search, diff rendering |
 | Terminal state ownership | Server-canonical | mux_server owns PTY + alacritty emulator + grid; client renders grid only; no dual-parser divergence |
@@ -68,14 +68,14 @@ Detailed reports in `docs/competitive-research/`. Key takeaways:
 
 | Source | Lesson Applied |
 | **mosh** | SSP transport design (UDP + per-packet AEAD + stateless roaming + frame-rate control + local-echo prediction); transport-layer resilience is orthogonal to multiplexing |
-| **ghostty** | Per-surface read/parse/render thread separation (zerminal gets this for free via server/client split); compile-time SIMD VT parsing; library-first design (libghostty C ABI forces clean separation); glyph atlas + textured-quad compositing is the consensus pattern — keep GPUI's existing atlas path |
-| **kitty** | Kitty graphics protocol = de-facto inline-image standard (adopt wholesale; its local-shm/remote-chunked transmission maps to zerminal's local-socket/SSH-tunnel split); capability-scoped permission model with action-glob passwords for mux control; versioned JSON wire protocol + async/streaming framing; pluggable overlay layouts (Tall/Fat/Grid/Splits) as client pane arrangement; transmit-image-once/place-many model for multiplexer image rendering |
-| **competitive gap** | Neither ghostty nor kitty has a headless persistent session daemon with detach/reattach. Ghostty has none; kitty approximates with listen-socket + scripts. zerminal's server-canonical mux_server with attach/detach + keep_alive is the genuine differentiator. |
+| **ghostty** | Per-surface read/parse/render thread separation (z3rm gets this for free via server/client split); compile-time SIMD VT parsing; library-first design (libghostty C ABI forces clean separation); glyph atlas + textured-quad compositing is the consensus pattern — keep GPUI's existing atlas path |
+| **kitty** | Kitty graphics protocol = de-facto inline-image standard (adopt wholesale; its local-shm/remote-chunked transmission maps to z3rm's local-socket/SSH-tunnel split); capability-scoped permission model with action-glob passwords for mux control; versioned JSON wire protocol + async/streaming framing; pluggable overlay layouts (Tall/Fat/Grid/Splits) as client pane arrangement; transmit-image-once/place-many model for multiplexer image rendering |
+| **competitive gap** | Neither ghostty nor kitty has a headless persistent session daemon with detach/reattach. Ghostty has none; kitty approximates with listen-socket + scripts. z3rm's server-canonical mux_server with attach/detach + keep_alive is the genuine differentiator. |
 | **tmux** | Server owns all PTYs + screen models; layout as recursive tree with checksummed serialization; versioned wire protocol from day one |
 | **zellij** | Thread-per-concern actor model with typed instruction enums; all chrome as plugins (WASM→QuickJS for us); prost forward-compat contract from day one; avoid god-object files |
 | **wezterm** | Domain trait abstraction — local/remote panes share one interface; notification bus decouples PTY I/O from rendering; output coalescing + DEC-2026 sync output; GPU glyph atlas + dirty-region tracking |
 | **herdr** | Server-owns-PTYs + rendered-frame streaming (validates our server-canonical model); Rust project successfully FFI-binding Ghostty's Zig VT core (`libghostty-vt`) — evidence that alternative VT cores are integrable; PTY fd passing for live handoff across server replacement (worth studying for daemon updates); explicit state/runtime separation in AGENTS.md (validates §15 constraints); their early server/TUI coupling was a documented mistake we avoid by design |
-| **competitive gap** | None of tmux, zellij, ghostty, kitty, or herdr combines server-canonical multiplexing + GPUI GPU rendering + read-only editor/file-viewer + CLI agent diff review. herdr is closest in architecture (server-canonical, agent-aware) but is a TUI (ratatui), not a GPU-rendered GUI. zerminal occupies the gap between GUI terminal performance and multiplexer durability. |
+| **competitive gap** | None of tmux, zellij, ghostty, kitty, or herdr combines server-canonical multiplexing + GPUI GPU rendering + read-only editor/file-viewer + CLI agent diff review. herdr is closest in architecture (server-canonical, agent-aware) but is a TUI (ratatui), not a GPU-rendered GUI. z3rm occupies the gap between GUI terminal performance and multiplexer durability. |
 
 ## 2. Crate Classification
 
@@ -182,13 +182,13 @@ All crates below must compile and be functional after the two-pass migration is 
 
 | Crate | Responsibility | License |
 |---|---|---|
-| `crates/zerminal` | New entry point (replaces `zed`), slimmed main.rs | Apache-2.0 |
+| `crates/z3rm` | New entry point (replaces `zed`), slimmed main.rs | Apache-2.0 |
 | `crates/mux` | MuxDomain, MuxTransport (enum: Local/Ssh), session lifecycle, notification stream, grid sync (generation counter), file fetch RPCs | Apache-2.0 |
 | `crates/mux_server` | Headless daemon: PTY management, alacritty emulator, session keepalive, layout metadata persistence | Apache-2.0 |
 | `crates/mux_protocol` | prost/protobuf wire protocol (versioned contract), grid diff types, file fetch types | Apache-2.0 |
 | `crates/shadow_snapshot` | Persistent-tree filesystem versioning (version tree, WAL, SQLite), runs on file's host machine (local or remote mux_server), per-project quota | Apache-2.0 |
 | `crates/quickjs_runtime` | QuickJS engine bundled via `rquickjs`, replaces `node_runtime`, resource limits (CPU fuel, memory, IO rate), dedicated OS thread | Apache-2.0 |
-| `crates/zerminal_macros` | `#[zerminal_todo]` macro + project-specific proc macros | Apache-2.0 |
+| `crates/z3rm_macros` | `#[z3rm_todo]` macro + project-specific proc macros | Apache-2.0 |
 | `crates/transport_resilient` | UDP + per-packet AEAD + stateless roaming + RTT estimation (mosh-inspired transport layer) | Apache-2.0 |
 
 ### 2.4 Post-Foundation
@@ -346,14 +346,14 @@ GUI client disconnects (window close, crash, network drop)
     │
     ├── mux_server continues holding PTY master fds
     ├── Child processes keep running
-    └── User reopens zerminal → client connects → reattach
+    └── User reopens z3rm → client connects → reattach
         → client fetches full grid snapshot for each pane → renders
 ```
 
 **Daemon lifecycle:**
-- Default: `keep_alive = true` — daemon stays alive until explicitly killed via `zerminal-server kill` or system shutdown. This matches tmux user expectations; silently killing PTYs after a timeout is a footgun.
+- Default: `keep_alive = true` — daemon stays alive until explicitly killed via `z3rm-server kill` or system shutdown. This matches tmux user expectations; silently killing PTYs after a timeout is a footgun.
 - Configurable: `keep_alive_seconds` for users who prefer auto-exit after idle period.
-- `zerminal-server kill` / `zerminal-server kill --session <id>` CLI commands for manual termination.
+- `z3rm-server kill` / `z3rm-server kill --session <id>` CLI commands for manual termination.
 
 ### 3.6 Session Persistence
 
@@ -475,11 +475,11 @@ Delta chains are capped at $D_{max} = 16$. The 17th version forces materializati
 worktree event stream (single subscription)
     │
     ├── ignore filter (evaluated BEFORE any processing):
-    │     .gitignore (from worktree) + default list + .zerminalignore
+    │     .gitignore (from worktree) + default list + .z3rmignore
     │     default: .git, node_modules, target, .next, __pycache__,
     │              *.o, *.obj, *.exe, *.out, *.elf, *.dll, *.so, *.dylib,
     │              *.pyc, *.class
-    │     (no domain-specific patterns like test data — users add their own via .zerminalignore)
+    │     (no domain-specific patterns like test data — users add their own via .z3rmignore)
     │
     ├── write event → debounce 500ms → merge into one version
     ├── file close → force flush version
@@ -536,7 +536,7 @@ Default: per-project quota (500MB, configurable to unlimited).
 Git commit hook: after `git commit`, mark pre-commit deltas as `gc-eligible`. Next GC cycle prioritizes `gc-eligible` nodes. Orphan branches (not reachable from HEAD, past grace period) are also `gc-eligible`.
 ### 5.1 Design Principle
 
-**All UI chrome is implemented as extensions.** The "bare" zerminal GUI has only: terminal pane rendering (GPUI), pane/tab layout engine (workspace), extension host (QuickJS runtime), settings pane.
+**All UI chrome is implemented as extensions.** The "bare" z3rm GUI has only: terminal pane rendering (GPUI), pane/tab layout engine (workspace), extension host (QuickJS runtime), settings pane.
 
 Status bar, tab bar, session manager, layout manager, command palette, which-key hints — all extensions via QuickJS.
 
@@ -568,7 +568,7 @@ Reuses Zed's extension manifest format:
 ```toml
 # extension.toml
 [extension]
-name = "zerminal-status-bar"
+name = "z3rm-status-bar"
 version = "0.1.0"
 
 [capabilities]
@@ -586,7 +586,7 @@ io_rate_limit = 100
 
 ### 5.4 Extension API and Rendering Pipeline
 
-Extensions interact with zerminal through a typed JavaScript API:
+Extensions interact with z3rm through a typed JavaScript API:
 
 ```javascript
 export function activate(context) {
@@ -599,7 +599,7 @@ export function activate(context) {
 }
 ```
 
-**Chrome Views return declarative Virtual DOM (JSON)** → zerminal's GPUI bridge maps to GPUI elements. Extensions never call GPUI directly.
+**Chrome Views return declarative Virtual DOM (JSON)** → z3rm's GPUI bridge maps to GPUI elements. Extensions never call GPUI directly.
 
 **High-frequency widgets use a display-list pattern** (not a direct paint handle). For widgets requiring 30fps+ updates (CPU meter, clock), the extension returns a JSON display list instead of a full VDOM tree. The native side caches and diffs display lists, avoiding full VDOM reconciliation:
 
@@ -619,12 +619,12 @@ The native side diffs consecutive display lists and only repaints changed region
 
 | Extension | Function | Update Frequency |
 |---|---|---|
-| `zerminal-tab-bar` | Tab strip: titles, add/remove, drag-reorder | Low (event-driven) |
-| `zerminal-status-bar` | Status line: session name, git branch, clock | Mixed (clock = display list; branch = VDOM) |
-| `zerminal-session-manager` | Session list, switch, detach/reattach | Low (event-driven) |
-| `zerminal-layout-manager` | Preset layout selection, save current layout | Low (event-driven) |
-| `zerminal-command-palette` | Command palette | Low (on-demand) |
-| `zerminal-which-key` | Keybinding hints | Low (on-demand) |
+| `z3rm-tab-bar` | Tab strip: titles, add/remove, drag-reorder | Low (event-driven) |
+| `z3rm-status-bar` | Status line: session name, git branch, clock | Mixed (clock = display list; branch = VDOM) |
+| `z3rm-session-manager` | Session list, switch, detach/reattach | Low (event-driven) |
+| `z3rm-layout-manager` | Preset layout selection, save current layout | Low (event-driven) |
+| `z3rm-command-palette` | Command palette | Low (on-demand) |
+| `z3rm-which-key` | Keybinding hints | Low (on-demand) |
 
 These extensions live in `extensions/` and use the exact same API as third-party extensions. Users can fork built-in extensions to customize chrome.
 
@@ -653,17 +653,17 @@ Profiles (`tmux.json`, `zellij.json`, `screen.json`) are keymap files bundled in
 
 ## 8. Migration Strategy
 
-### 8.1 `zerminal_todo` Macro
+### 8.1 `z3rm_todo` Macro
 
-A proc-macro attribute that enforces migration completion. **"Fixing a hole" ≡ "deleting the `#[zerminal_todo]` attribute from that code."** There is no separate "macro cleanup" step — when you fix a hole, you remove the attribute. The count of remaining macros equals the count of remaining holes.
+A proc-macro attribute that enforces migration completion. **"Fixing a hole" ≡ "deleting the `#[z3rm_todo]` attribute from that code."** There is no separate "macro cleanup" step — when you fix a hole, you remove the attribute. The count of remaining macros equals the count of remaining holes.
 
 Switching is controlled by a **Cargo feature flag**, not a profile (proc-macros cannot see cargo profiles; they can only see `cfg(feature)`):
 
-- **Without `zerminal-migration` feature (default):** Expands to `compile_error!` — any unfixed hole blocks compilation
-- **With `--features zerminal-migration`:** Expands to `inventory::submit!` registration — compilation succeeds, build script reports remaining hole count
+- **Without `z3rm-migration` feature (default):** Expands to `compile_error!` — any unfixed hole blocks compilation
+- **With `--features z3rm-migration`:** Expands to `inventory::submit!` registration — compilation succeeds, build script reports remaining hole count
 
 ```rust
-#[zerminal_todo(category = "removed-crate", desc = "workspace no longer depends on project::worktree")]
+#[z3rm_todo(category = "removed-crate", desc = "workspace no longer depends on project::worktree")]
 fn some_function() { ... }
 ```
 
@@ -679,13 +679,13 @@ Build script outputs: per-category counts + total remaining holes.
 3. Human review: confirm completeness before proceeding
 
 **Pass 2 — Migration (edit, don't analyze):**
-1. Fix marked holes one by one; deleting the `#[zerminal_todo]` attribute IS the fix
-2. Milestone verification via `cargo check --features zerminal-migration`:
+1. Fix marked holes one by one; deleting the `#[z3rm_todo]` attribute IS the fix
+2. Milestone verification via `cargo check --features z3rm-migration`:
    - M0: Cargo.toml cleanup → check → count errors
    - M1: Fix all `removed-crate` holes → that category count = 0
    - M2: Fix all `broken-ref` holes → that category count = 0
    - M3: Fix all `stub` and `disabled-feature` holes → total count = 0
-   - M4: `cargo check` WITHOUT `zerminal-migration` feature → clean compilation (no `compile_error!` triggers because all macros are already deleted) → migration complete
+   - M4: `cargo check` WITHOUT `z3rm-migration` feature → clean compilation (no `compile_error!` triggers because all macros are already deleted) → migration complete
 
 `.rs.old` discipline: `.rs.old` files are temporary local artifacts only. **They must never be committed.** Git history is the official backup. `.rs.old` files must be deleted before any commit.
 
@@ -696,16 +696,16 @@ A local model (accessed via environment variables, credentials never committed) 
 ### 8.4 Naming and Branding
 
 **Layer 1 — User-visible names (one-time change):**
-- `crates/zed` → `crates/zerminal`
+- `crates/zed` → `crates/z3rm`
 - `default-members` updated
-- `paths::APP_NAME` = `"Zerminal"`, `paths::APP_NAME_LOWERCASE` = `"zerminal"`
-- Environment variable prefix `ZED_*` → `ZERMINAL_*`
+- `paths::APP_NAME` = `"Z3rm"`, `paths::APP_NAME_LOWERCASE` = `"z3rm"`
+- Environment variable prefix `ZED_*` → `Z3RM_*`
 - Bundle identifier updated
 - `README.md`, `CONTRIBUTING.md` rewritten
 
 **Layer 2 — Internal module names (gradual):**
-- `mod zed` → `mod zerminal`
-- `use zed::` → `use zerminal::`
+- `mod zed` → `mod z3rm`
+- `use zed::` → `use z3rm::`
 - Variable names updated over time
 
 This layered approach preserves cherry-pick compatibility with upstream.
@@ -747,9 +747,9 @@ docs/
 ```
 
 **AGENTS.md / CLAUDE.md / .rules rewrite:**
-- `AGENTS.md` — rewritten for zerminal (preserve GPUI guidelines, delete editor/agent specifics, add mux/terminal/extension development guidelines)
+- `AGENTS.md` — rewritten for z3rm (preserve GPUI guidelines, delete editor/agent specifics, add mux/terminal/extension development guidelines)
 - `CLAUDE.md` — symlink to `AGENTS.md` (`ln -s AGENTS.md CLAUDE.md`)
-- `.rules` — high-signal traps (preserve Rust + GPUI rules, delete Zed-specific rules, add zerminal-specific traps)
+- `.rules` — high-signal traps (preserve Rust + GPUI rules, delete Zed-specific rules, add z3rm-specific traps)
 
 ## 10. Licensing
 
@@ -759,7 +759,7 @@ docs/
 |---|---|---|
 | GPUI framework crates | **Apache-2.0** | `gpui`, `gpui_macos`, `gpui_linux`, `gpui_windows`, `gpui_platform`, `gpui_wgpu`, `gpui_shared_string`, `gpui_macros`, `gpui_util`, `gpui_tokio` |
 | Other retained Zed crates | GPL-3.0-or-later | `terminal`, `editor`, `workspace`, `project`, `settings`, `theme`, etc. (unless individually marked Apache) |
-| Foundation new crates | Apache-2.0 | `zerminal`, `mux`, `mux_server`, `mux_protocol`, `zerminal_macros` |
+| Foundation new crates | Apache-2.0 | `z3rm`, `mux`, `mux_server`, `mux_protocol`, `z3rm_macros` |
 | Post-foundation new crates | Apache-2.0 when created | `shadow_snapshot`, `quickjs_runtime`, `transport_resilient` |
 
 The combined binary is GPL-3.0-or-later (due to linking with GPL crates). Source-level layered declaration allows others to reference GPUI and new crates under Apache-2.0 terms. **CI enforcement:** `cargo-about` / `REUSE.toml` audit blocks merge on license mismatch. New crates that copy code from GPL Zed files must carry GPL, not Apache. Each file retains its original SPDX identifier. Zed name/logo/trademark must not be used.
@@ -847,7 +847,7 @@ Everything else — including UDP resilient transport, all terminal product deta
 
 **Cherry-pick reality check:** After deleting 90 crates and rewriting files, cherry-picking upstream GPUI updates will be labor-intensive. GPUI is not a stable API; it evolves with Zed. The layered naming strategy helps but does not guarantee easy merges. This cost is accepted as a consequence of the hard fork decision.
 
-**Keymap "compatible subset" risk:** A partial tmux keymap that violates muscle memory for the missing 20% may be worse than no keymap at all. Users who need exact tmux compatibility should use actual tmux inside zerminal. The built-in profiles target common operations only; documentation must be clear about the "compatible subset" limitation.
+**Keymap "compatible subset" risk:** A partial tmux keymap that violates muscle memory for the missing 20% may be worse than no keymap at all. Users who need exact tmux compatibility should use actual tmux inside z3rm. The built-in profiles target common operations only; documentation must be clear about the "compatible subset" limitation.
 
 ## 15. Hard Constraints and Performance SLOs
 
@@ -862,12 +862,12 @@ These are the load-bearing constraints that must hold for Day 0 to ship. They ar
 ### 15.2 Phase Boundaries
 
 4. **Day 0 includes QuickJS extension host, shadow snapshot engine, and all foundation crates in §2.3.** Native chrome is the **primary implementation** (not fallback), running alongside the extension host. Chrome-as-extension is the target; native chrome is the Day 0 baseline that works even when extensions are loading or crashed. Shadow snapshot runs on the file's host machine (local or remote mux_server), providing fine-grained undo independent of git.
-6. **Remote server auto-install.** Client SSHes to remote host, probes for `zerminal-server` via `command -v`. If not found: same-arch = scp local binary; different-arch = download from release server. Installed to `~/.zerminal-server/`. Version mismatch triggers reinstall (VS Code model). GUI-first: CLI is a convenience, not the primary interface.
+6. **Remote server auto-install.** Client SSHes to remote host, probes for `z3rm-server` via `command -v`. If not found: same-arch = scp local binary; different-arch = download from release server. Installed to `~/.z3rm-server/`. Version mismatch triggers reinstall (VS Code model). GUI-first: CLI is a convenience, not the primary interface.
 
 ### 15.3 Platform Abstraction
 
 7. **Local IPC uses `interprocess` crate's local socket abstraction** (Unix domain socket on Unix, named pipe on Windows). No `UnixStream` in top-level types. Platform-specific code is behind this abstraction.
-8. **Socket permissions:** Unix socket created with `0600` in `$XDG_RUNTIME_DIR/zerminal/`. Named pipe ACL restricts to current user SID. No same-machine cross-user session access.
+8. **Socket permissions:** Unix socket created with `0600` in `$XDG_RUNTIME_DIR/z3rm/`. Named pipe ACL restricts to current user SID. No same-machine cross-user session access.
 9. **Windows ConPTY support** is available in alacritty's Windows backend (Zed already builds and runs on Windows with ConPTY). Real Windows CI runner required for behavioral testing; Wine for compilation only.
 
 ### 15.4 Notification and Reconnect Semantics
@@ -887,7 +887,7 @@ These are minimum acceptable thresholds. "Benchmark first" means these numbers m
 |---|---|---|
 | Local keystroke-to-glyph p95 | < 16ms (one frame at 60fps) | Type a char, measure time to glyph appearing on screen. The keystroke path is: key → `send_input` → server writes PTY → shell echoes → PTY output → emulator → generation bump → `PaneDirty` → client repaint → `fetch_grid_update` → render. |
 | Local pane output steady-state | > 50 MB/s sustained throughput | `cat /dev/urandom > /dev/null` equivalent (large synthetic output). Measured as bytes processed by emulator per wall-clock second. |
-| Cold start to first shell prompt | < 500ms | `zerminal` launch → daemon spawn → socket connect → spawn shell → first prompt visible. |
+| Cold start to first shell prompt | < 500ms | `z3rm` launch → daemon spawn → socket connect → spawn shell → first prompt visible. |
 | Full snapshot resync (80x24 grid) | < 5ms | Time from `fetch_grid_update` returning `FullSnapshot` to render complete. |
 | Reattach to interactive | < 200ms | From `attach()` call to all panes rendered from authoritative snapshot. |
 
@@ -913,11 +913,11 @@ All decisions below were resolved through structured grilling and are Day 0 bind
 
 ### 16.1 Daemon Lifecycle
 
-- **Auto-spawn:** GUI startup checks for daemon; if not running, spawns `zerminal-server --daemonize`. If running, connects directly.
-- **Socket:** Fixed path default (`$XDG_RUNTIME_DIR/zerminal/mux.sock` on Unix, `\\.\pipe\zerminal-mux` on Windows). `--session <name>` uses named socket. Connect timeout configurable (default 500ms).
+- **Auto-spawn:** GUI startup checks for daemon; if not running, spawns `z3rm-server --daemonize`. If running, connects directly.
+- **Socket:** Fixed path default (`$XDG_RUNTIME_DIR/z3rm/mux.sock` on Unix, `\\.\pipe\z3rm-mux` on Windows). `--session <name>` uses named socket. Connect timeout configurable (default 500ms).
 - **Stale socket:** Connect timeout → do NOT delete socket → spawn new daemon → new daemon detects conflict → reports error or takes over.
 - **Idle resource:** Zero-pane daemon enters passive idle mode (minimal CPU/memory).
-- **keep_alive:** Default `true`. Daemon stays until explicit `zerminal-server kill`. Configurable `keep_alive_seconds` for auto-exit.
+- **keep_alive:** Default `true`. Daemon stays until explicit `z3rm-server kill`. Configurable `keep_alive_seconds` for auto-exit.
 - **One daemon, multiple sessions:** Each session has independent cwd/env. `--session <name>` attaches to existing or creates new in running daemon.
 - **Crash recovery:** Restore layout + shells at recorded cwd. Commands never auto-re-run.
 
@@ -969,12 +969,12 @@ All decisions below were resolved through structured grilling and are Day 0 bind
 
 - Runs on the file's host machine: local mux_server for local files, remote mux_server for remote files.
 - Full implementation: version tree, WAL, SQLite, bounded delta chain ($D_{max}=16$), Rope-level delta replay, binary lifting LCA, frequency circuit breaker, crash-safe decline, quota GC with promote-to-full, Zstd compression, content-addressed blob store.
-- Git commit hook integration and `.zerminalignore` are Day 0.
+- Git commit hook integration and `.z3rmignore` are Day 0.
 
 ### 16.8 Remote Connection
 
 - **GUI-first.** CLI is a convenience add-on, not the primary interface.
-- **Auto-install:** Client probes remote via `command -v zerminal-server`. Not found → same-arch: scp local binary. Different-arch: download from release server. Version mismatch → reinstall. Installed to `~/.zerminal-server/`.
+- **Auto-install:** Client probes remote via `command -v z3rm-server`. Not found → same-arch: scp local binary. Different-arch: download from release server. Version mismatch → reinstall. Installed to `~/.z3rm-server/`.
 - **Extension sync:** On connect + on install. Client pushes extension manifests + source to server. Server loads server-side extensions.
 - **Extension runtime declaration:** `extension.toml` `[runtime] side = "server" | "client" | "both"` + `sync = true | false`. Server-side extensions access remote PTY/grid/filesystem; chrome output returns to client via mux_protocol RPC. Client-side extensions render chrome UI directly via GPUI.
 
@@ -999,8 +999,8 @@ All decisions below were resolved through structured grilling and are Day 0 bind
 
 ### 16.12 Extension Installation
 
-- **Local directory scan:** `~/.config/zerminal/extensions/` scanned on startup.
-- **CLI install:** `zerminal extension install <path-or-git-url>` copies/clones to extensions directory.
+- **Local directory scan:** `~/.config/z3rm/extensions/` scanned on startup.
+- **CLI install:** `z3rm extension install <path-or-git-url>` copies/clones to extensions directory.
 - **No marketplace in Day 0.** Marketplace is post-foundation.
 
 ### 16.13 Testing (Day 0)
@@ -1010,6 +1010,6 @@ All decisions below were resolved through structured grilling and are Day 0 bind
 
 ### 16.14 Logging and Diagnostics
 
-- **File logs:** `~/.local/share/zerminal/logs/mux-server.log` (with rotation).
-- **Status CLI:** `zerminal-server status` prints uptime, session count, pane count, memory usage.
+- **File logs:** `~/.local/share/z3rm/logs/mux-server.log` (with rotation).
+- **Status CLI:** `z3rm-server status` prints uptime, session count, pane count, memory usage.
 - **GPUI notifications:** daemon issues push to client as toast/error notifications for critical problems.

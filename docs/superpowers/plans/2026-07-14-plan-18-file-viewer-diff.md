@@ -74,7 +74,7 @@ If session is connected to remote mux_server (SSH transport) → use RemoteWorkt
 ### Task 5: Diff review with accept/decline
 
 **Files:**
-- Create: `crates/zerminal/src/diff_review.rs` (or in editor crate)
+- Create: `crates/z3rm/src/diff_review.rs` (or in editor crate)
 
 - [ ] **Step 1: Implement diff view (side-by-side using split.rs)**
 
@@ -103,6 +103,6 @@ Decline = trigger shadow_snapshot decline protocol (§4.8). File reverts to prev
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/editor/ crates/project_panel/ crates/terminal_view/ crates/zerminal/src/diff_review.rs
+git add crates/editor/ crates/project_panel/ crates/terminal_view/ crates/z3rm/src/diff_review.rs
 git commit -m "Wire file viewer, diff review, remote file access via mux_protocol"
 ```

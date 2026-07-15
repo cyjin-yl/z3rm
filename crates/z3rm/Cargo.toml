@@ -1,5 +1,5 @@
 [[bin]]
-name = "zerminal"
+name = "z3rm"
 path = "src/main.rs"
 
 [[bin]]
@@ -9,11 +9,11 @@ required-features = [ "visual-tests"]
 
 [package]
 description = "The fast, collaborative code editor."
-name = "zerminal"
+name = "z3rm"
 version = "1.12.0"
 license = "GPL-3.0-or-later"
 authors = [ "Zed Team <hi@zed.dev>"]
-default-run = "zerminal"
+default-run = "z3rm"
 
 [lints]
 workspace = true
@@ -305,7 +305,7 @@ workspace = true
 [dependencies.zlog_settings]
 workspace = true
 
-[dependencies.zerminal_macros_types]
+[dependencies.z3rm_macros_types]
 workspace = true
 
 [dev-dependencies.editor]
@@ -345,35 +345,35 @@ features = [ "test-support"]
 
 [package.metadata.bundle-dev]
 icon = [ "resources/app-icon-dev@2x.png", "resources/app-icon-dev.png"]
-identifier = "dev.zerminal.Zerminal-Dev"
-name = "Zerminal Dev"
+identifier = "dev.z3rm.Z3rm-Dev"
+name = "Z3rm Dev"
 osx_minimum_system_version = "10.15.7"
 osx_info_plist_exts = [ "resources/info/*"]
-osx_url_schemes = [ "zerminal"]
+osx_url_schemes = [ "z3rm"]
 
 [package.metadata.bundle-nightly]
 icon = [ "resources/app-icon-nightly@2x.png", "resources/app-icon-nightly.png"]
-identifier = "dev.zerminal.Zerminal-Nightly"
-name = "Zerminal Nightly"
+identifier = "dev.z3rm.Z3rm-Nightly"
+name = "Z3rm Nightly"
 osx_minimum_system_version = "10.15.7"
 osx_info_plist_exts = [ "resources/info/*"]
-osx_url_schemes = [ "zerminal"]
+osx_url_schemes = [ "z3rm"]
 
 [package.metadata.bundle-preview]
 icon = [ "resources/app-icon-preview@2x.png", "resources/app-icon-preview.png"]
-identifier = "dev.zerminal.Zerminal-Preview"
-name = "Zerminal Preview"
+identifier = "dev.z3rm.Z3rm-Preview"
+name = "Z3rm Preview"
 osx_minimum_system_version = "10.15.7"
 osx_info_plist_exts = [ "resources/info/*"]
-osx_url_schemes = [ "zerminal"]
+osx_url_schemes = [ "z3rm"]
 
 [package.metadata.bundle-stable]
 icon = [ "resources/app-icon@2x.png", "resources/app-icon.png"]
-identifier = "dev.zerminal.Zerminal"
-name = "Zerminal"
+identifier = "dev.z3rm.Z3rm"
+name = "Z3rm"
 osx_minimum_system_version = "10.15.7"
 osx_info_plist_exts = [ "resources/info/*"]
-osx_url_schemes = [ "zerminal"]
+osx_url_schemes = [ "z3rm"]
 
 [package.metadata.cargo-machete]
 ignored = [ "profiling", "zstd", "tracing"]
@@ -396,5 +396,5 @@ features = [ "input-latency-histogram", "wayland", "x11"]
 workspace = true
 
 [dependencies]
-zerminal_macros = { workspace = true }
+z3rm_macros = { workspace = true }
 inventory = "0.3"

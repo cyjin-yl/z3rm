@@ -5,15 +5,15 @@ description: "Reference for Zed's command-line interface (CLI), including openin
 
 # CLI Reference
 
-Use Zerminal's command-line interface (CLI) to open files and directories, integrate with other tools, and control Zed from scripts.
+Use Z3rm's command-line interface (CLI) to open files and directories, integrate with other tools, and control Zed from scripts.
 
 ## Installation
 
 **macOS:** Run the {#action cli::InstallCliBinary} command from the command palette ({#kb command_palette::Toggle}) to install the `zed` CLI to `/usr/local/bin/zed`.
 
-**Linux:** The CLI is included with Zerminal packages. The binary name is `zerminal`.
+**Linux:** The CLI is included with Z3rm packages. The binary name is `z3rm`.
 
-**Windows:** The CLI is included with Zerminal. Add Zerminal's installation directory to your PATH, or use the full path to `zerminal.exe`.
+**Windows:** The CLI is included with Z3rm. Add Z3rm's installation directory to your PATH, or use the full path to `z3rm.exe`.
 
 ## Usage
 
@@ -184,18 +184,18 @@ eval "$(zed --completions zsh)"
 
 ### `--uninstall`
 
-Uninstall Zerminal and remove all related files (macOS and Linux only):
+Uninstall Z3rm and remove all related files (macOS and Linux only):
 
 ```sh
-zerminal --uninstall
+z3rm --uninstall
 ```
 
-### `--zerminal <PATH>`
+### `--z3rm <PATH>`
 
-Specify a custom path to the Zerminal application or binary:
+Specify a custom path to the Z3rm application or binary:
 
 ```sh
-zerminal --zerminal /path/to/Zerminal.app myfile.txt
+z3rm --z3rm /path/to/Z3rm.app myfile.txt
 ```
 
 ## Reading from Standard Input
@@ -212,10 +212,10 @@ This creates a temporary file with the stdin content and opens it in Zed.
 
 ## URL Handling
 
-The CLI can open `zerminal://`, `file://`, and `ssh://` URLs:
+The CLI can open `z3rm://`, `file://`, and `ssh://` URLs:
 
 ```sh
-zed zerminal://settings
+zed z3rm://settings
 zed file:///Users/whatever/.zshrc
 zed ssh://me@example.com/abs/path
 zed ssh://me@example.com:/abs/path

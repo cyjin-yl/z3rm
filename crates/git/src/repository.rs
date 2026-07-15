@@ -1388,7 +1388,7 @@ pub async fn get_git_committer(cx: &AsyncApp) -> GitCommitter {
     }
 
     let git_binary_path =
-        if cfg!(target_os = "macos") && option_env!("ZERMINAL_BUNDLE").as_deref() == Some("true") {
+        if cfg!(target_os = "macos") && option_env!("Z3RM_BUNDLE").as_deref() == Some("true") {
             cx.update(|cx| {
                 cx.path_for_auxiliary_executable("git")
                     .context("could not find git binary path")
@@ -3745,7 +3745,7 @@ async fn run_git_command(
             .env("SSH_ASKPASS", ask_pass.script_path())
             .env("SSH_ASKPASS_REQUIRE", "force");
         #[cfg(target_os = "windows")]
-        command.env("ZERMINAL_ASKPASS_SOCKET", ask_pass.socket_path());
+        command.env("Z3RM_ASKPASS_SOCKET", ask_pass.socket_path());
         let git_process = command.spawn()?;
 
         run_askpass_command(ask_pass, git_process).await

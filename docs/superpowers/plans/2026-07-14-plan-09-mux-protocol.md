@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans.
 
-**Goal:** Define the prost/protobuf wire protocol between zerminal client and mux_server. Versioned from day one. Covers: session lifecycle, pane lifecycle, grid sync (generation counter), scrollback fetch, file fetch, clipboard, extension chrome RPC.
+**Goal:** Define the prost/protobuf wire protocol between z3rm client and mux_server. Versioned from day one. Covers: session lifecycle, pane lifecycle, grid sync (generation counter), scrollback fetch, file fetch, clipboard, extension chrome RPC.
 
 **Architecture:** prost-based protobuf messages over framed binary (length-prefixed). Protocol version in every message header. All types in `mux_protocol` crate, shared by both client and server.
 
@@ -54,7 +54,7 @@ This is the wire protocol contract. Every message has a protocol version. Field 
 
 ```protobuf
 syntax = "proto3";
-package zerminal.mux;
+package z3rm.mux;
 
 // Protocol version — bumped on breaking changes.
 // Minor additions use new field numbers (forward-compatible).
@@ -468,7 +468,7 @@ message Response {
 
 ```rust
 pub mod gen {
-    include!(concat!(env!("OUT_DIR"), "/zerminal.mux.rs"));
+    include!(concat!(env!("OUT_DIR"), "/z3rm.mux.rs"));
 }
 
 pub use gen::*;
