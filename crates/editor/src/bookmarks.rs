@@ -192,7 +192,7 @@ impl Editor {
                 "Enter bookmark label (Optional)",
                 Some(Box::new(move |label: String, _, cx| {
                     bookmark_store.update(cx, |store, cx| {
-                        store.toggle_bookmark(target.buffer, target.buffer_anchor, label, cx);
+                        BookmarkStore::toggle_bookmark(target.buffer, target.buffer_anchor, label, cx);
                     });
                 })),
                 None,
@@ -211,7 +211,7 @@ impl Editor {
         if let Some(bookmark_store) = self.bookmark_store.clone() {
             bookmark_store.update(cx, |store, cx| {
                 for target in targets {
-                    store.toggle_bookmark(target.buffer, target.buffer_anchor, label.clone(), cx);
+                    BookmarkStore::toggle_bookmark(target.buffer, target.buffer_anchor, label.clone(), cx);
                 }
             });
         }

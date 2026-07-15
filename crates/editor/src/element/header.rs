@@ -1040,7 +1040,7 @@ pub(crate) fn render_buffer_header(
                             reveal_in_project_panel.is_some() || parent_abs_path.is_some(),
                             |menu| menu.separator(),
                         )
-                        .when_some(reveal_in_project_panel, |menu, entry_id| {
+                        .when_some(reveal_in_project_panel, |menu, _entry_id| {
                             menu.entry(
                                 "Reveal In Project Panel",
                                 Some(Box::new(RevealInProjectPanel::default())),

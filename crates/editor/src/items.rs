@@ -31,7 +31,7 @@ use project::{
     project_settings::ProjectSettings, search::SearchQuery,
 };
 use rope::TextSummary;
-use rpc::proto::{self, update_view};
+use rpc::proto::{self};
 use settings::Settings;
 use std::{
     any::{Any, TypeId},
@@ -45,7 +45,6 @@ use std::{
 use text::{BufferId, BufferSnapshot, OffsetRangeExt, Selection, ToPoint as _};
 use ui::{IconDecorationKind, prelude::*};
 use util::{ResultExt, TryFutureExt, paths::PathExt, rel_path::RelPath};
-use crate::stubs::{CollaboratorId, ProjectExt, ViewId};
 use workspace::item::{ItemSettings, SerializableItem, TabContentParams};
 use workspace::{
     ItemId, ItemNavHistory, ToolbarItemLocation, Workspace, WorkspaceId,

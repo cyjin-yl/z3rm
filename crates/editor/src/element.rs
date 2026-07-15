@@ -31,7 +31,7 @@ use crate::{
         scroll_amount::ScrollAmount,
     },
 };
-use crate::stubs::{hide_hover, inlay_hint_settings};
+use crate::stubs::inlay_hint_settings;
 use buffer_diff::{DiffHunkStatus, DiffHunkStatusKind};
 use collections::{BTreeMap, HashMap, HashSet};
 use feature_flags::{DiffReviewFeatureFlag, FeatureFlagAppExt as _};
@@ -2002,7 +2002,7 @@ impl EditorElement {
             let mut padding = ProjectSettings::get_global(cx).git.inline_blame.padding as f32;
 
             if let Some(edit_prediction) = editor.active_edit_prediction.as_ref()
-                && let EditPrediction::Edit {
+                && let crate::element::CursorPopoverType::Edit {
                     display_mode: EditDisplayMode::TabAccept,
                     ..
                 } = &edit_prediction.completion

@@ -6,7 +6,7 @@ use std::{any::Any, sync::Arc};
 use gpui::{App, Entity, Pixels, SharedString, Task, TextStyle, Window, px};
 use language::{Buffer, Location};
 use project::Project;
-use text::{Anchor, BufferId, Point};
+use text::{Anchor, BufferId};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

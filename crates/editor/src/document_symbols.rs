@@ -1,5 +1,5 @@
-use gpui::{App, Context, Task};
-use language::{Buffer, OutlineItem};
+use gpui::{Context, Task};
+use language::OutlineItem;
 use multi_buffer::{Anchor, MultiBufferSnapshot};
 use text::BufferId;
 use theme::ActiveTheme as _;

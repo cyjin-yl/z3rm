@@ -1155,7 +1155,7 @@ impl Editor {
         let project = self.project.clone();
 
         cx.spawn_in(window, async move |_, cx| {
-            let result = find_file(&buffer, project, buffer_position, cx).await;
+            let result = find_file(&buffer, project, buffer_position, cx);
 
             if let Some((_, file_target)) = result {
                 let item = workspace

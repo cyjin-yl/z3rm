@@ -87,14 +87,11 @@ pub use stubs::{
     set_diagnostic_renderer,
 };
 pub(crate) use stubs::{
-    ActiveDiagnostic, CodeLensState, CompletionId, CompletionGroup as _, DiagnosticRenderer as _,
+    ActiveDiagnostic, CodeLensState, CompletionId, DiagnosticRenderer as _,
     HOVER_POPOVER_GAP, MENU_ASIDE_MAX_WIDTH, MENU_ASIDE_MIN_WIDTH, MENU_GAP,
     MIN_POPOVER_CHARACTER_WIDTH, MIN_POPOVER_LINE_HEIGHT, POPOVER_RIGHT_OFFSET,
     FormatTrigger, RefreshForServer,
-    InlayHintRefreshReason, InlayHintSettings, ProjectBufferExt, ProjectCapabilityExt,
-    SignatureHelpPopover, find_file, find_url, find_url_from_range, hide_hover, hover_at,
-    hover_markdown_style, inlay_hint_settings, parse_zed_link, refresh_linked_ranges,
-    send_telemetry, split_words,
+    InlayHintRefreshReason, ProjectBufferExt, ProjectCapabilityExt, find_file, hide_hover, hover_at, inlay_hint_settings, refresh_linked_ranges,
 };
 pub use display_map::{
     ChunkRenderer, ChunkRendererContext, DisplayPoint, FoldPlaceholder, HighlightKey,
@@ -133,7 +130,7 @@ pub use text::Bias;
 
 use ::git::{Blame, status::FileStatus};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, BuildError};
-use anyhow::{Context as _, Result, anyhow, bail};
+use anyhow::{Context as _, Result, anyhow};
 use blink_manager::BlinkManager;
 // use client::{Collaborator, ParticipantIndex, parse_zed_link};  // removed-crate: client
 use clock::ReplicaId;
@@ -148,46 +145,38 @@ use document_links::LspDocumentLinks;
 // EditPredictionGranularity, SuggestionDisplayType,
 // };  // removed-crate: edit_prediction_types
 use editor_settings::{GoToDefinitionFallback, Minimap as MinimapSettings};
-use element::{LineWithInvisibles, PositionMap, layout_line};
+use element::{LineWithInvisibles, PositionMap};
 use futures::{
     FutureExt,
     future::{self, Shared},
 };
-use fuzzy::{StringMatch, StringMatchCandidate};
 use git::blame::{GitBlame, GlobalBlameRenderer};
 use gpui::{
-    Action, Animation, AnimationExt, AnyElement, App, AppContext, AsyncWindowContext,
-    AvailableSpace, Background, Bounds, ClickEvent, ClipboardEntry, ClipboardItem, Context,
-    DispatchPhase, Edges, Entity, EntityId, EntityInputHandler, EventEmitter, FocusHandle,
-    FocusOutEvent, Focusable, FontId, FontStyle, FontWeight, Global, HighlightStyle, Hsla,
+    Action, AnimationExt, AnyElement, App, AppContext, AsyncWindowContext, Background, Bounds, ClickEvent, ClipboardEntry, ClipboardItem, Context,
+    DispatchPhase, Entity, EntityInputHandler, EventEmitter, FocusHandle,
+    FocusOutEvent, Focusable, FontId, FontStyle, Global, HighlightStyle, Hsla,
     KeyContext, Modifiers, MouseButton, MouseDownEvent, MouseMoveEvent, PaintQuad, ParentElement,
-    Pixels, PressureStage, Render, ScrollHandle, SharedString, SharedUri, Size, Stateful, Styled,
-    Subscription, Task, TextRun, TextStyle, TextStyleRefinement, UTF16Selection, UnderlineStyle,
-    UniformListScrollHandle, WeakEntity, WeakFocusHandle, Window, div, point, prelude::*,
-    pulsating_between, px, relative, size,
+    Pixels, PressureStage, Render, ScrollHandle, SharedString, SharedUri, Size, Styled,
+    Subscription, Task, TextRun, TextStyle, TextStyleRefinement, WeakEntity, WeakFocusHandle, Window, div, prelude::*, px, relative,
 };
 use indent_guides::ActiveIndentGuidesState;
 use itertools::{Either, Itertools};
 use language::{
-    AutoindentMode, BlockCommentConfig, BracketMatch, BracketPair, Buffer, BufferRow,
-    BufferSnapshot, Capability, CharClassifier, CharKind, CharScopeContext, CodeLabel, CursorShape,
-    DiagnosticEntryRef, DiffOptions, EditPredictionsMode, EditPreview, HighlightedText, IndentKind,
-    IndentSize, Language, LanguageAwareStyling, LanguageName, LanguageRegistry, LanguageScope,
+    AutoindentMode, BracketPair, Buffer, BufferRow, Capability, CharKind, CodeLabel, CursorShape, HighlightedText,
+    IndentSize, Language, LanguageAwareStyling, LanguageName,
     LocalFile, OffsetRangeExt, OutlineItem, Point, Selection, SelectionGoal, TextObject,
-    TransactionId, TreeSitterOptions, WordsQuery,
+    TransactionId, TreeSitterOptions,
     language_settings::{
-        self, AllLanguageSettings, LanguageSettings, LspInsertMode, RewrapBehavior,
-        WordsCompletionMode, all_language_settings,
+        self, AllLanguageSettings, LanguageSettings, LspInsertMode, all_language_settings,
     },
-    point_from_lsp, point_to_lsp, text_diff_with_options,
+    point_from_lsp,
 };
 use lsp::{
-    CodeActionKind, CompletionItemKind, CompletionTriggerKind, InsertTextFormat, InsertTextMode,
+    CodeActionKind, CompletionItemKind,
     LanguageServerId,
 };
 use markdown::Markdown;
 use mouse_context_menu::MouseContextMenu;
-use movement::TextLayoutDetails;
 use multi_buffer::{
     ExcerptBoundaryInfo, ExpandExcerptDirection, MultiBufferDiffHunk, MultiBufferPoint,
     MultiBufferRow,
@@ -196,12 +185,11 @@ use parking_lot::Mutex;
 use persistence::EditorDb;
 use project::{
     git_store::GitStoreEvent,
-    project_settings::{DiagnosticSeverity, GoToDiagnosticSeverityFilter, ProjectSettings},
+    project_settings::{DiagnosticSeverity, ProjectSettings},
     Location, Project, ProjectItem, ProjectPath, ProjectTransaction,
     bookmark_store::BookmarkStore,
 };
 use rand::seq::SliceRandom;
-use regex::Regex;
 use rpc::{ErrorCode, ErrorExt, proto::PeerId};
 use scroll::{Autoscroll, OngoingScroll, ScrollAnchor, ScrollManager, SharedScrollAnchor};
 use selections_collection::{MutableSelectionsCollection, SelectionsCollection};
@@ -220,21 +208,20 @@ use std::{
     collections::hash_map,
     iter::{self, Peekable},
     mem,
-    num::NonZeroU32,
-    ops::{ControlFlow, Deref, DerefMut, Not, Range, RangeInclusive},
+    ops::{Deref, DerefMut, Not, Range, RangeInclusive},
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
     time::{Duration, Instant},
 };
 // use task::TaskVariables;  // removed-crate: task
-use text::{BufferId, FromAnchor, OffsetUtf16, Rope, ToOffset as _, ToPoint as _};
+use text::{BufferId, FromAnchor, Rope, ToOffset as _, ToPoint as _};
 use theme::{
     AccentColors, ActiveTheme, GlobalTheme, PlayerColor, StatusColors, SyntaxTheme, Theme,
 };
 use theme_settings::{ThemeSettings, observe_buffer_font_size_adjustment};
 use ui::{
-    Avatar, ContextMenu, Disclosure, IconButtonShape, Indicator, Key, KeyBinding, Tooltip,
+    Avatar, ContextMenu, Disclosure, IconButtonShape, Indicator, KeyBinding, Tooltip,
     prelude::*, scrollbars::ScrollbarAutoHide, tooltip_container, utils::WithRemSize,
 };
 use ui_input::ErasedEditor;
@@ -251,8 +238,7 @@ use zed_actions::editor::{MoveDown, MoveUp};
 
 use crate::{
     editor_settings::MultiCursorModifier,
-    scroll::{ScrollOffset, ScrollPixelOffset},
-    selections_collection::resolve_selections_wrapping_blocks,
+    scroll::ScrollOffset,
     semantic_tokens::SemanticTokenState,
 };
 
@@ -9417,7 +9403,7 @@ impl Editor {
             .and_then(|item| item.to_any_mut()?.downcast_mut::<T>())
     }
 
-    fn character_dimensions(&self, window: &mut Window, cx: &mut App) -> CharacterDimensions {
+    fn character_dimensions(&mut self, window: &mut Window, cx: &mut App) -> CharacterDimensions {
         let text_layout_details = self.text_layout_details(window, cx);
         let style = &text_layout_details.editor_style;
         let font_id = window.text_system().resolve_font(&style.text.font());
@@ -9830,6 +9816,300 @@ impl Editor {
             offset if offset < 0.0 || offset >= visible => None,
             offset => Some(offset),
         }
+    }
+    /// Stub: clear_code_lenses
+    pub fn clear_code_lenses<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: clear_runnables
+    pub fn clear_runnables<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: compose_completion
+    pub fn compose_completion<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: confirm_code_action
+    pub fn confirm_code_action<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: confirm_completion
+    pub fn confirm_completion<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: confirm_completion_insert
+    pub fn confirm_completion_insert<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: confirm_completion_replace
+    pub fn confirm_completion_replace<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: discard_edit_prediction
+    pub fn discard_edit_prediction<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: dismiss_diagnostics
+    pub fn dismiss_diagnostics<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: edit_prediction_requires_modifier
+    pub fn edit_prediction_requires_modifier<R>(&mut self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: handle_input
+    pub fn handle_input<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: has_active_diagnostic_group
+    pub fn has_active_diagnostic_group<R>(&mut self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: has_available_code_actions_for_selection
+    pub fn has_available_code_actions_for_selection<R>(&mut self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: invalidate_autoclose_regions
+    pub fn invalidate_autoclose_regions<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: is_lsp_relevant
+    pub fn is_lsp_relevant<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: pull_diagnostics
+    pub fn pull_diagnostics<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: refresh_active_diagnostics
+    pub fn refresh_active_diagnostics<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: refresh_code_lenses
+    pub fn refresh_code_lenses<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: refresh_inline_diagnostics
+    pub fn refresh_inline_diagnostics<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: render_edit_prediction_cursor_popover
+    pub fn render_edit_prediction_cursor_popover<A, B, C, D, E, F, R>(&mut self, _a0: A, _a1: B, _a2: C, _a3: D, _a4: E, _a5: F) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: render_edit_prediction_popover
+    pub fn render_edit_prediction_popover<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, R>(&mut self, _a0: A, _a1: B, _a2: C, _a3: D, _a4: E, _a5: F, _a6: G, _a7: H, _a8: I, _a9: J, _a10: K, _a11: L, _a12: M, _a13: N, _a14: O, _a15: P) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: render_inline_code_actions
+    pub fn render_inline_code_actions<A, B, C, D, R>(&mut self, _a0: A, _a1: B, _a2: C, _a3: D) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: render_run_indicator
+    pub fn render_run_indicator<A, B, C, D, E, R>(&mut self, _a0: A, _a1: B, _a2: C, _a3: D, _a4: E) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: resolve_visible_code_lenses
+    pub fn resolve_visible_code_lenses<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: rewrap
+    pub fn rewrap<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: set_max_diagnostics_severity
+    pub fn set_max_diagnostics_severity<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: should_open_signature_help_automatically
+    pub fn should_open_signature_help_automatically<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: show_signature_help_auto
+    pub fn show_signature_help_auto<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: toggle_code_lens
+    pub fn toggle_code_lens<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: trigger_completion_on_input
+    pub fn trigger_completion_on_input<A, B, C, D, R>(&mut self, _a0: A, _a1: B, _a2: C, _a3: D) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: update_diagnostics_state
+    pub fn update_diagnostics_state<A, B, R>(&mut self, _a0: A, _a1: B) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: update_edit_prediction_preview
+    pub fn update_edit_prediction_preview<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: visible_buffers
+    pub fn visible_buffers<A, R>(&mut self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: accept_edit_prediction
+    pub fn accept_edit_prediction<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: accept_next_line_edit_prediction
+    pub fn accept_next_line_edit_prediction<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: accept_next_word_edit_prediction
+    pub fn accept_next_word_edit_prediction<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: cut_to_end_of_line
+    pub fn cut_to_end_of_line<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_beginning_of_line
+    pub fn delete_to_beginning_of_line<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_end_of_line
+    pub fn delete_to_end_of_line<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_next_subword_end
+    pub fn delete_to_next_subword_end<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_next_word_end
+    pub fn delete_to_next_word_end<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_previous_subword_start
+    pub fn delete_to_previous_subword_start<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: delete_to_previous_word_start
+    pub fn delete_to_previous_word_start<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: newline
+    pub fn newline<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: newline_above
+    pub fn newline_above<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: newline_below
+    pub fn newline_below<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: observe_pending_input
+    pub fn observe_pending_input<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: show_edit_prediction
+    pub fn show_edit_prediction<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: show_signature_help
+    pub fn show_signature_help<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: spawn_nearest_task
+    pub fn spawn_nearest_task<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: toggle_block_comments
+    pub fn toggle_block_comments<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: toggle_comments
+    pub fn toggle_comments<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: toggle_markdown_block_quote
+    pub fn toggle_markdown_block_quote<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: unwrap_syntax_node
+    pub fn unwrap_syntax_node<A, B, C, R>(&mut self, _a0: A, _a1: B, _a2: C) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: active_diagnostic_group_id
+    pub fn active_diagnostic_group_id<R>(&self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: edit_prediction_cursor_popover_height
+    pub fn edit_prediction_cursor_popover_height<R>(&self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: edit_prediction_preview_is_active
+    pub fn edit_prediction_preview_is_active<R>(&self) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: edit_prediction_visible_in_cursor_popover
+    pub fn edit_prediction_visible_in_cursor_popover<A, R>(&self, _a0: A) -> R {
+        unimplemented!()
+    }
+
+    /// Stub: inline_diagnostics_enabled
+    pub fn inline_diagnostics_enabled<R>(&self) -> R {
+        unimplemented!()
     }
 }
 
@@ -10267,6 +10547,106 @@ impl SemanticsProvider for WeakEntity<Project> {
     }
 }
 
+
+impl SemanticsProvider for Project {
+    fn hover(
+        &self,
+        buffer: &Entity<Buffer>,
+        position: text::Anchor,
+        cx: &mut App,
+    ) -> Option<Task<Option<Vec<project::Hover>>>> {
+        unimplemented!("stub: SemanticsProvider::hover")
+    }
+
+    fn inline_values(
+        &self,
+        _buffer_handle: Entity<Buffer>,
+        _range: Range<text::Anchor>,
+        _cx: &mut App,
+    ) -> Option<Task<anyhow::Result<Vec<InlayHint>>>> {
+        unimplemented!("stub: SemanticsProvider::inline_values")
+    }
+
+    fn applicable_inlay_chunks(
+        &self,
+        _buffer: &Entity<Buffer>,
+        _ranges: &[Range<text::Anchor>],
+        _cx: &mut App,
+    ) -> Vec<Range<BufferRow>> {
+        unimplemented!("stub: SemanticsProvider::applicable_inlay_chunks")
+    }
+
+    fn invalidate_inlay_hints(&self, _for_buffers: &HashSet<BufferId>, _cx: &mut App) {
+        unimplemented!("stub: SemanticsProvider::invalidate_inlay_hints")
+    }
+
+    fn inlay_hints(
+        &self,
+        _invalidate: InvalidationStrategy,
+        _buffer: Entity<Buffer>,
+        _ranges: Vec<Range<text::Anchor>>,
+        _known_chunks: Option<(clock::Global, HashSet<Range<BufferRow>>)>,
+        _cx: &mut App,
+    ) -> Option<HashMap<Range<BufferRow>, Task<Result<CacheInlayHints>>>> {
+        unimplemented!("stub: SemanticsProvider::inlay_hints")
+    }
+
+    fn semantic_tokens(
+        &self,
+        _buffer: Entity<Buffer>,
+        _refresh: Option<RefreshForServer>,
+        _cx: &mut App,
+    ) -> Option<Shared<Task<std::result::Result<BufferSemanticTokens, Arc<anyhow::Error>>>>> {
+        unimplemented!("stub: SemanticsProvider::semantic_tokens")
+    }
+
+    fn supports_inlay_hints(&self, _buffer: &Entity<Buffer>, _cx: &mut App) -> bool {
+        unimplemented!("stub: SemanticsProvider::supports_inlay_hints")
+    }
+
+    fn supports_semantic_tokens(&self, _buffer: &Entity<Buffer>, _cx: &mut App) -> bool {
+        unimplemented!("stub: SemanticsProvider::supports_semantic_tokens")
+    }
+
+    fn document_highlights(
+        &self,
+        _buffer: &Entity<Buffer>,
+        _position: text::Anchor,
+        _cx: &mut App,
+    ) -> Option<Task<Result<Vec<DocumentHighlight>>>> {
+        unimplemented!("stub: SemanticsProvider::document_highlights")
+    }
+
+    fn definitions(
+        &self,
+        _buffer: &Entity<Buffer>,
+        _position: text::Anchor,
+        _kind: GotoDefinitionKind,
+        _cx: &mut App,
+    ) -> Option<Task<Result<Option<Vec<LocationLink>>>>> {
+        unimplemented!("stub: SemanticsProvider::definitions")
+    }
+
+    fn range_for_rename(
+        &self,
+        _buffer: &Entity<Buffer>,
+        _position: text::Anchor,
+        _cx: &mut App,
+    ) -> Task<Result<Option<Range<text::Anchor>>>> {
+        unimplemented!("stub: SemanticsProvider::range_for_rename")
+    }
+
+    fn perform_rename(
+        &self,
+        _buffer: &Entity<Buffer>,
+        _position: text::Anchor,
+        _new_name: String,
+        _cx: &mut App,
+    ) -> Option<Task<Result<ProjectTransaction>>> {
+        unimplemented!("stub: SemanticsProvider::perform_rename")
+    }
+}
+
 fn consume_contiguous_rows(
     contiguous_row_selections: &mut Vec<Selection<Point>>,
     selection: &Selection<Point>,
@@ -10566,82 +10946,6 @@ impl EditorSnapshot {
             .collect()
     }
 
-    // =====================================================================
-    // Stub methods for deleted editing functionality (只读模式)
-    // =====================================================================
-
-
-    /// Stub: compose_completion (补全模块已删除)
-    pub fn compose_completion(&mut self, _completion: &Completion, _cx: &mut Context<Self>) {}
-
-    /// Stub: show_signature_help (签名帮助模块已删除)
-    pub fn show_signature_help(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: show_edit_prediction (编辑预测模块已删除)
-    pub fn show_edit_prediction(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: spawn_nearest_task (任务模块已删除)
-    pub fn spawn_nearest_task(&mut self, _cx: &mut Context<Self>) -> Task<Result<()>> {
-        Task::ready(Ok(()))
-    }
-
-    /// Stub: newline (编辑功能已删除)
-    pub fn newline(&mut self, _: &Newline, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: newline_above (编辑功能已删除)
-    pub fn newline_above(&mut self, _: &NewlineAbove, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: newline_below (编辑功能已删除)
-    pub fn newline_below(&mut self, _: &NewlineBelow, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_previous_word_start (编辑功能已删除)
-    pub fn delete_to_previous_word_start(&mut self, _: &DeleteToPreviousWordStart, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_previous_subword_start (编辑功能已删除)
-    pub fn delete_to_previous_subword_start(&mut self, _: &DeleteToPreviousSubwordStart, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_next_word_end (编辑功能已删除)
-    pub fn delete_to_next_word_end(&mut self, _: &DeleteToNextWordEnd, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_next_subword_end (编辑功能已删除)
-    pub fn delete_to_next_subword_end(&mut self, _: &DeleteToNextSubwordEnd, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_beginning_of_line (编辑功能已删除)
-    pub fn delete_to_beginning_of_line(&mut self, _: &DeleteToBeginningOfLine, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: delete_to_end_of_line (编辑功能已删除)
-    pub fn delete_to_end_of_line(&mut self, _: &DeleteToEndOfLine, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: cut_to_end_of_line (编辑功能已删除)
-    pub fn cut_to_end_of_line(&mut self, _: &CutToEndOfLine, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: rewrap (编辑功能已删除)
-    pub fn rewrap(&mut self, _: &Rewrap, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-    /// Stub: toggle_comments (编辑功能已删除)
-    pub fn toggle_comments(&mut self, _: &ToggleComments, _window: &mut Window, _cx: &mut Context<Self>) {}
-
-
-    /// Stub: update_edit_prediction_preview (编辑预测模块已删除)
-    pub fn update_edit_prediction_preview(&mut self, _cx: &mut Context<Self>) {}
-    /// Stub: visible_buffers (LSP 模块已删除)
-    fn visible_buffers(&mut self, _cx: &App) -> Vec<gpui::Entity<language::Buffer>> {
-        Vec::new()
-    }
-
-    /// Stub: trigger_completion_on_input (补全模块已删除)
-    pub fn trigger_completion_on_input(&mut self, _cx: &mut Context<Self>) {}
-
-    /// Stub: toggle_code_lens (code lens 模块已删除)
-    pub fn toggle_code_lens(&mut self, _cx: &mut Context<Self>) {}
-
-    /// Stub: take_active_edit_prediction (edit prediction 模块已删除)
-    pub fn take_active_edit_prediction(&mut self) -> Option<EditPredictionState> {
-        None
-    }
-
-    /// Stub: update_diagnostics_state (诊断模块已删除)
-    pub fn update_diagnostics_state(&mut self, _cx: &mut Context<Self>) {}
 }
 
 pub fn column_pixels(style: &EditorStyle, column: usize, window: &Window) -> Pixels {

@@ -1,10 +1,9 @@
-use futures::future::join_all;
 use itertools::Itertools;
 use language::language_settings::LanguageSettings;
 use text::BufferId;
 use ui::{Context, Window};
 
-use crate::{Editor, LSP_REQUEST_DEBOUNCE_TIMEOUT};
+use crate::Editor;
 
 impl Editor {
     pub(super) fn refresh_folding_ranges(

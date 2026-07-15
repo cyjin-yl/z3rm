@@ -1,7 +1,6 @@
 use std::ops::Range;
 
-use collections::HashMap;
-use gpui::{App, Context, Hsla, Rgba};
+use gpui::{App, Context, Hsla};
 use multi_buffer::Anchor;
 use project::{DocumentColor, InlayId};
 use settings::Settings as _;
