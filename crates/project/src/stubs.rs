@@ -6,6 +6,7 @@ use std::{ops::Range, path::PathBuf, sync::Arc};
 use collections::BTreeMap;
 use gpui::{App, Entity, SharedString, Task};
 use serde::{Deserialize, Serialize};
+use fs::Fs;
 use text::Anchor;
 
 pub type CompletionId = u64;
@@ -196,6 +197,27 @@ pub struct Symbol {
     pub name: String,
     pub kind: lsp::SymbolKind,
     pub range: Range<text::Point>,
+}
+
+
+// ---------------------------------------------------------------------------
+// Diagnostic summary stubs (spec §8.2 M2)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DiagnosticSummary {
+    pub warning_count: usize,
+    pub error_count: usize,
+}
+
+// ---------------------------------------------------------------------------
+// Directory lister stub (spec §8.2 M2)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone)]
+pub enum DirectoryLister {
+    Local(Arc<dyn Fs>),
+    Project(Arc<Project>),
 }
 
 // ---------------------------------------------------------------------------
@@ -668,6 +690,14 @@ use util::rel_path::RelPath;
 #[derive(Clone, Debug)]
 pub struct StackFrame { pub position: text::Point }
 
+/// Stub for deleted remote::RemoteConnectionOptions (spec §8.2 M2)
+#[derive(Clone, Debug)]
+pub struct RemoteConnectionOptionsStub;
+
+/// Stub for deleted git::Repository (spec §8.2 M2)
+#[derive(Clone, Debug)]
+pub struct Repository;
+
 impl Project {
     pub fn open_buffer_by_id(
         &mut self,
@@ -934,6 +964,103 @@ impl Project {
 
     pub fn visible_worktrees(&self, _cx: &gpui::App) -> impl Iterator<Item = Entity<Worktree>> {
         std::iter::empty::<Entity<Worktree>>()
+    }
+
+    // --- Stub methods for deleted diagnostic/remote features (spec §8.2 M2) ---
+
+    pub fn diagnostic_summary(&self, _warnings: bool, _cx: &App) -> DiagnosticSummary {
+        DiagnosticSummary::default()
+    }
+
+    pub fn diagnostic_summary_for_path(&self, _path: &ProjectPath, _cx: &App) -> DiagnosticSummary {
+        DiagnosticSummary::default()
+    }
+
+    pub fn diagnostic_summaries(
+        &mut self,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<BTreeMap<WorktreeId, DiagnosticSummary>>> {
+        Task::ready(Ok(BTreeMap::new()))
+    }
+
+    pub fn capability(
+        &self,
+        _server_id: LanguageServerId,
+        _capability: language::Capability,
+        _cx: &App,
+    ) -> bool {
+        false
+    }
+
+    pub fn is_local(&self, _cx: &App) -> bool {
+        true
+    }
+
+    pub fn remote_client(&self) -> Option<Arc<Client>> {
+        None
+    }
+
+    pub fn remote_connection_options(&self) -> Option<Arc<RemoteConnectionOptionsStub>> {
+        None
+    }
+
+    pub fn language_servers_running_disk_based_diagnostics(
+        &self,
+        _cx: &App,
+    ) -> Vec<lsp::LanguageServerId> {
+        Vec::new()
+    }
+
+    pub fn remove_worktree(
+        &mut self,
+        _worktree_id: WorktreeId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    pub fn repositories(&self, _cx: &App) -> Vec<Arc<Repository>> {
+        Vec::new()
+    }
+
+    pub fn active_repository(
+        &self,
+        _path: &ProjectPath,
+        _cx: &App,
+    ) -> Option<Arc<Repository>> {
+        None
+    }
+
+    pub fn save_buffer(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    pub fn get_open_buffer(
+        &self,
+        _file: &dyn language::File,
+        _cx: &App,
+    ) -> Option<Entity<language::Buffer>> {
+        None
+    }
+
+    pub fn create_buffer(
+        &mut self,
+        _language: Arc<language::Language>,
+        cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<Entity<language::Buffer>> {
+        gpui::Task::ready(panic!("stub: create_buffer"))
+    }
+
+    pub fn set_language_for_buffer(
+        &mut self,
+        _buffer: &Entity<language::Buffer>,
+        _language: Arc<language::Language>,
+        _cx: &mut gpui::Context<Self>,
+    ) {
     }
 }
 

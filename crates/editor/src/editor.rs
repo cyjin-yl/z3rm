@@ -30,6 +30,7 @@ mod git;
 mod highlight_matching_bracket;
 mod indent_guides;
 pub mod items;
+pub mod hover_popover;
 mod mouse_context_menu;
 pub mod movement;
 mod persistence;
@@ -10005,6 +10006,29 @@ impl Editor {
     /// Stub: inline_diagnostics_enabled
     pub fn inline_diagnostics_enabled<R>(&self) -> R {
         unimplemented!()
+    }
+
+    // --- Stub methods for deleted diagnostic features (spec §8.2 M2) ---
+
+    /// Stub: any_active_diagnostics
+    pub fn any_active_diagnostics(&self) -> bool {
+        false
+    }
+
+    /// Stub: go_to_diagnostic_at_cursor
+    pub fn go_to_diagnostic_at_cursor(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+    }
+
+    /// Stub: disable_inline_diagnostics
+    pub fn disable_inline_diagnostics(&mut self) {
+    }
+
+    /// Stub: set_all_diagnostics_active
+    pub fn set_all_diagnostics_active(&mut self, _cx: &mut Context<Self>) {
     }
 }
 

@@ -151,6 +151,14 @@ pub enum Event {
         message: String,
         link: Option<String>,
     },
+    /// Stub variants for deleted diagnostic/remote features (spec §8.2 M2)
+    DiskBasedDiagnosticsStarted,
+    DiskBasedDiagnosticsFinished,
+    DiagnosticsUpdated,
+    LanguageServerRemoved,
+    DisconnectedFromRemote,
+    DisconnectedFromHost,
+    LanguageNotFound,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]

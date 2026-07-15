@@ -122,6 +122,9 @@ fn append_source_and_code(markdown: &mut String, diagnostic: &Diagnostic) {
 }
 
 impl editor::DiagnosticRenderer for DiagnosticRenderer {
+    fn clone_box(&self) -> Box<dyn editor::DiagnosticRenderer> {
+        Box::new(DiagnosticRenderer)
+    }
     fn render_group(
         &self,
         diagnostic_group: Vec<DiagnosticEntryRef<'_, Point>>,

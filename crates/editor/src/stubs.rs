@@ -1,16 +1,18 @@
 //! Stub types and helpers for APIs removed during dependency stripping.
 //! Avoids duplicating definitions that remain in `project::stubs`.
 
-use std::{any::Any, sync::Arc};
+use std::{any::Any, ops::Range, sync::Arc};
 
-use gpui::{App, AnyElement, Context, Element as _, Entity, IntoElement, Modifiers, Pixels, ScrollHandle, SharedString, Task, TextStyle, Window, div, px};
-use language::{Buffer, Location};
+use gpui::{App, AnyElement, Context, Element as _, Entity, IntoElement, Modifiers, Pixels, ScrollHandle, SharedString, Task, TextStyle, WeakEntity, Window, div, px};
+use language::{Buffer, DiagnosticEntryRef, LanguageRegistry, Location};
 use project::Project;
 use rpc::proto::PeerId;
-use text::{Anchor, BufferId};
+use text::{Anchor, BufferId, Point};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use settings::SnippetSortOrder;
+use markdown::Markdown;
+use crate::display_map::BlockProperties;
 
 // Types that were previously imported from project but no longer exist there.
 // Defined as stubs locally to keep the editor crate compiling.
@@ -639,6 +641,33 @@ pub struct InlineDiagnostic {
 
 pub trait DiagnosticRenderer: Send + Sync {
     fn clone_box(&self) -> Box<dyn DiagnosticRenderer>;
+
+    fn render_group(
+        &self,
+        diagnostic_group: Vec<language::DiagnosticEntryRef<'_, Point>>,
+        buffer_id: BufferId,
+        snapshot: crate::EditorSnapshot,
+        editor: WeakEntity<crate::Editor>,
+        language_registry: Option<Arc<LanguageRegistry>>,
+        cx: &mut App,
+    ) -> Vec<BlockProperties<Anchor>>;
+
+    fn render_hover(
+        &self,
+        diagnostic_group: Vec<language::DiagnosticEntryRef<'_, Point>>,
+        range: Range<Point>,
+        buffer_id: BufferId,
+        language_registry: Option<Arc<LanguageRegistry>>,
+        cx: &mut App,
+    ) -> Option<Entity<Markdown>>;
+
+    fn open_link(
+        &self,
+        editor: &mut crate::Editor,
+        link: SharedString,
+        window: &mut Window,
+        cx: &mut Context<crate::Editor>,
+    );
 }
 
 impl Clone for Box<dyn DiagnosticRenderer> {
