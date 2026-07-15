@@ -46,3 +46,4 @@ Plans must be executed in order. Each plan depends on the previous.
 | 24 | [logging & diagnostics](./2026-07-14-plan-24-logging.md) | 12 | file logs, status CLI, GPUI notifications |
 | 25 | [transport_resilient](./2026-07-14-plan-25-transport-resilient.md) | 9 | UDP AEAD, roaming, RTT, frame-rate control |
 | 26 | [final compilation gate](./2026-07-14-plan-26-final-gate.md) | all | clean build, all tests pass, SLOs met |
+| 27 | [CLI control interface](./2026-07-14-plan-27-cli-control-interface.md) | 9, 11 | tmux-compatible send-keys/capture-pane/ls |

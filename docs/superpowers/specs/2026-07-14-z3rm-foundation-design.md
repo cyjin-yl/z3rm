@@ -392,6 +392,54 @@ Persistence uses **absolute cell counts** with checksum (matching tmux's `layout
 - Version mismatch on connect → server sends `ProtocolVersion`, client downgrades or disconnects
 - **Shared memory ABI versioning** is not needed in the foundation — there is no shared memory path. Local uses Unix socket + framed binary, same as remote.
 
+### 3.10 CLI Control Interface (tmux-compatible)
+
+z3rm provides a CLI control interface for programmatic pane/session control, designed to be **tmux-compatible** so CLI agents (Claude Code, aider, omp, etc.) that already know tmux commands can control z3rm with zero learning cost.
+
+**Binary:** `z3rm` (the main binary, not `z3rm-server`)
+**Mechanism:** `z3rm` CLI subcommands connect to the local mux_server socket and issue mux_protocol RPCs. Same socket, same protocol as the GUI client — just a different client type.
+
+**tmux-compatible command mapping:**
+
+| tmux command | z3rm equivalent | Notes |
+|---|---|---|
+| `tmux ls` | `z3rm ls` | List sessions |
+| `tmux new -s <name>` | `z3rm new -s <name>` | Create session |
+| `tmux kill-session -t <name>` | `z3rm kill -t <name>` | Kill session |
+| `tmux attach -t <name>` | `z3rm attach -t <name>` | Attach (opens GUI or connects terminal) |
+| `tmux detach` | `z3rm detach` | Detach current client |
+| `tmux split-window -h` | `z3rm split-window -h` | Split pane horizontally |
+| `tmux split-window -v` | `z3rm split-window -v` | Split pane vertically |
+| `tmux send-keys -t <pane> <keys>` | `z3rm send-keys -t <pane> <keys>` | Send input to pane PTY |
+| `tmux send-keys -t <pane> Enter` | `z3rm send-keys -t <pane> Enter` | Special key names supported |
+| `tmux capture-pane -t <pane> -p` | `z3rm capture-pane -t <pane> -p` | Capture pane content as text |
+| `tmux capture-pane -t <pane> -p -S -<N>` | `z3rm capture-pane -t <pane> -p -S -<N>` | Capture with scrollback |
+| `tmux list-panes -t <session>` | `z3rm list-panes -t <session>` | List panes in session |
+| `tmux select-pane -t <pane>` | `z3rm select-pane -t <pane>` | Focus pane |
+| `tmux kill-pane -t <pane>` | `z3rm kill-pane -t <pane>` | Close pane |
+| `tmux resize-pane -t <pane> -x <W> -y <H>` | `z3rm resize-pane -t <pane> -x <W> -y <H>` | Resize pane |
+| `tmux new-window -t <session>` | `z3rm new-window -t <session>` | Create new tab |
+| `tmux rename-window -t <pane> <title>` | `z3rm rename-window -t <pane> <title>` | Set pane title |
+
+**Key name parsing:** `send-keys` accepts tmux-style key names: `Enter`, `C-c` (Ctrl+C), `Escape`, `Up`, `Down`, `Left`, `Right`, `Tab`, `Space`, `BSpace` (backspace), literal text. This is a subset of tmux's key table — sufficient for agent automation.
+
+**`capture-pane` output:** Returns the pane's visible grid as plain text (ANSI stripped by default, `-e` flag preserves ANSI). The `-S -<N>` flag includes N lines of scrollback above the visible area. Output format matches tmux: lines joined by `\n`, trailing whitespace preserved per tmux behavior.
+
+**Target specifiers:** tmux-style target strings are supported:
+- `-t session_name` — target session by name
+- `-t session_name:window.pane` — target specific pane (e.g., `dev:0.1`)
+- `-t %N` — target pane by index number
+
+**Implementation:** CLI commands translate directly to mux_protocol RPCs:
+- `send-keys` → `SendInputRequest` with parsed key bytes
+- `capture-pane` → `FetchGridUpdate` (full snapshot) + text extraction from grid cells
+- `split-window` → `SplitPaneRequest`
+- `ls` / `list-panes` → `ListSessionsRequest` / session snapshot
+
+**Agent integration:** CLI agents running inside z3rm panes can self-identify via `Z3RM_SESSION` and `Z3RM_PANE` environment variables (set by mux_server on PTY spawn). Agents use these to `send-keys` to other panes or `capture-pane` to read output — enabling multi-pane agent orchestration without any custom protocol.
+
+This is a Day 0 feature. It is essential for CLI agent workflows and requires minimal additional code (CLI arg parsing → mux_protocol RPC translation).
+
 ## 4. Shadow Snapshot Engine
 
 ### 4.1 Purpose
