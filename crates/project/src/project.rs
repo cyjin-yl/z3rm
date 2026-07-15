@@ -158,7 +158,7 @@ pub enum Event {
     LanguageServerRemoved,
     DisconnectedFromRemote,
     DisconnectedFromHost,
-    LanguageNotFound,
+    LanguageNotFound(Entity<language::Buffer>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -424,6 +424,47 @@ impl Project {
     ) -> Task<Result<(Entity<buffer_diff::BufferDiff>, Entity<Buffer>)>> {
         self.git_store
             .update(cx, |store, cx| store.open_staged_diff(buffer, cx))
+    }
+
+    // =====================================================================
+    // 以下为 stub 方法 — 对应已删除的远程协作 / 终端 / 符号跳转功能模块
+    // =====================================================================
+
+    /// Stub: is_shared (collaboration 模块已删除)
+    pub fn is_shared(&self) -> bool {
+        false
+    }
+
+    /// Stub: is_via_remote_server (remote 模块已删除)
+    pub fn is_via_remote_server(&self) -> bool {
+        false
+    }
+
+    /// Stub: project_path_git_status (git status 模块已简化)
+    pub fn project_path_git_status(
+        &self,
+        _path: &ProjectPath,
+        _cx: &App,
+    ) -> Option<git::status::FileStatus> {
+        None
+    }
+
+    /// Stub: set_language_for_buffer (language assignment 功能已删除)
+    pub fn set_language_for_buffer(
+        &mut self,
+        _buffer: &Entity<Buffer>,
+        _language: Arc<language::Language>,
+        _cx: &mut Context<Self>,
+    ) {
+    }
+
+    /// Stub: open_buffer_for_symbol (symbol search 功能已删除)
+    pub fn open_buffer_for_symbol(
+        &self,
+        _symbol: &Symbol,
+        _cx: &mut Context<Self>,
+    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+        Task::ready(Err(anyhow::anyhow!("stub: symbol search disabled")))
     }
 }
 

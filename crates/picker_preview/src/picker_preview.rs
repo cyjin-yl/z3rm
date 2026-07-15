@@ -11,7 +11,7 @@ use picker::{
     MatchLocation, PreviewBackend, PreviewLayout, PreviewSource, PreviewUpdate, ToMultiBuffer,
 };
 use project::{Project, Symbol};
-use rope::Point;
+use rope::{Point, Unclipped};
 use settings::Settings;
 use ui::{ActiveTheme, Color, div, prelude::*, v_flex};
 use util::ResultExt as _;
@@ -182,8 +182,8 @@ impl EditorPreview {
             };
             this.update_in(cx, |this, window, cx| {
                 let snapshot = buffer.read(cx).text_snapshot();
-                let start = snapshot.clip_point_utf16(symbol.range.start, Bias::Left);
-                let end = snapshot.clip_point_utf16(symbol.range.end, Bias::Left);
+                let start = snapshot.clip_point_utf16(Unclipped(symbol.range.start), Bias::Left);
+                let end = snapshot.clip_point_utf16(Unclipped(symbol.range.end), Bias::Left);
                 let highlight = MatchLocation {
                     anchor_range: snapshot.anchor_before(start)..snapshot.anchor_after(end),
                     range: snapshot.point_utf16_to_offset(start)

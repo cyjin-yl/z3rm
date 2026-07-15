@@ -196,7 +196,7 @@ pub struct Color {
 pub struct Symbol {
     pub name: String,
     pub kind: lsp::SymbolKind,
-    pub range: Range<text::Point>,
+    pub range: Range<language::PointUtf16>,
 }
 
 
@@ -1036,7 +1036,7 @@ impl Project {
 
     pub fn get_open_buffer(
         &self,
-        _file: &dyn language::File,
+        _file: &ProjectPath,
         _cx: &App,
     ) -> Option<Entity<language::Buffer>> {
         None
@@ -1051,5 +1051,94 @@ impl Project {
         gpui::Task::ready(Err(anyhow::anyhow!("stub: create_buffer")))
     }
 }
+
+/// Stub: FileFinderSettings (open_path_prompt 模块已删除)
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct FileFinderSettings {
+    pub file_icons: bool,
+}
+
+impl settings::SettingsKey for FileFinderSettings {
+    const KEY: Option<&'static str> = None;
+}
+
+impl settings::Settings for FileFinderSettings {
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        Self::default()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Extension stubs (spec §8.2 M2)
+// ---------------------------------------------------------------------------
+
+/// Stub: ExtensionMetadata (cloud_api_types crate 已删除)
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ExtensionMetadata {
+    pub id: Arc<str>,
+    pub manifest: extension::ExtensionManifest,
+    pub published_at: Option<String>,
+    pub download_count: u64,
+}
+
+/// Stub: VimModeSetting (vim_mode_setting crate 已删除)
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
+pub struct VimModeSetting(pub bool);
+
+impl settings::SettingsKey for VimModeSetting {
+    const KEY: Option<&'static str> = None;
+}
+
+impl settings::Settings for VimModeSetting {
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        Self::default()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Terminal / task stubs (spec §8.2 M2)
+// ---------------------------------------------------------------------------
+
+/// Stub: TaskId (task crate 已删除)
+pub type TaskId = u64;
+
+/// Stub: RevealStrategy (open_path_prompt crate 已删除)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RevealStrategy {
+    Center,
+    Top,
+}
+
+/// Stub: RevealTarget (open_path_prompt crate 已删除)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RevealTarget {
+    Center,
+}
+
+/// Stub: Shell (task crate 已删除)
+#[derive(Debug, Clone)]
+pub struct Shell {
+    pub program: String,
+    pub args: Vec<String>,
+}
+
+/// Stub: ShellBuilder (task crate 已删除)
+#[derive(Debug, Clone)]
+pub struct ShellBuilder {
+    pub program: String,
+    pub args: Vec<String>,
+}
+
+/// Stub: SpawnInTerminal (task crate 已删除)
+#[derive(Debug, Clone)]
+pub struct SpawnInTerminal {
+    pub program: String,
+    pub args: Vec<String>,
+    pub working_directory: Option<ProjectPath>,
+}
+
+/// Stub: Breadcrumbs (breadcrumbs crate 已删除)
+#[derive(Debug, Clone)]
+pub struct Breadcrumbs {}
 
 

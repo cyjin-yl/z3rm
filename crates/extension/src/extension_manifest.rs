@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, anyhow, bail};
-// use cloud_api_types::ExtensionProvides;  // removed-crate: cloud_api_types
 use collections::{BTreeMap, BTreeSet, HashMap};
 use fs::Fs;
 use language::LanguageName;
@@ -16,7 +15,7 @@ use util::rel_path::{PathExt, RelPathBuf};
 use crate::ExtensionCapability;
 
 /// Extension 提供的功能类别 (stub: replaced deleted cloud_api_types::ExtensionProvides)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, strum::EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum ExtensionProvides {
     Themes,

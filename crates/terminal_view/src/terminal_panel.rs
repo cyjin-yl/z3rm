@@ -6,7 +6,7 @@ use crate::{
         SerializedItems, SerializedTerminalPanel, deserialize_terminal_panel, serialize_pane_group,
     },
 };
-// use breadcrumbs::Breadcrumbs;  // removed-crate: breadcrumbs
+use project::Breadcrumbs;
 use collections::HashMap;
 use db::kvp::KeyValueStore;
 use futures::{channel::oneshot, future::join_all};
@@ -16,10 +16,7 @@ use gpui::{
     Window, actions,
 };
 use itertools::Itertools;
-use project::{Fs, Project};
-
-use settings::{Settings, TerminalDockPosition};
-// use task::{RevealStrategy, RevealTarget, Shell, ShellBuilder, SpawnInTerminal, TaskId};  // removed-crate: task
+use project::{Fs, Project, RevealStrategy, RevealTarget, Shell, ShellBuilder, SpawnInTerminal, TaskId};
 use terminal::{Terminal, terminal_settings::TerminalSettings};
 use ui::{
     ButtonLike, Clickable, ContextMenu, FluentBuilder, PopoverMenu, SplitButton, Toggleable,

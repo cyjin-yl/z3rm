@@ -3685,6 +3685,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "strum 0.27.2",
  "tempfile",
  "toml 0.8.23",
  "tracing",

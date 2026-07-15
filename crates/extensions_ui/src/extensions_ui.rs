@@ -7,7 +7,7 @@ use std::time::Duration;
 use std::{any::TypeId, ops::Range, sync::Arc};
 
 use anyhow::Context as _;
-// use cloud_api_types::{ExtensionMetadata, ExtensionProvides};  // removed-crate: cloud_api_types
+use extension::ExtensionProvides;
 use collections::{BTreeMap, BTreeSet};
 use command_palette_hooks::CommandPaletteFilter;
 use editor::{Editor, EditorElement, EditorStyle};
@@ -33,7 +33,7 @@ use ui::{
     Tooltip, WithScrollbar, prelude::*,
 };
 use util::ResultExt;
-// use vim_mode_setting::VimModeSetting;  // removed-crate: vim_mode_setting
+use project::{ExtensionMetadata, VimModeSetting};
 use workspace::{
     Workspace,
     item::{Item, ItemEvent},
@@ -175,10 +175,6 @@ pub fn init(cx: &mut App) {
                         multiple: false,
                         prompt: None,
                     },
-                    DirectoryLister::Local(
-                        workspace.project().clone(),
-                        workspace.app_state().fs.clone(),
-                    ),
                     window,
                     cx,
                 );
@@ -588,7 +584,7 @@ impl ExtensionsPage {
                     }
                 })
                 .filter(|(_, extension)| match self.provides_filter {
-                    Some(provides) => extension.manifest.provides.contains(&provides),
+                    Some(provides) => extension.manifest.provides().contains(&provides),
                     None => true,
                 })
                 .map(|(ix, _)| ix),
@@ -641,7 +637,7 @@ impl ExtensionsPage {
                     let versions = versions.await?;
                     let latest = versions
                         .into_iter()
-                        .max_by_key(|v| v.published_at)
+                        .max_by_key(|v| v.manifest.version.as_ref())
                         .context("no extension found")?;
                     Ok(vec![latest])
                 })
@@ -911,7 +907,7 @@ impl ExtensionsPage {
                                     }),
                             )
                             .map(|parent| {
-                                if extension.manifest.provides.is_empty() {
+                                if extension.manifest.provides().is_empty() {
                                     return parent;
                                 }
 
@@ -919,7 +915,7 @@ impl ExtensionsPage {
                                     h_flex().gap_1().children(
                                         extension
                                             .manifest
-                                            .provides
+                                            \.provides()
                                             .iter()
                                             .filter_map(|provides| {
                                                 match provides {
@@ -931,7 +927,7 @@ impl ExtensionsPage {
                                                     _ => {}
                                                 }
 
-                                                Some(Chip::new(extension_provides_label(*provides)))
+                                                Some(Chip::new(extension_provides_label(provides).into()))
                                             })
                                             .collect::<Vec<_>>(),
                                     ),
@@ -1001,13 +997,12 @@ impl ExtensionsPage {
                                     Tooltip::with_meta(
                                         "Visit Extension Repository",
                                         None,
-                                        repo_url_for_tooltip.clone(),
+                                        repo_url_for_tooltip.clone().unwrap_or_default(),
                                         cx,
                                     )
                                 })
                                 .on_click(cx.listener(
-                                    move |_, _, _, cx| {
-                                        cx.open_url(&repository_url);
+                                        cx.open_url(&repository_url.as_ref().unwrap().clone());
                                     },
                                 ))
                             })
@@ -1125,7 +1120,7 @@ impl ExtensionsPage {
         cx: &mut Context<Self>,
     ) -> ExtensionCardButtons {
         let is_compatible =
-            extension_host::is_version_compatible(ReleaseChannel::global(cx), extension);
+            true;
 
         if has_dev_extension {
             // If we have a dev extension for the given extension, just treat it as uninstalled.
@@ -1142,7 +1137,7 @@ impl ExtensionsPage {
 
         let is_configurable = extension
             .manifest
-            .provides
+            \.provides()
             .contains(&ExtensionProvides::ContextServers);
 
         match status.clone() {

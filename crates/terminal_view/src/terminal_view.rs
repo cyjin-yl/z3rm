@@ -31,7 +31,7 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-// use task::TaskId;  // removed-crate: task
+use project::TaskId;
 use terminal::{
     Clear, Copy, Event, HoveredWord, MaybeNavigationTarget, Modes, Paste, PasteText, Point, Range,
     ScrollLineDown, ScrollLineUp, ScrollPageDown, ScrollPageUp, ScrollToBottom, ScrollToTop,

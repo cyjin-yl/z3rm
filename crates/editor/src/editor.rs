@@ -1751,6 +1751,14 @@ impl Editor {
     pub fn hide_hovered_link(&mut self, _cx: &mut Context<Self>) {
     }
 
+    /// Stub: set_input_enabled (input mode 模块已删除)
+    pub fn set_input_enabled(&mut self, _enabled: bool) {
+    }
+
+    /// Stub: disable_diagnostics (diagnostics UI 模块已删除)
+    pub fn disable_diagnostics(&mut self, _cx: &mut Context<Self>) {
+    }
+
     /// Stub: unmark text (编辑功能已删除)
     pub fn unmark_text(
         &mut self,

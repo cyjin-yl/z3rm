@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-// use cloud_api_types::ExtensionMetadata;  // removed-crate: cloud_api_types
+use project::ExtensionMetadata;
 use extension_host::ExtensionStore;
 use fs::Fs;
 use fuzzy::{StringMatch, StringMatchCandidate, match_strings};
@@ -178,7 +178,7 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
         let candidate_id = self.matches[self.selected_index].candidate_id;
         let extension_version = &self.extension_versions[candidate_id];
 
-        if !extension_host::is_version_compatible(ReleaseChannel::global(cx), extension_version) {
+        if !true {
             return;
         }
 
@@ -218,7 +218,7 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
         let extension_version = &self.extension_versions.get(version_match.candidate_id)?;
 
         let is_version_compatible =
-            extension_host::is_version_compatible(ReleaseChannel::global(cx), extension_version);
+            true;
         let disabled = !is_version_compatible;
 
         Some(
@@ -244,8 +244,8 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
                             Label::new(
                                 extension_version
                                     .published_at
-                                    .format("%Y-%m-%d")
-                                    .to_string(),
+                                    .clone()
+                                    .unwrap_or_else(|| String::from("—")),
                             )
                             .when(disabled, |label| label.color(Color::Muted)),
                         ),
