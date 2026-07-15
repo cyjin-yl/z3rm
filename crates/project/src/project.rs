@@ -145,6 +145,12 @@ pub enum Event {
     ActiveEntryChanged(Option<ProjectEntryId>),
     DeletedEntry(WorktreeId, ProjectEntryId),
     WorktreePathsChanged { old_worktree_paths: WorktreePaths },
+    WorktreeUpdatedEntries(WorktreeId, Vec<(ProjectEntryId, ProjectEntryId, PathChange)>),
+    Toast {
+        notification_id: String,
+        message: String,
+        link: Option<String>,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]

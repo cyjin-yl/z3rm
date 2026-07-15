@@ -34,6 +34,15 @@ pub struct InlayHint {
     pub padding_after: bool,
 }
 
+impl InlayHint {
+    pub fn text(&self) -> String {
+        match &self.label {
+            InlayHintLabel::String(text) => text.clone(),
+            InlayHintLabel::LabelParts(parts) => parts.iter().map(|p| &p.value).cloned().collect(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum InlayHintLabel {
     String(String),
@@ -216,6 +225,15 @@ pub mod bookmark_store {
         ) -> Option<text::Anchor> {
             None
         }
+
+        pub fn edit_bookmark(
+            &mut self,
+            _buffer: &Entity<language::Buffer>,
+            _anchor: text::Anchor,
+            _label: String,
+            _cx: &mut gpui::Context<Self>,
+        ) {
+        }
     }
 }
 
@@ -230,9 +248,15 @@ pub mod debugger {
         use std::ops::Range;
         use text::{Anchor, Point};
 
+        #[derive(Clone, Copy, Debug)]
+        pub enum BreakpointState {
+            Enabled,
+            Disabled,
+        }
+
         #[derive(Clone, Debug)]
         pub struct Breakpoint {
-            pub enabled: bool,
+            pub state: BreakpointState,
             pub condition: Option<String>,
             pub hit_condition: Option<String>,
             pub log_point: Option<String>,
@@ -241,15 +265,15 @@ pub mod debugger {
 
         impl Breakpoint {
             pub fn new_standard() -> Self {
-                Self { enabled: true, condition: None, hit_condition: None, log_point: None, message: None }
+                Self { state: BreakpointState::Enabled, condition: None, hit_condition: None, log_point: None, message: None }
             }
 
             pub fn is_enabled(&self) -> bool {
-                self.enabled
+                matches!(self.state, BreakpointState::Enabled)
             }
 
             pub fn is_disabled(&self) -> bool {
-                !self.enabled
+                !self.is_enabled()
             }
         }
 
@@ -266,9 +290,10 @@ pub mod debugger {
                 &self,
                 _buffer: &Entity<language::Buffer>,
                 _range: Option<Range<Anchor>>,
+                _snapshot: &language::BufferSnapshot,
                 _cx: &App,
-            ) -> Vec<(Anchor, Breakpoint, Option<BreakpointSessionState>)> {
-                Vec::new()
+            ) -> std::vec::IntoIter<(BreakpointWithPosition, Option<BreakpointSessionState>)> {
+                Vec::new().into_iter()
             }
 
             pub fn active_position(&self) -> Option<&Point> {
@@ -277,6 +302,9 @@ pub mod debugger {
 
             pub fn active_debug_line_pane_id(&self) -> Option<usize> {
                 None
+            }
+
+            pub fn set_active_debug_line_pane_id(&mut self, _pane_id: Option<usize>) {
             }
 
             pub fn toggle_breakpoint(
@@ -290,7 +318,7 @@ pub mod debugger {
 
         #[derive(Clone, Debug)]
         pub struct BreakpointWithPosition {
-            pub breakpoint: Breakpoint,
+            pub bp: Breakpoint,
             pub position: Point,
         }
     }
@@ -298,6 +326,13 @@ pub mod debugger {
     pub mod session {
         #[derive(Default)]
         pub struct Session;
+
+        #[derive(Clone, Debug)]
+        pub enum SessionEvent {
+            InvalidateInlineValue,
+        }
+
+        impl gpui::EventEmitter<SessionEvent> for Session {}
     }
 }
 
@@ -392,7 +427,7 @@ pub mod lsp_store {
     #[derive(Clone, Copy, Debug)]
     pub struct TokenType(pub u32);
 
-    #[derive(Clone, Copy, Debug)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum FormatTrigger {
         Invocation,
         TypeChange,
@@ -505,6 +540,317 @@ impl Default for TaskVariables {
         Self {
             map: BTreeMap::default(),
         }
+    }
+}
+
+impl TaskVariables {
+    pub fn insert(&mut self, key: VariableName, value: String) {
+        self.map.insert(key.to_string(), value);
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum VariableName {
+    Custom(String),
+}
+
+impl std::fmt::Display for VariableName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VariableName::Custom(s) => f.write_str(s),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Types referenced by the Project method stubs below
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+pub struct OpenLspBufferHandle;
+
+#[derive(Clone, Debug)]
+pub enum PrepareRenameResponse {
+    Ready,
+    Success(Range<text::Anchor>),
+    OnlyUnpreparedRenameSupported,
+    InvalidPosition,
+}
+
+#[derive(Default)]
+pub struct DapStore;
+
+#[derive(Default)]
+pub struct Client;
+
+#[derive(Default)]
+pub struct Telemetry;
+
+impl Client {
+    pub fn telemetry(&self) -> Arc<Telemetry> {
+        Arc::new(Telemetry)
+    }
+}
+
+impl Telemetry {
+    pub fn log_edit_event(&self, _name: &str, _is_via_ssh: bool) {}
+}
+
+// ---------------------------------------------------------------------------
+// Project method stubs for APIs removed during dependency stripping
+// ---------------------------------------------------------------------------
+
+use crate::{
+    bookmark_store::BookmarkStore,
+    debugger::breakpoint_store::BreakpointStore,
+    Location, Project, ProjectPath, ProjectTransaction, Worktree, WorktreeId,
+};
+use git::Blame;
+use lsp::LanguageServerId;
+use util::rel_path::RelPath;
+
+pub struct StackFrame;
+
+impl Project {
+    pub fn open_buffer_by_id(
+        &mut self,
+        _id: text::BufferId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+        Task::ready(Err(anyhow::anyhow!("stub: open_buffer_by_id")))
+    }
+
+    pub fn open_local_buffer(
+        &mut self,
+        _path: &std::path::Path,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+        Task::ready(Err(anyhow::anyhow!("stub: open_local_buffer")))
+    }
+
+    pub fn open_path(
+        &mut self,
+        _path: ProjectPath,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+        Task::ready(Err(anyhow::anyhow!("stub: open_path")))
+    }
+
+    pub fn open_local_buffer_via_lsp(
+        &mut self,
+        _uri: lsp::Uri,
+        _server_id: LanguageServerId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Entity<language::Buffer>>> {
+        Task::ready(Err(anyhow::anyhow!("stub: open_local_buffer_via_lsp")))
+    }
+
+    pub fn find_project_path(
+        &self,
+        _full_path: &std::path::Path,
+        _cx: &gpui::App,
+    ) -> Option<ProjectPath> {
+        None
+    }
+
+    pub fn find_worktree(
+        &mut self,
+        _abs_path: &std::path::Path,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<(Entity<Worktree>, Arc<RelPath>)> {
+        None
+    }
+
+    pub fn save_buffers(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    pub fn save_buffer_as(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _path: ProjectPath,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    pub fn reload_buffers(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _reload: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<ProjectTransaction>> {
+        Task::ready(Ok(ProjectTransaction::default()))
+    }
+
+    pub fn blame_buffer(
+        &mut self,
+        _buffer: &Entity<language::Buffer>,
+        _version: Option<git::Oid>,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Blame>> {
+        Task::ready(Err(anyhow::anyhow!("stub: blame_buffer")))
+    }
+
+    pub fn references(
+        &mut self,
+        _buffer: &Entity<language::Buffer>,
+        _position: text::Anchor,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Option<Vec<Location>>>> {
+        Task::ready(Ok(None))
+    }
+
+    pub fn declarations(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _position: text::Anchor,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Vec<Location>>> {
+        Task::ready(Ok(Vec::new()))
+    }
+
+    pub fn type_definitions(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _position: text::Anchor,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Vec<Location>>> {
+        Task::ready(Ok(Vec::new()))
+    }
+
+    pub fn implementations(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _position: text::Anchor,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Vec<Location>>> {
+        Task::ready(Ok(Vec::new()))
+    }
+
+    pub fn prepare_rename(
+        &mut self,
+        _buffer: Entity<language::Buffer>,
+        _position: text::Anchor,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<PrepareRenameResponse>> {
+        Task::ready(Ok(PrepareRenameResponse::InvalidPosition))
+    }
+
+    pub fn apply_code_action_kind(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _kind: lsp::CodeActionKind,
+        _only: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<()>> {
+        Task::ready(Ok(()))
+    }
+
+    pub fn supports_range_formatting(
+        &self,
+        _buffer: &Entity<language::Buffer>,
+        _cx: &gpui::App,
+    ) -> bool {
+        false
+    }
+
+    pub fn restart_language_servers_for_buffers(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _server_ids: std::collections::HashSet<LanguageServerId>,
+        _restart: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) {
+    }
+
+    pub fn stop_language_servers_for_buffers(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _server_ids: std::collections::HashSet<LanguageServerId>,
+        _stop: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) {
+    }
+
+    pub fn cancel_language_server_work_for_buffers(
+        &mut self,
+        _buffers: Vec<Entity<language::Buffer>>,
+        _cx: &mut gpui::Context<Self>,
+    ) {
+    }
+
+    pub fn reveal_path(&mut self, _path: &std::path::Path, _cx: &mut gpui::Context<Self>) {}
+
+    pub fn register_buffer_with_language_servers(
+        &mut self,
+        _buffer: &Entity<language::Buffer>,
+        _cx: &mut gpui::Context<Self>,
+    ) -> OpenLspBufferHandle {
+        OpenLspBufferHandle
+    }
+
+    pub fn client(&self) -> &Client {
+        static CLIENT: std::sync::LazyLock<Client> = std::sync::LazyLock::new(Client::default);
+        &CLIENT
+    }
+
+    pub fn task_store(&self) -> Entity<crate::task_store::TaskStore> {
+        unimplemented!("stub: task_store")
+    }
+
+    pub fn dap_store(&self) -> Entity<DapStore> {
+        unimplemented!("stub: dap_store")
+    }
+
+    pub fn bookmark_store(&self) -> Entity<BookmarkStore> {
+        unimplemented!("stub: bookmark_store")
+    }
+
+    pub fn breakpoint_store(&self) -> Entity<BreakpointStore> {
+        unimplemented!("stub: breakpoint_store")
+    }
+
+    pub fn active_debug_session(
+        &self,
+        _cx: &gpui::App,
+    ) -> Option<(Entity<crate::debugger::session::Session>, StackFrame)> {
+        None
+    }
+
+    pub fn any_language_server_supports_inlay_hints(
+        &mut self,
+        _buffer: &language::Buffer,
+        _cx: &mut gpui::Context<Self>,
+    ) -> bool {
+        false
+    }
+
+    pub fn any_language_server_supports_semantic_tokens(
+        &mut self,
+        _buffer: &language::Buffer,
+        _cx: &mut gpui::Context<Self>,
+    ) -> bool {
+        false
+    }
+
+    pub fn inline_values(
+        &mut self,
+        _session: Entity<crate::debugger::session::Session>,
+        _stack_frame: StackFrame,
+        _buffer_handle: Entity<language::Buffer>,
+        _range: Range<text::Anchor>,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Task<anyhow::Result<Vec<InlayHint>>> {
+        Task::ready(Ok(Vec::new()))
+    }
+
+    pub fn visible_worktrees(&self, _cx: &gpui::App) -> impl Iterator<Item = Entity<Worktree>> {
+        std::iter::empty::<Entity<Worktree>>()
     }
 }
 

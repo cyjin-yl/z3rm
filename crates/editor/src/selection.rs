@@ -1714,7 +1714,7 @@ impl Editor {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(columnar_state) = self.columnar_selection_state.as_ref() else {
+        let Some(columnar_state) = self.columnar_selection_state.clone() else {
             return;
         };
 

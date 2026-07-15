@@ -9,7 +9,7 @@ pub(crate) use header::{header_jump_data, render_buffer_header};
 use crate::{
     BUFFER_HEADER_PADDING, BlockId, ChunkRendererContext, ChunkReplacement, CodeActionSource,
     CodeActionsMenu, ConflictsOurs, ConflictsOursMarker, ConflictsOuter, ConflictsTheirs, ConflictsTheirsMarker,
-    ContextMenuPlacement, CursorShape, CustomBlockId, DisplayDiffHunk, DisplayPoint, DisplayRow,
+    ContextMenuPlacement, CursorPopoverType, CursorShape, CustomBlockId, DisplayDiffHunk, DisplayPoint, DisplayRow,
     EditDisplayMode, Editor, EditorMode, EditorSettings, EditorSnapshot, EditorStyle,
     FILE_HEADER_HEIGHT, FocusedBlock, GutterDimensions, HalfPageDown, HalfPageUp,
     HandleInput, HOVER_POPOVER_GAP, HoveredCursor, InlayHintRefreshReason, LineDown, LineHighlight, LineUp,
@@ -2002,7 +2002,7 @@ impl EditorElement {
             let mut padding = ProjectSettings::get_global(cx).git.inline_blame.padding as f32;
 
             if let Some(edit_prediction) = editor.active_edit_prediction.as_ref()
-                && let crate::element::CursorPopoverType::Edit {
+                && let crate::CursorPopoverType::Edit {
                     display_mode: EditDisplayMode::TabAccept,
                     ..
                 } = &edit_prediction.completion
@@ -10566,10 +10566,7 @@ impl HighlightedRange {
     }
 }
 
-enum CursorPopoverType {
-    CodeContextMenu,
-    EditPrediction,
-}
+
 
 pub fn register_action<T: Action>(
     editor: &Entity<Editor>,

@@ -198,6 +198,10 @@ impl Anchor {
         bytes[18] = self.bias as u8;
         bytes
     }
+
+    pub fn to_offset(&self, snapshot: &BufferSnapshot) -> usize {
+        snapshot.summary_for_anchor(self)
+    }
 }
 
 pub trait OffsetRangeExt {

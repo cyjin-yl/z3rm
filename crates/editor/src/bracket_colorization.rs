@@ -35,7 +35,7 @@ impl Editor {
         let excerpt_data: Vec<(
             BufferSnapshot,
             Range<BufferOffset>,
-            ExcerptRange<text::Anchor>,
+            ExcerptRange<Anchor>,
         )> = visible_excerpts
             .into_iter()
             .filter(|(buffer_snapshot, _, _)| {

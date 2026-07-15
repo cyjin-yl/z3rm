@@ -7171,6 +7171,17 @@ impl Focusable for Workspace {
     }
 }
 
+impl Workspace {
+    pub fn open_resolved_path(
+        &mut self,
+        _path: project::ResolvedPath,
+        _window: &mut Window,
+        _cx: &mut App,
+    ) -> Task<anyhow::Result<gpui::AnyView>> {
+        Task::ready(Err(anyhow::anyhow!("stub: open_resolved_path")))
+    }
+}
+
 #[derive(Clone)]
 struct DraggedDock(DockPosition);
 

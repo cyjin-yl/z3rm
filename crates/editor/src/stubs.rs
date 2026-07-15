@@ -3,12 +3,13 @@
 
 use std::{any::Any, sync::Arc};
 
-use gpui::{App, Entity, Pixels, SharedString, Task, TextStyle, Window, px};
+use gpui::{App, AnyElement, Entity, IntoElement, Modifiers, Pixels, ScrollHandle, SharedString, Task, TextStyle, Window, div, px};
 use language::{Buffer, Location};
 use project::Project;
-use text::{Anchor, BufferId};
+use text::{Anchor, BufferId, ToOffset};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use settings::SnippetSortOrder;
 
 // Types that were previously imported from project but no longer exist there.
 // Defined as stubs locally to keep the editor crate compiling.
@@ -23,7 +24,10 @@ pub struct CacheInlayHints;
 pub struct CompletionDocumentation;
 
 #[derive(Clone, Debug)]
-pub struct DocumentHighlight;
+pub struct DocumentHighlight {
+    pub range: std::ops::Range<text::Anchor>,
+    pub kind: lsp::DocumentHighlightKind,
+}
 
 #[derive(Clone, Debug)]
 pub struct LspAction;
@@ -31,14 +35,11 @@ pub struct LspAction;
 #[derive(Clone, Debug)]
 pub struct LspFormatTarget;
 
-#[derive(Clone, Debug)]
-pub struct OpenLspBufferHandle;
-
 // Re-export project stub types that still exist.
 pub use project::{
     DisableAiSettings, Hover, InlayHint, InlayHintLabel, InlayHintLabelPart,
     InlayHintLabelPartTooltip, InlayHintTooltip, InlayId, InvalidationStrategy,
-    LanguageServerToQuery, LocationLink, TaskVariables,
+    LanguageServerToQuery, LocationLink, OpenLspBufferHandle, PrepareRenameResponse, TaskVariables,
 };
 
 #[derive(Clone, Debug)]
@@ -48,17 +49,11 @@ pub struct RefreshForServer;
 pub enum FormatTrigger { Manual }
 
 
-// 调试器会话 stub (project::debugger::session 中不存在)
-#[derive(Default)]
-pub struct Session;
-
-#[derive(Clone, Debug)]
-pub struct SessionEvent;
-
-// Re-export debugger breakpoint types from project
+// Re-export debugger session/breakpoint types from project
 pub use project::debugger::breakpoint_store::{
-    Breakpoint, BreakpointSessionState, BreakpointWithPosition,
+    Breakpoint, BreakpointSessionState, BreakpointState, BreakpointWithPosition,
 };
+pub use project::debugger::session::{Session, SessionEvent};
 
 // ---------------------------------------------------------------------------
 // 任务相关类型 stub (task.rs 引用)
@@ -166,7 +161,29 @@ impl ProjectBufferExt for Project {
     }
 }
 
-pub enum RevealInFileManager {}
+pub struct RevealInFileManager;
+
+impl gpui::Action for RevealInFileManager {
+    fn boxed_clone(&self) -> Box<dyn gpui::Action> {
+        Box::new(*self)
+    }
+
+    fn partial_eq(&self, _other: &dyn gpui::Action) -> bool {
+        false
+    }
+
+    fn name(&self) -> &'static str {
+        "RevealInFileManager"
+    }
+
+    fn name_for_type() -> &'static str {
+        "RevealInFileManager"
+    }
+
+    fn build(_value: serde_json::Value) -> anyhow::Result<Box<dyn gpui::Action>> {
+        Ok(Box::new(Self))
+    }
+}
 
 pub fn parse_zed_link(_link: &str) -> Option<Location> { None }
 
@@ -185,10 +202,22 @@ pub fn send_telemetry(_event_name: &str, _cx: &App) {}
 
 pub trait CompletionProvider: Send + Sync {
     fn clone_box(&self) -> Box<dyn CompletionProvider>;
+    fn selection_changed(
+        &self,
+        _selection: Option<&std::ops::Range<Anchor>>,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) {}
 }
 
 impl Clone for Box<dyn CompletionProvider> {
     fn clone(&self) -> Self { self.clone_box() }
+}
+
+impl CompletionProvider for gpui::Entity<Project> {
+    fn clone_box(&self) -> Box<dyn CompletionProvider> {
+        Box::new(self.clone())
+    }
 }
 
 pub type CompletionId = u64;
@@ -197,7 +226,15 @@ pub type CompletionId = u64;
 pub struct Completion {
     pub new_text: SharedString,
     pub old_range: std::ops::Range<Anchor>,
+    pub replace_range: std::ops::Range<Anchor>,
     pub label: SharedString,
+    pub source: CompletionSource,
+}
+
+impl Completion {
+    pub fn is_snippet(&self) -> bool { false }
+    pub fn label(&self) -> Option<language::CodeLabel> { None }
+    pub fn kind(&self) -> Option<lsp::CompletionItemKind> { None }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -213,7 +250,12 @@ pub struct CompletionGroup;
 pub struct CompletionResponse;
 
 #[derive(Clone, Copy, Debug)]
-pub enum CompletionSource { Lsp }
+pub enum CompletionSource {
+    Lsp {
+        server_id: lsp::LanguageServerId,
+        insert_range: Option<std::ops::Range<Anchor>>,
+    }
+}
 
 pub fn split_words(_text: &str) -> Vec<String> { Vec::new() }
 
@@ -227,6 +269,12 @@ pub trait CodeActionProvider: Send + Sync {
 
 impl Clone for Box<dyn CodeActionProvider> {
     fn clone(&self) -> Self { self.clone_box() }
+}
+
+impl CodeActionProvider for gpui::Entity<Project> {
+    fn clone_box(&self) -> Box<dyn CodeActionProvider> {
+        Box::new(self.clone())
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -260,19 +308,82 @@ impl CodeContextMenu {
     ) -> bool {
         false
     }
+
+    pub fn origin(&self) -> ContextMenuOrigin {
+        ContextMenuOrigin::Cursor
+    }
+
+    pub fn render(
+        &self,
+        _style: &crate::EditorStyle,
+        _max_height_in_lines: u32,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) -> AnyElement {
+        div().into_any()
+    }
+
+    pub fn render_aside(
+        &mut self,
+        _max_size: gpui::Size<gpui::Pixels>,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) -> Option<AnyElement> {
+        None
+    }
+
+    pub fn select_prev(
+        &mut self,
+        _completion_provider: Option<&dyn CompletionProvider>,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) {
+    }
+
+    pub fn select_next(
+        &mut self,
+        _completion_provider: Option<&dyn CompletionProvider>,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) {
+    }
+
+    pub fn focused(&self, _window: &Window, _cx: &gpui::Context<crate::Editor>) -> bool {
+        false
+    }
+
+    pub fn primary_scroll_handle(&self) -> Option<ScrollHandle> {
+        None
+    }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum ContextMenuOrigin { Cursor, GutterIndicator(u32) }
+#[derive(Clone, Copy, Debug, Default)]
+pub enum ContextMenuOrigin { #[default] Cursor, GutterIndicator(u32) }
 #[derive(Clone, Debug, Default)]
 pub struct CompletionsMenu;
 
 impl CompletionsMenu {
     pub fn visible(&self) -> bool { false }
+
+    pub fn new_snippet_choices(
+        _id: CompletionId,
+        _show_completion_documentation: bool,
+        _choices: Vec<Snippet>,
+        _position: Anchor,
+        _range: std::ops::Range<Anchor>,
+        _buffer: Entity<Buffer>,
+        _scroll_handle: Option<ScrollHandle>,
+        _snippet_sort_order: SnippetSortOrder,
+    ) -> Self {
+        Self::default()
+    }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct CodeActionsMenu;
+pub struct CodeActionsMenu {
+    pub deployed_from: ContextMenuOrigin,
+    pub actions: Vec<AvailableCodeAction>,
+}
 
 impl CodeActionsMenu {
     pub fn visible(&self) -> bool { false }
@@ -288,12 +399,25 @@ pub struct SignatureHelpState;
 impl SignatureHelpState {
     pub fn popover_mut(&mut self,
     ) -> Option<&mut SignatureHelpPopover> { None }
+
+    pub fn has_multiple_signatures(&self) -> bool { false }
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct SignatureHelpPopover {
     pub current_signature: usize,
     pub signatures: Vec<()>,
+}
+
+impl SignatureHelpPopover {
+    pub fn render(
+        &mut self,
+        _max_size: gpui::Size<gpui::Pixels>,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) -> AnyElement {
+        div().into_any()
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -304,18 +428,43 @@ pub struct HoverState;
 
 impl HoverState {
     pub fn focused(&self, _window: &Window, _cx: &gpui::Context<crate::Editor>) -> bool { false }
+
+    pub fn render(
+        &self,
+        _snapshot: &crate::DisplaySnapshot,
+        _rows: std::ops::Range<crate::DisplayRow>,
+        _max_size: gpui::Size<gpui::Pixels>,
+        _text_layout_details: &crate::movement::TextLayoutDetails,
+        _window: &mut Window,
+        _cx: &mut gpui::Context<crate::Editor>,
+    ) -> Option<(crate::DisplayPoint, Vec<AnyElement>)> {
+        None
+    }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct HoveredLinkState;
+pub struct HoveredLinkState {
+    pub links: Vec<HoverLink>,
+    pub symbol_range: Option<std::ops::Range<Anchor>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FileTarget {
+    pub resolved_path: project::ResolvedPath,
+    pub project_path: project::ProjectPath,
+}
+
+impl FileTarget {
+    pub fn navigate_item_to_position(&self, _item: gpui::AnyView, _cx: &mut gpui::AsyncApp) {}
+}
 
 #[derive(Clone, Debug)]
 pub enum HoverLink {
     Url(String),
     InlayHighlight(LocationLink),
-    Text(String),
-    LspLocation(language::Location),
-    File(project::ProjectPath),
+    Text(LocationLink),
+    LspLocation(language::Location, lsp::LanguageServerId),
+    File(FileTarget),
 }
 
 pub fn find_file(_path: &std::path::Path) -> Option<Entity<Buffer>> { None }
@@ -323,6 +472,15 @@ pub fn find_file(_path: &std::path::Path) -> Option<Entity<Buffer>> { None }
 pub fn find_url(_text: &str) -> Option<String> { None }
 
 pub fn find_url_from_range(_text: &str, _range: std::ops::Range<usize>) -> Option<String> { None }
+
+pub fn exclude_link_to_position(
+    _buffer: &Entity<Buffer>,
+    _position: &text::Anchor,
+    _location: &language::Location,
+    _cx: &App,
+) -> bool {
+    false
+}
 
 pub fn hide_hover(_editor: &mut crate::Editor, _window: &mut Window, _cx: &mut gpui::Context<crate::Editor>) -> bool { false }
 
@@ -347,8 +505,32 @@ pub struct CodeLensState;
 #[derive(Clone, Debug, Default)]
 pub struct RunnableData;
 
+impl RunnableData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn all_runnables(&self) -> impl Iterator<Item = &Arc<RunnableTasks>> {
+        std::iter::empty()
+    }
+}
+
 #[derive(Clone, Debug)]
-pub struct RunnableTasks;
+pub struct RunnableTasks {
+    pub offset: Anchor,
+    pub column: u32,
+    pub extra_variables: Vec<(String, String)>,
+}
+
+impl Default for RunnableTasks {
+    fn default() -> Self {
+        Self {
+            offset: text::Anchor::min_for_buffer(text::BufferId::new(1).unwrap()),
+            column: 0,
+            extra_variables: Vec::new(),
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct ResolvedTasks;
@@ -357,14 +539,39 @@ pub struct ResolvedTasks;
 // Inlay / diagnostics
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Debug, Default)]
+#[derive(Debug)]
 pub struct InlineValueCache {
     pub enabled: bool,
     pub inlays: Vec<InlayId>,
+    pub refresh_task: Task<()>,
+}
+
+impl Default for InlineValueCache {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            inlays: Vec::new(),
+            refresh_task: Task::ready(()),
+        }
+    }
+}
+
+impl InlineValueCache {
+    pub fn new(enabled: bool) -> Self {
+        Self { enabled, ..Default::default() }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct LspInlayHintData;
+
+impl LspInlayHintData {
+    pub fn new(_settings: InlayHintSettings) -> Self {
+        Self::default()
+    }
+
+    pub fn remove_inlay_chunk_data(&mut self, _buffer_ids: &[language::BufferId]) {}
+}
 pub fn inlay_hint_settings(
     _anchor: text::Anchor,
     _snapshot: &language::BufferSnapshot,
@@ -374,10 +581,24 @@ pub fn inlay_hint_settings(
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct InlayHintSettings { pub enabled: bool }
+pub struct InlayHintSettings {
+    pub enabled: bool,
+    pub show_value_hints: bool,
+    pub toggle_on_modifiers_press: Option<Modifiers>,
+}
 
-#[derive(Clone, Copy, Debug)]
-pub enum InlayHintRefreshReason { RefreshRequested, NewLinesShown, ModifiersChanged(bool), SettingsChange, BuffersRemoved, BufferEdited }
+#[derive(Clone, Debug)]
+pub enum InlayHintRefreshReason {
+    RefreshRequested {
+        server_id: lsp::LanguageServerId,
+        request_id: Option<usize>,
+    },
+    NewLinesShown,
+    ModifiersChanged(bool),
+    SettingsChange(InlayHintSettings),
+    BuffersRemoved(Vec<language::BufferId>),
+    BufferEdited(language::BufferId),
+}
 
 #[derive(Clone, Debug)]
 pub struct InlaySplice {
@@ -385,14 +606,27 @@ pub struct InlaySplice {
     pub to_insert: Vec<(Anchor, InlayHint)>,
 }
 
+impl InlaySplice {
+    pub fn is_empty(&self) -> bool {
+        self.to_remove.is_empty() && self.to_insert.is_empty()
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct ActiveDiagnostic;
+
+impl ActiveDiagnostic {
+    pub const None: Option<Self> = None;
+}
 
 #[derive(Clone, Debug)]
 pub struct InlineDiagnostic {
     pub severity: language::DiagnosticSeverity,
     pub new_text: SharedString,
-    pub start: Anchor,
+    pub message: SharedString,
+    pub start: language::Point,
+    pub group_id: usize,
+    pub is_primary: bool,
 }
 
 pub trait DiagnosticRenderer: Send + Sync {
@@ -408,6 +642,14 @@ pub fn set_diagnostic_renderer(_renderer: Option<Box<dyn DiagnosticRenderer>>) {
 #[derive(Clone, Debug, Default)]
 pub struct GlobalDiagnosticRenderer;
 
+#[derive(Clone, Copy, Debug, Default)]
+pub enum CursorPopoverType {
+    #[default]
+    CodeContextMenu,
+    EditPrediction,
+    Edit { display_mode: EditDisplayMode },
+}
+
 // ---------------------------------------------------------------------------
 // Edit predictions / snippets / rename
 // ---------------------------------------------------------------------------
@@ -417,6 +659,7 @@ pub struct EditPredictionRequestTrigger;
 
 impl EditPredictionRequestTrigger {
     pub const BufferEdit: Self = Self;
+    pub const Other: Self = Self;
 }
 
 #[derive(Clone, Debug)]
@@ -448,8 +691,14 @@ pub struct EditPredictionPreview;
 #[derive(Clone, Debug, Default)]
 pub struct EditPredictionSettings;
 
+impl EditPredictionSettings {
+    pub const Disabled: Self = Self;
+}
+
 #[derive(Clone, Debug, Default)]
-pub struct EditPredictionState;
+pub struct EditPredictionState {
+    pub completion: CursorPopoverType,
+}
 
 pub fn make_suggestion_styles(_cx: &App) -> TextStyle { TextStyle::default() }
 
@@ -457,21 +706,23 @@ pub fn make_suggestion_styles(_cx: &App) -> TextStyle { TextStyle::default() }
 pub struct Snippet { pub text: SharedString }
 
 impl Snippet {
-    pub fn parse(_text: &str) -> Option<Self> { None }
+    pub fn parse(text: &str) -> anyhow::Result<Self> {
+        Ok(Self { text: SharedString::from(text) })
+    }
 }
-
-#[derive(Clone, Debug)]
-pub enum PrepareRenameResponse { Ready, Success(std::ops::Range<text::Anchor>), OnlyUnpreparedRenameSupported, InvalidPosition }
 
 // ---------------------------------------------------------------------------
 // Breakpoints (define missing variants/types not in project::stubs)
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Copy, Debug)]
-pub enum BreakpointEditAction { Toggle, InvertState, EditLogMessage, EditHitCondition, EditCondition }
-
-#[derive(Clone, Copy, Debug)]
-pub enum BreakpointState { Enabled, Disabled }
+#[derive(Clone, Debug)]
+pub enum BreakpointEditAction {
+    Toggle,
+    InvertState,
+    EditLogMessage(SharedString),
+    EditHitCondition(SharedString),
+    EditCondition(SharedString),
+}
 
 #[derive(Clone, Debug)]
 pub struct BreakpointStoreEvent;
@@ -488,6 +739,24 @@ impl BreakpointStore {
     ) -> Vec<(Anchor, Breakpoint, Option<BreakpointSessionState>)> {
         Vec::new()
     }
+
+    pub fn active_position(&self) -> Option<&text::Point> {
+        None
+    }
+
+    pub fn active_debug_line_pane_id(&self) -> Option<usize> {
+        None
+    }
+
+    pub fn set_active_debug_line_pane_id(&mut self, _pane_id: Option<usize>) {}
+
+    pub fn toggle_breakpoint(
+        &mut self,
+        _buffer: Entity<Buffer>,
+        _breakpoint: BreakpointWithPosition,
+        _cx: &mut gpui::Context<Self>,
+    ) {
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -501,8 +770,7 @@ impl VimModeSetting {
     pub fn try_get(_cx: &App) -> Option<Self> { None }
 }
 
-#[derive(Clone, Debug)]
-pub enum VariableName { Custom(SharedString) }
+pub use project::VariableName;
 
 // ---------------------------------------------------------------------------
 // Collaboration hub stub
@@ -518,8 +786,8 @@ pub trait CollaborationHub: Send + Sync {
 
 pub const HOVER_POPOVER_GAP: Pixels = px(4.);
 pub const POPOVER_RIGHT_OFFSET: Pixels = px(4.);
-pub const MIN_POPOVER_CHARACTER_WIDTH: Pixels = px(240.);
-pub const MIN_POPOVER_LINE_HEIGHT: Pixels = px(24.);
+pub const MIN_POPOVER_CHARACTER_WIDTH: f32 = 240.;
+pub const MIN_POPOVER_LINE_HEIGHT: f32 = 24.;
 
 pub const MENU_GAP: Pixels = px(8.);
 pub const MENU_ASIDE_MIN_WIDTH: Pixels = px(240.);
@@ -558,6 +826,10 @@ impl Inlay {
 
     pub fn edit_prediction(_id: usize, anchor: text::Anchor, pred_text: &str) -> Self {
         Self { id: project::InlayId::Hint(0), position: anchor, text: text::Rope::from(pred_text), content: InlayContent::Label(gpui::SharedString::from(pred_text)) }
+    }
+
+    pub fn debugger(_id: usize, anchor: text::Anchor, text: &str) -> Self {
+        Self { id: project::InlayId::DebuggerValue(0), position: anchor, text: text::Rope::from(text), content: InlayContent::Label(gpui::SharedString::from(text)) }
     }
 }
 

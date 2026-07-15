@@ -40,6 +40,10 @@ mod split;
 pub mod split_editor_view;
 
 mod bookmarks;
+mod hover_links {
+    pub use crate::stubs::exclude_link_to_position;
+}
+mod task;
 #[cfg(test)]
 mod editor_block_comment_tests;
 #[cfg(test)]
@@ -71,7 +75,7 @@ pub use stubs::{
     CacheInlayHints, CodeActionProvider, CodeActionsMenu, CodeContextMenu, Collaborator, CollaboratorId,
     Completion, CompletionDisplayOptions, CompletionDocumentation, CompletionGroup,
     CompletionIntent, CompletionProvider, CompletionResponse, CompletionSource, CompletionsMenu,
-    ContextMenuOrigin, DiagnosticRenderer, Direction, DocumentHighlight, EditDisplayMode,
+    ContextMenuOrigin, CursorPopoverType, DiagnosticRenderer, Direction, DocumentHighlight, EditDisplayMode,
     EditPredictionDelegate, EditPredictionDelegateHandle, EditPredictionDiscardReason,
     EditPredictionGranularity, EditPredictionPreview, EditPredictionRequestTrigger,
     EditPredictionSettings, EditPredictionState, GlobalDiagnosticRenderer, Hover, HoverLink,
@@ -835,6 +839,7 @@ enum SelectionDragState {
     },
 }
 
+#[derive(Clone)]
 enum ColumnarSelectionState {
     FromMouse {
         selection_tail: Anchor,
@@ -953,6 +958,7 @@ pub struct Editor {
     nav_history: Option<ItemNavHistory>,
     context_menu: RefCell<Option<CodeContextMenu>>,
     context_menu_options: Option<ContextMenuOptions>,
+    completion_tasks: Vec<Task<()>>,
     mouse_context_menu: Option<MouseContextMenu>,
     inline_blame_popover: Option<InlineBlamePopover>,
     inline_blame_popover_show_task: Option<Task<()>>,
@@ -1019,6 +1025,7 @@ pub struct Editor {
     use_auto_surround: bool,
     use_selection_highlight: bool,
     auto_replace_emoji_shortcode: bool,
+    jsx_tag_auto_close_enabled_in_any_buffer: bool,
     show_git_blame_gutter: bool,
     show_git_blame_inline: bool,
     show_git_blame_inline_delay_task: Option<Task<()>>,
@@ -1784,7 +1791,8 @@ impl Editor {
         &mut self,
         _cx: &mut Context<Self>,
         _hidden_by: SignatureHelpHiddenBy,
-    ) {
+    ) -> bool {
+        false
     }
 
     /// Stub: has active edit prediction (edit prediction 模块已删除)
@@ -4740,9 +4748,9 @@ impl Editor {
 
     pub fn join_lines_impl(
         &mut self,
-        _insert_whitespace: bool,
-        _window: &mut Window,
-        _cx: &mut Context<Self>,
+        insert_whitespace: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
     ) {
         if self.read_only(cx) {
             return;
@@ -11698,4 +11706,73 @@ pub fn multibuffer_context_lines(cx: &App) -> u32 {
         .map(|settings| settings.excerpt_context_lines)
         .unwrap_or(2)
         .min(32)
+}
+
+impl gpui::EntityInputHandler for Editor {
+    fn text_for_range(
+        &mut self,
+        _range: std::ops::Range<usize>,
+        _adjusted_range: &mut Option<std::ops::Range<usize>>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Option<String> {
+        None
+    }
+
+    fn selected_text_range(
+        &mut self,
+        _ignore_disabled_input: bool,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Option<gpui::UTF16Selection> {
+        None
+    }
+
+    fn marked_text_range(
+        &self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Option<std::ops::Range<usize>> {
+        None
+    }
+
+    fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {}
+
+    fn replace_text_in_range(
+        &mut self,
+        _range: Option<std::ops::Range<usize>>,
+        _text: &str,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+    }
+
+    fn replace_and_mark_text_in_range(
+        &mut self,
+        _range: Option<std::ops::Range<usize>>,
+        _new_text: &str,
+        _new_selected_range: Option<std::ops::Range<usize>>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+    }
+
+    fn bounds_for_range(
+        &mut self,
+        _range_utf16: std::ops::Range<usize>,
+        _element_bounds: gpui::Bounds<gpui::Pixels>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Option<gpui::Bounds<gpui::Pixels>> {
+        None
+    }
+
+    fn character_index_for_point(
+        &mut self,
+        _point: gpui::Point<gpui::Pixels>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Option<usize> {
+        None
+    }
 }
