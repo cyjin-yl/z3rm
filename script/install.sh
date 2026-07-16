@@ -8,13 +8,13 @@ set -eu
 main() {
     platform="$(uname -s)"
     arch="$(uname -m)"
-    channel="${ZERMINAL_CHANNEL:-stable}"
-    ZERMINAL_VERSION="${ZERMINAL_VERSION:-latest}"
+    channel="${Z3RM_CHANNEL:-stable}"
+    Z3RM_VERSION="${Z3RM_VERSION:-latest}"
     # Use TMPDIR if available (for environments with non-standard temp directories)
     if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
-        temp="$(mktemp -d "$TMPDIR/zerminal-XXXXXX")"
+        temp="$(mktemp -d "$TMPDIR/z3rm-XXXXXX")"
     else
-        temp="$(mktemp -d "/tmp/zerminal-XXXXXX")"
+        temp="$(mktemp -d "/tmp/z3rm-XXXXXX")"
     fi
 
     if [ "$platform" = "Darwin" ]; then
@@ -54,8 +54,8 @@ main() {
 
     "$platform" "$@"
 
-    if [ "$(command -v zed)" = "$HOME/.local/bin/zerminal" ]; then
-        echo "Zerminal has been installed. Run with 'zerminal'"
+    if [ "$(command -v zed)" = "$HOME/.local/bin/z3rm" ]; then
+        echo "Z3rm has been installed. Run with 'z3rm'"
     else
         echo "To run Zed from your terminal, you must add ~/.local/bin to your PATH"
         echo "Run:"
@@ -74,16 +74,16 @@ main() {
                 ;;
         esac
 
-        echo "To run Zed now, '~/.local/bin/zerminal'"
+        echo "To run Zed now, '~/.local/bin/z3rm'"
     fi
 }
 
 linux() {
-    if [ -n "${ZERMINAL_BUNDLE_PATH:-}" ]; then
-        cp "$ZERMINAL_BUNDLE_PATH" "$temp/zerminal-linux-$arch.tar.gz"
+    if [ -n "${Z3RM_BUNDLE_PATH:-}" ]; then
+        cp "$Z3RM_BUNDLE_PATH" "$temp/z3rm-linux-$arch.tar.gz"
     else
-        echo "Downloading Zed version: $ZERMINAL_VERSION"
-        curl "https://cloud.zed.dev/releases/$channel/$ZERMINAL_VERSION/download?asset=zerminal&arch=$arch&os=linux&source=install.sh" > "$temp/zerminal-linux-$arch.tar.gz"
+        echo "Downloading Zed version: $Z3RM_VERSION"
+        curl "https://cloud.zed.dev/releases/$channel/$Z3RM_VERSION/download?asset=z3rm&arch=$arch&os=linux&source=install.sh" > "$temp/z3rm-linux-$arch.tar.gz"
     fi
 
     suffix=""
@@ -94,37 +94,37 @@ linux() {
     appid=""
     case "$channel" in
       stable)
-        appid="dev.zerminal.Zerminal"
+        appid="dev.z3rm.Z3rm"
         ;;
       nightly)
-        appid="dev.zerminal.Zerminal-Nightly"
+        appid="dev.z3rm.Z3rm-Nightly"
         ;;
       preview)
-        appid="dev.zerminal.Zerminal-Preview"
+        appid="dev.z3rm.Z3rm-Preview"
         ;;
       dev)
-        appid="dev.zerminal.Zerminal-Dev"
+        appid="dev.z3rm.Z3rm-Dev"
         ;;
       *)
         echo "Unknown release channel: ${channel}. Using stable app ID."
-        appid="dev.zerminal.Zerminal"
+        appid="dev.z3rm.Z3rm"
         ;;
     esac
 
     # Unpack
-    rm -rf "$HOME/.local/zerminal$suffix.app"
-    mkdir -p "$HOME/.local/zerminal$suffix.app"
-    tar -xzf "$temp/zerminal-linux-$arch.tar.gz" -C "$HOME/.local/"
+    rm -rf "$HOME/.local/z3rm$suffix.app"
+    mkdir -p "$HOME/.local/z3rm$suffix.app"
+    tar -xzf "$temp/z3rm-linux-$arch.tar.gz" -C "$HOME/.local/"
 
     # Setup ~/.local directories
     mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
 
     # Link the binary
-    if [ -f "$HOME/.local/zerminal$suffix.app/bin/zerminal" ]; then
-        ln -sf "$HOME/.local/zerminal$suffix.app/bin/zerminal" "$HOME/.local/bin/zerminal"
+    if [ -f "$HOME/.local/z3rm$suffix.app/bin/z3rm" ]; then
+        ln -sf "$HOME/.local/z3rm$suffix.app/bin/z3rm" "$HOME/.local/bin/z3rm"
     else
         # support for versions before 0.139.x.
-        ln -sf "$HOME/.local/zerminal$suffix.app/bin/cli" "$HOME/.local/bin/zerminal"
+        ln -sf "$HOME/.local/z3rm$suffix.app/bin/cli" "$HOME/.local/bin/z3rm"
     fi
 
     # Copy .desktop file
@@ -134,16 +134,16 @@ linux() {
         cp "$src_dir/${appid}.desktop" "${desktop_file_path}"
     else
         # Fallback for older tarballs
-        cp "$src_dir/zerminal$suffix.desktop" "${desktop_file_path}"
+        cp "$src_dir/z3rm$suffix.desktop" "${desktop_file_path}"
     fi
-    sed -i "s|Icon=zerminal|Icon=$HOME/.local/zerminal$suffix.app/share/icons/hicolor/512x512/apps/zerminal.png|g" "${desktop_file_path}"
-    sed -i "s|Exec=zerminal|Exec=$HOME/.local/zerminal$suffix.app/bin/zerminal|g" "${desktop_file_path}"
+    sed -i "s|Icon=z3rm|Icon=$HOME/.local/z3rm$suffix.app/share/icons/hicolor/512x512/apps/z3rm.png|g" "${desktop_file_path}"
+    sed -i "s|Exec=z3rm|Exec=$HOME/.local/z3rm$suffix.app/bin/z3rm|g" "${desktop_file_path}"
 }
 
 macos() {
-    echo "Downloading Zed version: $ZERMINAL_VERSION"
-    curl "https://cloud.zed.dev/releases/$channel/$ZERMINAL_VERSION/download?asset=zerminal&os=macos&arch=$arch&source=install.sh" > "$temp/Zerminal-$arch.dmg"
-    hdiutil attach -quiet "$temp/Zerminal-$arch.dmg" -mountpoint "$temp/mount"
+    echo "Downloading Zed version: $Z3RM_VERSION"
+    curl "https://cloud.zed.dev/releases/$channel/$Z3RM_VERSION/download?asset=z3rm&os=macos&arch=$arch&source=install.sh" > "$temp/Z3rm-$arch.dmg"
+    hdiutil attach -quiet "$temp/Z3rm-$arch.dmg" -mountpoint "$temp/mount"
     app="$(cd "$temp/mount/"; echo *.app)"
     echo "Installing $app"
     if [ -d "/Applications/$app" ]; then
@@ -155,7 +155,7 @@ macos() {
 
     mkdir -p "$HOME/.local/bin"
     # Link the binary
-    ln -sf "/Applications/$app/Contents/MacOS/cli" "$HOME/.local/bin/zerminal"
+    ln -sf "/Applications/$app/Contents/MacOS/cli" "$HOME/.local/bin/z3rm"
 }
 
 main "$@"

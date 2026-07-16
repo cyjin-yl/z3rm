@@ -11,7 +11,7 @@ check_remaining_installations() {
         [ "$remaining" -eq 0 ]
     else
         # Check for any Zed variants in ~/.local
-        remaining=$(ls -d "$HOME/.local/zerminal"*.app 2>/dev/null | wc -l)
+        remaining=$(ls -d "$HOME/.local/z3rm"*.app 2>/dev/null | wc -l)
         [ "$remaining" -eq 0 ]
     fi
 }
@@ -21,7 +21,7 @@ prompt_remove_preferences() {
     read -r response
     case "$response" in
         [nN]|[nN][oO])
-            rm -rf "$HOME/.config/zerminal"
+            rm -rf "$HOME/.config/z3rm"
             echo "Preferences removed."
             ;;
         *)
@@ -32,7 +32,7 @@ prompt_remove_preferences() {
 
 main() {
     platform="$(uname -s)"
-    channel="${ZERMINAL_CHANNEL:-stable}"
+    channel="${Z3RM_CHANNEL:-stable}"
 
     if [ "$platform" = "Darwin" ]; then
         platform="macos"
@@ -58,71 +58,71 @@ linux() {
     db_suffix="stable"
     case "$channel" in
       stable)
-        appid="dev.zerminal.Zerminal"
+        appid="dev.z3rm.Z3rm"
         db_suffix="stable"
         ;;
       nightly)
-        appid="dev.zerminal.Zerminal-Nightly"
+        appid="dev.z3rm.Z3rm-Nightly"
         db_suffix="nightly"
         ;;
       preview)
-        appid="dev.zerminal.Zerminal-Preview"
+        appid="dev.z3rm.Z3rm-Preview"
         db_suffix="preview"
         ;;
       dev)
-        appid="dev.zerminal.Zerminal-Dev"
+        appid="dev.z3rm.Z3rm-Dev"
         db_suffix="dev"
         ;;
       *)
         echo "Unknown release channel: ${channel}. Using stable app ID."
-        appid="dev.zerminal.Zerminal"
+        appid="dev.z3rm.Z3rm"
         db_suffix="stable"
         ;;
     esac
 
     # Remove the app directory
-    rm -rf "$HOME/.local/zerminal$suffix.app"
+    rm -rf "$HOME/.local/z3rm$suffix.app"
 
     # Remove the binary symlink
-    rm -f "$HOME/.local/bin/zerminal"
+    rm -f "$HOME/.local/bin/z3rm"
 
     # Remove the .desktop file
     rm -f "$HOME/.local/share/applications/${appid}.desktop"
 
     # Remove the database directory for this channel
-    rm -rf "$HOME/.local/share/zerminal/db/0-$db_suffix"
+    rm -rf "$HOME/.local/share/z3rm/db/0-$db_suffix"
 
     # Remove socket file
-    rm -f "$HOME/.local/share/zerminal/zerminal-$db_suffix.sock"
+    rm -f "$HOME/.local/share/z3rm/z3rm-$db_suffix.sock"
 
     # Remove the entire Zed directory if no installations remain
     if check_remaining_installations; then
-        rm -rf "$HOME/.local/share/zerminal"
+        rm -rf "$HOME/.local/share/z3rm"
         prompt_remove_preferences
     fi
 
-    rm -rf $HOME/.zerminal_server
+    rm -rf $HOME/.z3rm_server
 }
 
 macos() {
-    app="Zerminal.app"
+    app="Z3rm.app"
     db_suffix="stable"
-    app_id="dev.zerminal.Zerminal"
+    app_id="dev.z3rm.Z3rm"
     case "$channel" in
       nightly)
-        app="Zerminal Nightly.app"
+        app="Z3rm Nightly.app"
         db_suffix="nightly"
-        app_id="dev.zerminal.Zerminal-Nightly"
+        app_id="dev.z3rm.Z3rm-Nightly"
         ;;
       preview)
-        app="Zerminal Preview.app"
+        app="Z3rm Preview.app"
         db_suffix="preview"
-        app_id="dev.zerminal.Zerminal-Preview"
+        app_id="dev.z3rm.Z3rm-Preview"
         ;;
       dev)
-        app="Zerminal Dev.app"
+        app="Z3rm Dev.app"
         db_suffix="dev"
-        app_id="dev.zerminal.Zerminal-Dev"
+        app_id="dev.z3rm.Z3rm-Dev"
         ;;
     esac
 
@@ -132,7 +132,7 @@ macos() {
     fi
 
     # Remove the binary symlink
-    rm -f "$HOME/.local/bin/zerminal"
+    rm -f "$HOME/.local/bin/z3rm"
 
     # Remove the database directory for this channel
     rm -rf "$HOME/Library/Application Support/Zed/db/0-$db_suffix"
@@ -152,7 +152,7 @@ macos() {
         prompt_remove_preferences
     fi
 
-    rm -rf $HOME/.zerminal_server
+    rm -rf $HOME/.z3rm_server
 }
 
 main "$@"

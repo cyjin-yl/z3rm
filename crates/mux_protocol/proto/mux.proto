@@ -1,0 +1,466 @@
+syntax = "proto3";
+package z3rm.mux;
+
+// §3.10 / §9 协议版本：重大变更时升级 major，增量字段保持 forward-compatible。
+// Protocol version — bumped on breaking changes.
+// Minor additions use new field numbers (forward-compatible).
+// Major version bumps require session restart.
+message ProtocolVersion {
+    uint32 major = 1;
+    uint32 minor = 2;
+}
+
+// §9 消息总封包：每个 Envelope 都携带协议版本与三类 payload 之一。
+// Every message envelope wraps a protocol version.
+message Envelope {
+    ProtocolVersion version = 1;
+    oneof payload {
+        Request request = 2;
+        Response response = 3;
+        Notification notification = 4;
+    }
+}
+
+// === Session Lifecycle ===
+
+// §3.10 会话元数据：会话 ID、名称、工作目录、创建时间、已连接客户端数。
+message SessionInfo {
+    string id = 1;
+    string name = 2;
+    string cwd = 3;
+    uint64 created_timestamp = 4;
+    uint32 attached_clients = 5;
+}
+
+// §3.10 创建会话请求。
+message CreateSessionRequest {
+    string name = 1;
+    string cwd = 2;
+}
+
+// §3.10 列出所有会话。
+message ListSessionsRequest {}
+
+// §3.10 会话列表响应。
+message ListSessionsResponse {
+    repeated SessionInfo sessions = 1;
+}
+
+// §3.10 结束指定会话。
+message KillSessionRequest {
+    string id = 1;
+}
+
+// §3.10 连接会话；AttachMode 定义共享/抢占/只读三种连接模式。
+message AttachRequest {
+    string session_id = 1;
+    AttachMode mode = 2;
+
+    enum AttachMode {
+        ATTACH_MODE_UNSPECIFIED = 0;
+        SHARED = 1;
+        STEAL = 2;
+        READ_ONLY = 3;
+    }
+}
+
+// §3.10 连接成功后返回完整快照。
+message AttachResponse {
+    SessionSnapshot snapshot = 1;
+}
+
+// §3.10 会话权威快照：标签页、布局树、焦点信息。
+message SessionSnapshot {
+    repeated TabInfo tabs = 1;
+    LayoutTree layout = 2;
+    string focused_pane_id = 3;
+    string focused_tab_id = 4;
+    string session_id = 5;
+}
+
+// §3.10 标签页信息。
+message TabInfo {
+    string id = 1;
+    string title = 2;
+    repeated PaneInfo panes = 3;
+}
+
+// §3.3 / §3.10 Pane 元数据，包含网格生成计数器 generation。
+message PaneInfo {
+    string id = 1;
+    string cwd = 2;
+    string title = 3;
+    string command = 4;
+    uint64 generation = 5;  // current grid generation
+    TerminalSize size = 6;
+    bool is_alive = 7;
+}
+
+// §3.3 / §3.10 终端尺寸。
+message TerminalSize {
+    uint32 cols = 1;
+    uint32 rows = 2;
+}
+
+// §3.10 断开连接请求。
+message DetachRequest {}
+
+// === Layout Tree ===
+
+// §3.10 布局树顶层包装。
+message LayoutTree {
+    LayoutNode root = 1;
+}
+
+// §3.10 布局节点：Pane 叶子或 Split 容器。
+message LayoutNode {
+    string id = 1;
+    oneof node {
+        PaneLeaf pane = 2;
+        SplitNode split = 3;
+    }
+}
+
+// §3.10 叶子节点保存 pane_id。
+message PaneLeaf {
+    string pane_id = 1;
+}
+
+// §3.10 分割容器：方向 + 子节点 + 尺寸比例。
+message SplitNode {
+    SplitDirection direction = 1;
+    repeated LayoutNode children = 2;
+    repeated float ratios = 3;  // size ratios for each child
+
+    enum SplitDirection {
+        SPLIT_DIRECTION_UNSPECIFIED = 0;
+        LEFT_RIGHT = 1;
+        TOP_BOTTOM = 2;
+    }
+}
+
+// === Pane Lifecycle ===
+
+// §3.10 在会话/标签页中创建新 Pane。
+message SpawnPaneRequest {
+    string session_id = 1;
+    string tab_id = 2;
+    TerminalSize size = 3;
+    optional ShellCommand command = 4;
+    optional string cwd = 5;
+}
+
+// §3.10 Shell 命令结构。
+message ShellCommand {
+    string program = 1;
+    repeated string args = 2;
+    map<string, string> env = 3;
+}
+
+// §3.10 拆分已有 Pane。
+message SplitPaneRequest {
+    string pane_id = 1;
+    SplitNode.SplitDirection direction = 2;
+}
+
+// §3.10 关闭 Pane。
+message ClosePaneRequest {
+    string pane_id = 1;
+}
+
+// §3.10 聚焦 Pane。
+message FocusPaneRequest {
+    string pane_id = 1;
+}
+
+// §3.10 调整 Pane 尺寸。
+message ResizePaneRequest {
+    string pane_id = 1;
+    uint32 cols = 2;
+    uint32 rows = 3;
+}
+
+// === Input ===
+
+// §3.10 向 Pane 发送原始输入字节。
+message SendInputRequest {
+    string pane_id = 1;
+    bytes data = 2;
+}
+
+// §3.10 向 Pane 粘贴文本。
+message PasteRequest {
+    string pane_id = 1;
+    string text = 2;
+}
+
+// === Grid Sync (generation counter, pull-based) ===
+
+// §3.3 网格增量同步：客户端基于 generation 拉取自某个版本以来的变更。
+message FetchGridUpdateRequest {
+    string pane_id = 1;
+    uint64 since_generation = 2;
+}
+
+// §3.3 网格更新响应：可能是增量 diff，也可能是完整快照。
+message FetchGridUpdateResponse {
+    uint64 from_generation = 1;
+    uint64 to_generation = 2;
+    oneof update {
+        GridDiff diff = 3;
+        FullGridSnapshot full_snapshot = 4;
+    }
+}
+
+// §3.3 网格行级差异。
+message GridDiff {
+    repeated RowChange rows = 1;
+}
+
+// §3.3 单行变更。
+message RowChange {
+    uint32 row = 1;
+    repeated Cell cells = 2;
+}
+
+// §3.3 单元格：字符、样式、前景/背景色。
+message Cell {
+    string char = 1;
+    CellStyle style = 2;
+    uint32 foreground = 3;  // 0xRRGGBB
+    uint32 background = 4;  // 0xRRGGBB
+}
+
+// §3.3 单元格样式标志。
+message CellStyle {
+    bool bold = 1;
+    bool italic = 2;
+    bool underline = 3;
+    bool strikethrough = 4;
+    bool dim = 5;
+    bool reverse = 6;
+}
+
+// §3.3 完整网格快照，用于重连或缓存失效。
+message FullGridSnapshot {
+    uint32 cols = 1;
+    uint32 rows = 2;
+    repeated Cell cells = 3;  // flat row-major: cells[row * cols + col]
+    CursorState cursor = 4;
+    bool alternate_screen = 5;
+}
+
+// §3.3 光标状态。
+message CursorState {
+    uint32 col = 1;
+    uint32 row = 2;
+    CursorStyle style = 3;
+    bool visible = 4;
+
+    enum CursorStyle {
+        CURSOR_STYLE_UNSPECIFIED = 0;
+        BLOCK = 1;
+        BAR = 2;
+        UNDERLINE = 3;
+    }
+}
+
+// === Scrollback ===
+
+// §3.10 拉取历史滚动缓冲区。
+message FetchScrollbackRequest {
+    string pane_id = 1;
+    uint32 from_line = 2;
+    uint32 direction = 3;  // 0 = up, 1 = down
+    uint32 count = 4;
+}
+
+// §3.10 历史滚动缓冲响应。
+message FetchScrollbackResponse {
+    repeated RowChange lines = 1;
+    uint32 total_lines = 2;
+    uint64 scrollback_version = 3;  // counter + timestamp for cache invalidation
+}
+
+// === File Fetch (for remote file viewer) ===
+
+// §3.10 读取远程/本地文件。
+message ReadFileRequest {
+    string path = 1;
+    optional uint32 offset_line = 2;
+    optional uint32 max_lines = 3;
+}
+
+// §3.10 文件内容响应。
+message ReadFileResponse {
+    bytes content = 1;
+    bool is_binary = 2;
+    string encoding = 3;  // "utf-8", "binary", etc.
+}
+
+// §3.10 列出目录。
+message ListDirRequest {
+    string path = 1;
+}
+
+// §3.10 目录条目。
+message DirEntry {
+    string name = 1;
+    bool is_dir = 2;
+    uint64 size = 3;
+    bool is_modified = 4;  // shadow snapshot detected change
+}
+
+// §3.10 列出目录响应。
+message ListDirResponse {
+    repeated DirEntry entries = 1;
+}
+
+// §3.10 文件 stat。
+message StatFileRequest {
+    string path = 1;
+}
+
+// §3.10 文件 stat 响应。
+message StatFileResponse {
+    bool exists = 1;
+    uint64 size = 2;
+    bool is_dir = 3;
+    uint64 modified_timestamp = 4;
+}
+
+// === Clipboard (server relay hub) ===
+
+// §16 剪贴板条目：内容类型 + 数据 + 来源主机。
+message ClipboardEntry {
+    ClipboardContentType content_type = 1;
+    bytes data = 2;
+    string origin_host = 3;  // which machine this came from
+
+    enum ClipboardContentType {
+        CONTENT_TYPE_UNSPECIFIED = 0;
+        TEXT = 1;
+        IMAGE_PNG = 2;
+        FILE_PATH = 3;
+    }
+}
+
+// §16 设置剪贴板。
+message SetClipboardRequest {
+    ClipboardEntry entry = 1;
+}
+
+// §16 获取剪贴板。
+message GetClipboardRequest {}
+
+// §16 获取剪贴板响应。
+message GetClipboardResponse {
+    ClipboardEntry entry = 1;
+}
+
+// === Extension Chrome RPC ===
+
+// §16 扩展 Chrome 视图更新：服务端向客户端推送 VDOM 字节。
+message ExtensionChromeUpdate {
+    string extension_id = 1;
+    string view_id = 2;
+    bytes vdom_payload = 3;  // serialized VDOM JSON
+}
+
+// === Notifications (server → client push) ===
+
+// §9 / §16 服务端主动推送通知。
+message Notification {
+    oneof event {
+        PaneDirty pane_dirty = 1;
+        PaneAdded pane_added = 2;
+        PaneRemoved pane_removed = 3;
+        PaneFocused pane_focused = 4;
+        TabTitleChanged tab_title_changed = 5;
+        SessionLayoutChanged session_layout_changed = 6;
+        ClipboardChanged clipboard_changed = 7;
+        ExtensionChromeUpdate extension_chrome = 8;
+    }
+}
+
+// §9 Pane 内容变脏通知。
+message PaneDirty {
+    string pane_id = 1;
+}
+
+// §9 Pane 新增通知。
+message PaneAdded {
+    string pane_id = 1;
+    string tab_id = 2;
+}
+
+// §9 Pane 移除通知（可带退出码）。
+message PaneRemoved {
+    string pane_id = 1;
+    int32 exit_code = 2;
+}
+
+// §9 Pane 获得焦点通知。
+message PaneFocused {
+    string pane_id = 1;
+}
+
+// §9 标签页标题变更通知。
+message TabTitleChanged {
+    string tab_id = 1;
+    string title = 2;
+}
+
+// §9 会话布局变更通知。
+message SessionLayoutChanged {
+    LayoutTree layout = 1;
+}
+
+// §16 剪贴板变更通知。
+message ClipboardChanged {}
+
+// === Request/Response envelope ===
+
+// §9 请求信封：携带 request_id 与具体请求体。
+message Request {
+    uint64 request_id = 1;
+    oneof body {
+        CreateSessionRequest create_session = 2;
+        ListSessionsRequest list_sessions = 3;
+        KillSessionRequest kill_session = 4;
+        AttachRequest attach = 5;
+        DetachRequest detach = 6;
+        SpawnPaneRequest spawn_pane = 7;
+        SplitPaneRequest split_pane = 8;
+        ClosePaneRequest close_pane = 9;
+        FocusPaneRequest focus_pane = 10;
+        ResizePaneRequest resize_pane = 11;
+        SendInputRequest send_input = 12;
+        PasteRequest paste = 13;
+        FetchGridUpdateRequest fetch_grid_update = 14;
+        FetchScrollbackRequest fetch_scrollback = 15;
+        ReadFileRequest read_file = 16;
+        ListDirRequest list_dir = 17;
+        StatFileRequest stat_file = 18;
+        SetClipboardRequest set_clipboard = 19;
+        GetClipboardRequest get_clipboard = 20;
+    }
+}
+
+// §9 响应信封：携带 request_id、错误字符串或具体响应体。
+message Response {
+    uint64 request_id = 1;
+    oneof body {
+        string error = 2;  // non-empty = error
+        SessionInfo session = 3;
+        ListSessionsResponse sessions = 4;
+        AttachResponse attach = 5;
+        string pane_id = 6;
+        FetchGridUpdateResponse grid_update = 7;
+        FetchScrollbackResponse scrollback = 8;
+        ReadFileResponse file_content = 9;
+        ListDirResponse dir_listing = 10;
+        StatFileResponse file_stat = 11;
+        GetClipboardResponse clipboard = 12;
+    }
+}

@@ -1,0 +1,97 @@
+// §9 / §3.3 mux_protocol 序列化与帧 round-trip 单元测试。
+use mux_protocol::*;
+use prost::Message;
+
+#[test]
+fn debug_bytes() {
+    let env = Envelope {
+        version: Some(PROTOCOL_VERSION),
+        payload: Some(proto::envelope::Payload::Notification(Notification {
+            event: Some(proto::notification::Event::PaneDirty(PaneDirty {
+                pane_id: "w1:p1".into(),
+            })),
+        })),
+    };
+    let framed = frame(&env).unwrap();
+    println!("framed len: {}", framed.len());
+    println!("framed bytes: {:?}", framed);
+    println!("raw env len: {}", env.encoded_len());
+    let mut raw = Vec::new();
+    env.encode(&mut raw).unwrap();
+    println!("raw env bytes: {:?}", raw);
+}
+
+// §3.3 验证 GridDiff 可以直接编码/解码。
+#[test]
+fn test_grid_diff_round_trip() {
+    let diff = GridDiff {
+        rows: vec![RowChange {
+            row: 5,
+            cells: vec![Cell {
+                char: "H".into(),
+                style: Some(CellStyle {
+                    bold: true,
+                    ..Default::default()
+                }),
+                foreground: 0xFFFFFF,
+                background: 0x000000,
+            }],
+        }],
+    };
+
+    let mut buf = Vec::new();
+    diff.encode(&mut buf).unwrap();
+    let decoded = GridDiff::decode(buf.as_slice()).unwrap();
+    assert_eq!(decoded.rows.len(), 1);
+    assert_eq!(decoded.rows[0].row, 5);
+}
+
+// §9 验证 Envelope 的 frame / unframe 往返。
+#[test]
+fn test_frame_unframe_round_trip() {
+    let env = Envelope {
+        version: Some(PROTOCOL_VERSION),
+        payload: Some(proto::envelope::Payload::Notification(Notification {
+            event: Some(proto::notification::Event::PaneDirty(PaneDirty {
+                pane_id: "w1:p1".into(),
+            })),
+        })),
+    };
+
+    let framed = frame(&env).unwrap();
+    let (decoded, consumed) = unframe(&framed).unwrap();
+    assert_eq!(consumed, framed.len());
+    assert!(matches!(
+        decoded.payload,
+        Some(proto::envelope::Payload::Notification(_))
+    ));
+}
+
+// §3.3 验证 FullGridSnapshot 大规模单元格编码/解码。
+#[test]
+fn test_full_snapshot_serialization() {
+    let snap = FullGridSnapshot {
+        cols: 80,
+        rows: 24,
+        cells: vec![Cell {
+            char: " ".into(),
+            style: None,
+            foreground: 0,
+            background: 0,
+        }; 80 * 24],
+        cursor: Some(CursorState {
+            col: 0,
+            row: 0,
+            style: proto::cursor_state::CursorStyle::Block as i32,
+            visible: true,
+        }),
+        alternate_screen: false,
+    };
+
+    let mut buf = Vec::new();
+    snap.encode(&mut buf).unwrap();
+    let decoded = FullGridSnapshot::decode(buf.as_slice()).unwrap();
+    assert_eq!(decoded.cols, 80);
+    assert_eq!(decoded.rows, 24);
+    assert_eq!(decoded.cells.len(), 80 * 24);
+}

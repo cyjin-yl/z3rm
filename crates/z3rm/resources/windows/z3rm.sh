@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 
-if [ "$ZERMINAL_WSL_DEBUG_INFO" = true ]; then
+if [ "$Z3RM_WSL_DEBUG_INFO" = true ]; then
 	set -x
 fi
 
-ZERMINAL_PATH="$(dirname "$(realpath "$0")")"
+Z3RM_PATH="$(dirname "$(realpath "$0")")"
 
 IN_WSL=false
 if [ -n "$WSL_DISTRO_NAME" ]; then
@@ -17,9 +17,9 @@ if [ $IN_WSL = true ]; then
     if [ -z "$WSL_USER" ]; then
         WSL_USER="$USERNAME"
     fi
-    "$ZERMINAL_PATH/zerminal.exe" --wsl "$WSL_USER@$WSL_DISTRO_NAME" "$@"
+    "$Z3RM_PATH/z3rm.exe" --wsl "$WSL_USER@$WSL_DISTRO_NAME" "$@"
     exit $?
 else
-    "$ZERMINAL_PATH/zerminal.exe" "$@"
+    "$Z3RM_PATH/z3rm.exe" "$@"
     exit $?
 fi

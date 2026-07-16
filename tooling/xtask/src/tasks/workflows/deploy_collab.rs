@@ -135,40 +135,40 @@ fn deploy(deps: &[&NamedJob]) -> NamedJob {
         named::bash(indoc! {r#"
             set -eu
             if [[ $GITHUB_REF_NAME = "collab-production" ]]; then
-              export ZERMINAL_KUBE_NAMESPACE=production
-              export ZERMINAL_COLLAB_LOAD_BALANCER_SIZE_UNIT=10
-              export ZERMINAL_API_LOAD_BALANCER_SIZE_UNIT=2
+              export Z3RM_KUBE_NAMESPACE=production
+              export Z3RM_COLLAB_LOAD_BALANCER_SIZE_UNIT=10
+              export Z3RM_API_LOAD_BALANCER_SIZE_UNIT=2
             elif [[ $GITHUB_REF_NAME = "collab-staging" ]]; then
-              export ZERMINAL_KUBE_NAMESPACE=staging
-              export ZERMINAL_COLLAB_LOAD_BALANCER_SIZE_UNIT=1
-              export ZERMINAL_API_LOAD_BALANCER_SIZE_UNIT=1
+              export Z3RM_KUBE_NAMESPACE=staging
+              export Z3RM_COLLAB_LOAD_BALANCER_SIZE_UNIT=1
+              export Z3RM_API_LOAD_BALANCER_SIZE_UNIT=1
             else
               echo "cowardly refusing to deploy from an unknown branch"
               exit 1
             fi
 
-            echo "Deploying collab:$GITHUB_SHA to $ZERMINAL_KUBE_NAMESPACE"
+            echo "Deploying collab:$GITHUB_SHA to $Z3RM_KUBE_NAMESPACE"
 
             source script/lib/deploy-helpers.sh
-            export_vars_for_environment "$ZERMINAL_KUBE_NAMESPACE"
+            export_vars_for_environment "$Z3RM_KUBE_NAMESPACE"
 
-            ZERMINAL_DO_CERTIFICATE_ID="$(doctl compute certificate list --format ID --no-header)"
-            export ZERMINAL_DO_CERTIFICATE_ID
-            export ZERMINAL_IMAGE_ID="registry.digitalocean.com/zed/collab:${GITHUB_SHA}"
+            Z3RM_DO_CERTIFICATE_ID="$(doctl compute certificate list --format ID --no-header)"
+            export Z3RM_DO_CERTIFICATE_ID
+            export Z3RM_IMAGE_ID="registry.digitalocean.com/zed/collab:${GITHUB_SHA}"
 
-            export ZERMINAL_SERVICE_NAME=collab
-            export ZERMINAL_LOAD_BALANCER_SIZE_UNIT=$ZERMINAL_COLLAB_LOAD_BALANCER_SIZE_UNIT
+            export Z3RM_SERVICE_NAME=collab
+            export Z3RM_LOAD_BALANCER_SIZE_UNIT=$Z3RM_COLLAB_LOAD_BALANCER_SIZE_UNIT
             export DATABASE_MAX_CONNECTIONS=850
             envsubst < crates/collab/k8s/collab.template.yml | kubectl apply -f -
-            kubectl -n "$ZERMINAL_KUBE_NAMESPACE" rollout status "deployment/$ZERMINAL_SERVICE_NAME" --watch
-            echo "deployed ${ZERMINAL_SERVICE_NAME} to ${ZERMINAL_KUBE_NAMESPACE}"
+            kubectl -n "$Z3RM_KUBE_NAMESPACE" rollout status "deployment/$Z3RM_SERVICE_NAME" --watch
+            echo "deployed ${Z3RM_SERVICE_NAME} to ${Z3RM_KUBE_NAMESPACE}"
 
-            export ZERMINAL_SERVICE_NAME=api
-            export ZERMINAL_LOAD_BALANCER_SIZE_UNIT=$ZERMINAL_API_LOAD_BALANCER_SIZE_UNIT
+            export Z3RM_SERVICE_NAME=api
+            export Z3RM_LOAD_BALANCER_SIZE_UNIT=$Z3RM_API_LOAD_BALANCER_SIZE_UNIT
             export DATABASE_MAX_CONNECTIONS=60
             envsubst < crates/collab/k8s/collab.template.yml | kubectl apply -f -
-            kubectl -n "$ZERMINAL_KUBE_NAMESPACE" rollout status "deployment/$ZERMINAL_SERVICE_NAME" --watch
-            echo "deployed ${ZERMINAL_SERVICE_NAME} to ${ZERMINAL_KUBE_NAMESPACE}"
+            kubectl -n "$Z3RM_KUBE_NAMESPACE" rollout status "deployment/$Z3RM_SERVICE_NAME" --watch
+            echo "deployed ${Z3RM_SERVICE_NAME} to ${Z3RM_KUBE_NAMESPACE}"
         "#})
     }
 

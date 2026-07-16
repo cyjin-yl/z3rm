@@ -1,0 +1,16 @@
+[package]
+name = "mux_protocol"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+
+[lib]
+path = "src/mux_protocol.rs"
+
+[dependencies]
+prost = { workspace = true }
+prost-types = { workspace = true }
+
+[build-dependencies]
+prost-build = { workspace = true }
