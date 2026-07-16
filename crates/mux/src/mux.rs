@@ -17,7 +17,7 @@ use tokio::sync::{mpsc, oneshot};
 
 // §9 从 mux_protocol 导入所有 protobuf 类型。
 use mux_protocol::{
-    attach_request::AttachMode,
+    attach_request::AttachMode as AttachMode_,
     request::Body as RequestBody, response::Body as ResponseBody,
     split_node::SplitDirection, envelope::Payload as EnvelopePayload,
     frame, Envelope, Notification, PROTOCOL_VERSION,
@@ -25,6 +25,8 @@ use mux_protocol::{
     FetchScrollbackResponse, AttachResponse, ShellCommand,
 };
 
+// §9 公共类型导出
+pub use mux_protocol::attach_request::AttachMode;
 // ============================================================================
 // §9 MuxDomain: mux client 核心结构体
 // ============================================================================
@@ -547,7 +549,7 @@ impl MuxDomain {
     // ========================================================================
 
     /// §3.10 连接会话，返回完整快照。
-    pub async fn attach(&self, session: &str, mode: AttachMode) -> Result<AttachResponse> {
+    pub async fn attach(&self, session: &str, mode: AttachMode_) -> Result<AttachResponse> {
         let req = RequestBody::Attach(mux_protocol::AttachRequest {
             session_id: session.to_string(),
             mode: mode as i32,

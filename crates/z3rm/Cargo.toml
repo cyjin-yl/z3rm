@@ -167,6 +167,15 @@ workspace = true
 [dependencies.menu]
 workspace = true
 
+[dependencies.mux]
+workspace = true
+
+[dependencies.dirs]
+workspace = true
+
+[dependencies.tokio]
+workspace = true
+
 [dependencies.notifications]
 workspace = true
 

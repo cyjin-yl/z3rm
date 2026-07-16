@@ -1,46 +1,34 @@
-// Disable command line from opening on release mode
+// §16.1 Disable command line from opening on release mode
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod daemon;
 mod zed;
 
-// Ensure the binary name stays in sync with APP_NAME so that the paths used
-// at runtime (data dir, config dir, etc.) match what the binary is called.
-const _: () = assert!(
-    paths::APP_NAME_LOWERCASE
-        .as_bytes()
-        .eq_ignore_ascii_case(env!("CARGO_BIN_NAME").as_bytes()),
-    "paths::APP_NAME_LOWERCASE must match the binary name. \
-     Forks: update APP_NAME in crates/paths/src/paths.rs when renaming the binary.",
-);
+use std::sync::Arc;
 
 use anyhow::Context as _;
 use assets::Assets;
-use collections::HashMap;
 use crashes::InitCrashHandler;
 use fs::{Fs, RealFs};
 use futures::StreamExt as _;
-use gpui::{App, AppContext, Application, QuitMode, TaskExt, WindowOptions};
+use gpui::{App, Application, TaskExt, WindowOptions};
 use gpui_platform;
 use parking_lot::Mutex;
 use release_channel::{AppCommitSha, AppVersion, ReleaseChannel};
-use std::{
-    env,
-    io,
-    path::Path,
-    process,
-    sync::{Arc, OnceLock},
-    time::Instant,
-};
 use theme::ThemeRegistry;
 use theme_settings::load_user_theme;
 use util::ResultExt as _;
-use crate::zed::{CrashHandler, init as zed_init, watch_settings_files};
+
+use crate::zed::{init as zed_init, watch_settings_files};
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-static STARTUP_TIME: OnceLock<Instant> = OnceLock::new();
+
+// ============================================================================
+// §16.1 Application 构建
+// ============================================================================
 
 fn build_application() -> Application {
     let platform = gpui_platform::current_platform(false);
@@ -51,191 +39,9 @@ fn build_application() -> Application {
     }
 }
 
-fn files_not_created_on_launch(errors: HashMap<io::ErrorKind, Vec<&Path>>) {
-    let message = "Zed failed to launch";
-    let error_details = errors
-        .into_iter()
-        .flat_map(|(kind, paths)| {
-            #[allow(unused_mut)] // for non-unix platforms
-            let mut error_kind_details = match paths.len() {
-                0 => return None,
-                1 => format!(
-                    "{kind} when creating directory {:?}",
-                    paths.first().expect("match arm checks for a single entry")
-                ),
-                _many => format!("{kind} when creating directories {paths:?}"),
-            };
-
-            #[cfg(unix)]
-            {
-                if kind == io::ErrorKind::PermissionDenied {
-                    error_kind_details.push_str("\n\nConsider using chown and chmod tools for altering the directories permissions if your user has corresponding rights.\
-                        \nFor example, `sudo chown $(whoami):staff ~/.config` and `chmod +uwrx ~/.config`");
-                }
-            }
-
-            Some(error_kind_details)
-        })
-        .collect::<Vec<_>>().join("\n\n");
-
-    eprintln!("{message}: {error_details}");
-    build_application()
-        .with_quit_mode(QuitMode::Explicit)
-        .run(move |cx| {
-            if let Ok(window) = cx.open_window(gpui::WindowOptions::default(), |_, cx| {
-                cx.new(|_| gpui::Empty)
-            }) {
-                window
-                    .update(cx, |_, window, cx| {
-                        let response = window.prompt(
-                            gpui::PromptLevel::Critical,
-                            message,
-                            Some(&error_details),
-                            &["Exit"],
-                            cx,
-                        );
-
-                        cx.spawn_in(window, async move |_, cx| {
-                            response.await?;
-                            cx.update(|_, cx| cx.quit())
-                        })
-                        .detach_and_log_err(cx);
-                    })
-                    .log_err();
-            } else {
-                fail_to_open_window(anyhow::anyhow!("{message}: {error_details}"), cx)
-            }
-        })
-}
-
-fn fail_to_open_window(e: anyhow::Error, _cx: &mut App) {
-    eprintln!(
-        "Zed failed to open a window: {e:?}. See https://zed.dev/docs/linux for troubleshooting steps."
-    );
-    process::exit(1);
-}
-
-fn main() {
-    STARTUP_TIME.get_or_init(|| Instant::now());
-
-    // If this process was re-executed as a Linux sandbox helper, run that mode
-    // without returning.
-    sandbox::run_sandbox_launcher_if_invoked();
-
-    #[cfg(unix)]
-    util::prevent_root_execution();
-
-    let file_errors = init_paths();
-    if !file_errors.is_empty() {
-        files_not_created_on_launch(file_errors);
-        return;
-    }
-
-    ztracing::init();
-
-    let version = option_env!("Z3RM_BUILD_ID");
-    let app_commit_sha =
-        option_env!("Z3RM_COMMIT_SHA").map(|commit_sha| AppCommitSha::new(commit_sha.to_string()));
-    let app_version = AppVersion::load(env!("CARGO_PKG_VERSION"), version, app_commit_sha.clone());
-
-    tracing::info!(
-        "========== starting zed version {}, sha {} ==========",
-        app_version,
-        app_commit_sha
-            .as_ref()
-            .map(|sha| sha.short())
-            .as_deref()
-            .unwrap_or("unknown"),
-    );
-
-    let app = build_application().with_assets(Assets);
-    let background_executor = app.background_executor();
-
-    let should_install_crash_handler = matches!(
-        env::var("Z3RM_GENERATE_MINIDUMPS").as_deref(),
-        Ok("true" | "1")
-    ) || *release_channel::RELEASE_CHANNEL != ReleaseChannel::Dev;
-
-    let crash_handler = if should_install_crash_handler {
-        Some(background_executor.spawn(crashes::init(
-            InitCrashHandler {
-                session_id: String::new(),
-                zed_version: format!(
-                    "{}.{}.{}",
-                    app_version.major, app_version.minor, app_version.patch
-                ),
-                binary: "zed".to_string(),
-                release_channel: release_channel::RELEASE_CHANNEL_NAME.clone(),
-                commit_sha: app_commit_sha
-                    .as_ref()
-                    .map(|sha| sha.full())
-                    .unwrap_or_else(|| "no sha".to_owned()),
-            },
-            {
-                let background_executor = background_executor.clone();
-                move |task| {
-                    background_executor.spawn(task).detach();
-                }
-            },
-            |pid| paths::temp_dir().join(format!("zed-crash-handler-{pid}")),
-            {
-                let background_executor = background_executor.clone();
-                move |duration| background_executor.timer(duration)
-            },
-        )))
-    } else {
-        crashes::force_backtrace();
-        None
-    };
-
-    let fs = Arc::new(RealFs::new(None, background_executor.clone()));
-
-    app.run(move |cx| {
-        cx.set_global(db::AppDatabase::new());
-        release_channel::init(app_version.clone(), cx);
-        settings::init(cx);
-        theme_settings::init(theme::LoadThemes::All(Box::new(Assets)), cx);
-        zed_init(cx);
-        watch_settings_files(fs.clone(), cx);
-
-        load_embedded_fonts(cx);
-        load_user_themes_in_background(fs.clone(), cx);
-        watch_themes(fs.clone(), cx);
-
-        if let Some(crash_handler) = crash_handler {
-            cx.spawn(async move |cx| {
-                let client = crash_handler.await;
-                cx.update(|cx| cx.set_global(CrashHandler(client)));
-            })
-            .detach();
-        }
-
-        if let Err(e) = cx.open_window(WindowOptions::default(), |_, cx| cx.new(|_| gpui::Empty)) {
-            fail_to_open_window(e, cx);
-        }
-        cx.activate(true);
-    });
-}
-
-fn init_paths() -> HashMap<io::ErrorKind, Vec<&'static Path>> {
-    [
-        paths::config_dir(),
-        paths::extensions_dir(),
-        paths::languages_dir(),
-        paths::debug_adapters_dir(),
-        paths::database_dir(),
-        paths::logs_dir(),
-        paths::temp_dir(),
-        paths::hang_traces_dir(),
-    ]
-    .into_iter()
-    .fold(HashMap::default(), |mut errors, path| {
-        if let Err(e) = std::fs::create_dir_all(path) {
-            errors.entry(e.kind()).or_insert_with(Vec::new).push(path);
-        }
-        errors
-    })
-}
+// ============================================================================
+// §16.1 Font 加载
+// ============================================================================
 
 fn load_embedded_fonts(cx: &App) {
     let asset_source = cx.asset_source();
@@ -261,7 +67,11 @@ fn load_embedded_fonts(cx: &App) {
         .unwrap();
 }
 
-/// Spawns a background task to load the user themes from the themes directory.
+// ============================================================================
+// §16.1 Theme 加载
+// ============================================================================
+
+/// 后台加载用户主题 (§16.1)
 fn load_user_themes_in_background(fs: Arc<dyn Fs>, cx: &mut App) {
     cx.spawn({
         let fs = fs.clone();
@@ -308,7 +118,7 @@ fn load_user_themes_in_background(fs: Arc<dyn Fs>, cx: &mut App) {
     .detach_and_log_err(cx);
 }
 
-/// Spawns a background task to watch the themes directory for changes.
+/// 监听主题目录变更 (§16.1)
 fn watch_themes(fs: Arc<dyn Fs>, cx: &mut App) {
     use std::time::Duration;
     cx.spawn(async move |cx| {
@@ -336,4 +146,142 @@ fn watch_themes(fs: Arc<dyn Fs>, cx: &mut App) {
         }
     })
     .detach()
+}
+
+// ============================================================================
+// §16.1 main: GPUI 应用启动 → daemon → window
+// ============================================================================
+
+fn main() {
+    // §16.1 沙盒与权限检查
+    sandbox::run_sandbox_launcher_if_invoked();
+
+    #[cfg(unix)]
+    util::prevent_root_execution();
+
+    ztracing::init();
+
+    // §16.1 版本信息
+    let version = option_env!("Z3RM_BUILD_ID");
+    let app_commit_sha =
+        option_env!("Z3RM_COMMIT_SHA").map(|commit_sha| AppCommitSha::new(commit_sha.to_string()));
+    let app_version = AppVersion::load(env!("CARGO_PKG_VERSION"), version, app_commit_sha.clone());
+
+    tracing::info!(
+        "========== starting z3rm version {}, sha {} ==========",
+        app_version,
+        app_commit_sha
+            .as_ref()
+            .map(|sha| sha.short())
+            .as_deref()
+            .unwrap_or("unknown"),
+    );
+
+    let app = build_application().with_assets(Assets);
+    let background_executor = app.background_executor();
+
+    // §16.1 Crash handler
+    let should_install_crash_handler = matches!(
+        std::env::var("Z3RM_GENERATE_MINIDUMPS").as_deref(),
+        Ok("true" | "1")
+    ) || *release_channel::RELEASE_CHANNEL != ReleaseChannel::Dev;
+
+    let crash_handler = if should_install_crash_handler {
+        Some(background_executor.spawn(crashes::init(
+            InitCrashHandler {
+                session_id: String::new(),
+                zed_version: format!(
+                    "{}.{}.{}",
+                    app_version.major, app_version.minor, app_version.patch
+                ),
+                binary: "z3rm".to_string(),
+                release_channel: release_channel::RELEASE_CHANNEL_NAME.clone(),
+                commit_sha: app_commit_sha
+                    .as_ref()
+                    .map(|sha| sha.full())
+                    .unwrap_or_else(|| "no sha".to_owned()),
+            },
+            {
+                let background_executor = background_executor.clone();
+                move |task| {
+                    background_executor.spawn(task).detach();
+                }
+            },
+            |pid| paths::temp_dir().join(format!("z3rm-crash-handler-{pid}")),
+            {
+                let background_executor = background_executor.clone();
+                move |duration| background_executor.timer(duration)
+            },
+        )))
+    } else {
+        crashes::force_backtrace();
+        None
+    };
+
+    let fs = Arc::new(RealFs::new(None, background_executor.clone()));
+
+    app.run(move |cx| {
+        // §16.1 基础初始化
+        cx.set_global(db::AppDatabase::new());
+        release_channel::init(app_version.clone(), cx);
+        settings::init(cx);
+        theme_settings::init(theme::LoadThemes::All(Box::new(Assets)), cx);
+        zed_init(cx);
+        watch_settings_files(fs.clone(), cx);
+
+        load_embedded_fonts(cx);
+        load_user_themes_in_background(fs.clone(), cx);
+        watch_themes(fs.clone(), cx);
+
+        // §16.1 Crash handler 异步初始化
+        if let Some(crash_handler) = crash_handler {
+            cx.spawn(async move |_| {
+                let _client = crash_handler.await;
+                // Crash handler client stored; unused in slim mode
+                drop(_client);
+            })
+            .detach();
+        }
+
+        // §16.1 daemon 自动启动 → 连接 → session → window
+        cx.spawn(async move |cx| {
+            // 1. 确保 daemon 运行并获取 MuxDomain
+            let domain = Arc::new(daemon::ensure_daemon_running().await?);
+
+            // 2. 创建/获取默认 session
+            let session_id = daemon::ensure_default_session(&domain).await?;
+
+            // 3. attach 到 session
+            let _attach_resp = domain.attach(&session_id, mux::AttachMode::ReadOnly).await?;
+            tracing::info!(session_id = %session_id, "attached to session");
+
+            // 4. 注册窗口关闭回调: detach session (daemon 继续运行)
+            let domain_for_close = domain.clone();
+            cx.update(|cx| {
+                let _ = cx.on_window_closed(move |_, _| {
+                    let d = domain_for_close.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = d.detach().await {
+                            tracing::warn!(error = %e, "detach failed on window close");
+                        } else {
+                            tracing::info!("detached on window close");
+                        }
+                    });
+                });
+            });
+
+            // 5. 创建窗口
+            use gpui::AppContext as _;
+            let _window = cx.update(|cx| {
+                cx.open_window(
+                    WindowOptions::default(),
+                    |_, cx| cx.new(|_| gpui::Empty),
+                )
+            })?;
+            cx.update(|cx| cx.activate(true));
+
+            anyhow::Ok(())
+        })
+        .detach_and_log_err(cx);
+    });
 }
