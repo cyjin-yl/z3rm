@@ -3722,7 +3722,7 @@ impl GitPanel {
             }
         }
         if !project.is_local()
-            && !project.is_read_only()
+            && !project.is_read_only(cx)
             && let Some(local_committer) = self.local_committer(room, cx)
         {
             new_co_authors.push(local_committer);
@@ -7099,7 +7099,7 @@ impl GitPanel {
     }
 
     fn has_write_access(&self, cx: &App) -> bool {
-        !self.project.read(cx).is_read_only()
+        !self.project.read(cx).is_read_only(cx)
     }
 
     pub fn load_commit_template(
@@ -7289,7 +7289,7 @@ impl Render for GitPanel {
             .id("git_panel")
             .key_context(self.dispatch_context(window, cx))
             .track_focus(&self.focus_handle)
-            .when(has_write_access && !project.is_read_only(), |this| {
+            .when(has_write_access, |this| {
                 this.on_action(cx.listener(Self::toggle_staged_for_selected))
                     .on_action(cx.listener(Self::stage_range))
                     .on_action(cx.listener(GitPanel::on_commit))

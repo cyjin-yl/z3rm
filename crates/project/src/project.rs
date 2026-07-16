@@ -162,6 +162,10 @@ pub enum Event {
     DisconnectedFromRemote { server_not_running: bool },
     DisconnectedFromHost,
     LanguageNotFound(Entity<language::Buffer>),
+    /// Stub variants for project_panel (spec §8.2 M3)
+    RevealInProjectPanel(ProjectEntryId),
+    ActivateProjectPanel,
+    ExpandedAllForEntry(WorktreeId, ProjectEntryId),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -545,7 +549,7 @@ impl Project {
     }
 
     /// Stub: is_read_only
-    pub fn is_read_only(&self) -> bool {
+    pub fn is_read_only(&self, _cx: &App) -> bool {
         false
     }
 

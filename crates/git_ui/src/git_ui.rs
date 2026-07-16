@@ -147,7 +147,7 @@ pub fn init(cx: &mut App) {
         );
 
         let project = workspace.project().read(cx);
-        if project.is_read_only() {
+        if project.is_read_only(cx) {
             return;
         }
         if !project.is_via_collab() {

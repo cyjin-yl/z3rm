@@ -3,7 +3,6 @@ mod undo;
 mod utils;
 
 use anyhow::{Context as _, Result};
-// use client::{ErrorCode, ErrorExt};  // removed-crate: client
 use collections::{BTreeSet, HashMap, hash_map};
 use command_palette_hooks::CommandPaletteFilter;
 use editor::{
@@ -30,7 +29,6 @@ use gpui::{
     linear_color_stop, linear_gradient, point, px, size, transparent_white, uniform_list,
 };
 use language::DiagnosticSeverity;
-// use markdown_preview::markdown_preview_view::MarkdownPreviewView;  // removed-crate: markdown_preview
 use menu::{Confirm, SelectFirst, SelectLast, SelectNext, SelectPrevious};
 use notifications::status_toast::StatusToast;
 use project::{
@@ -702,10 +700,7 @@ impl ProjectPanel {
                         }
                     }
                     project::Event::RevealInProjectPanel(entry_id) => {
-                        if let Some(()) = this
-                            .reveal_entry(project.clone(), *entry_id, false, window, cx)
-                            .log_err()
-                        {
+                        if this.reveal_entry(project.clone(), *entry_id, false, window, cx).is_ok() {
                             cx.emit(PanelEvent::Activate);
                         }
                     }
@@ -910,20 +905,10 @@ impl ProjectPanel {
                                     window, cx,
                                 )
                                 .detach_and_prompt_err("Failed to open file", window, cx, move |e, _, _| {
-                                    match e.error_code() {
-                                        ErrorCode::Disconnected => if is_via_ssh {
-                                            Some("Disconnected from SSH host".to_string())
-                                        } else {
-                                            Some("Disconnected from remote project".to_string())
-                                        },
-                                        ErrorCode::UnsharedItem => Some(format!(
-                                            "{} is not shared by the host. This could be because it has been marked as `private`",
-                                            file_path.display(path_style)
-                                        )),
-                                        // See note in worktree.rs where this error originates. Returning Some in this case prevents
-                                        // the error popup from saying "Try Again", which is a red herring in this case
-                                        ErrorCode::Internal if e.to_string().contains("File is too large to load") => Some(e.to_string()),
-                                        _ => None,
+                                    if e.to_string().contains("File is too large to load") {
+                                        Some(e.to_string())
+                                    } else {
+                                        None
                                     }
                                 });
 
@@ -981,74 +966,11 @@ impl ProjectPanel {
     }
 
     fn update_diagnostics(&mut self, cx: &mut Context<Self>) {
-        let mut diagnostics: HashMap<(WorktreeId, Arc<RelPath>), DiagnosticSeverity> =
-            Default::default();
-        let show_diagnostics_setting = ProjectPanelSettings::get_global(cx).show_diagnostics;
-
-        if show_diagnostics_setting != ShowDiagnostics::Off {
-            self.project
-                .read(cx)
-                .diagnostic_summaries(false, cx)
-                .filter_map(|(path, _, diagnostic_summary)| {
-                    if diagnostic_summary.error_count > 0 {
-                        Some((path, DiagnosticSeverity::ERROR))
-                    } else if show_diagnostics_setting == ShowDiagnostics::All
-                        && diagnostic_summary.warning_count > 0
-                    {
-                        Some((path, DiagnosticSeverity::WARNING))
-                    } else {
-                        None
-                    }
-                })
-                .for_each(|(project_path, diagnostic_severity)| {
-                    let ancestors = project_path.path.ancestors().collect::<Vec<_>>();
-                    for path in ancestors.into_iter().rev() {
-                        Self::update_strongest_diagnostic_severity(
-                            &mut diagnostics,
-                            &project_path,
-                            path.into(),
-                            diagnostic_severity,
-                        );
-                    }
-                });
-        }
-        self.diagnostics = diagnostics;
-
-        let diagnostic_badges = ProjectPanelSettings::get_global(cx).diagnostic_badges;
-        self.diagnostic_counts =
-            if diagnostic_badges && show_diagnostics_setting != ShowDiagnostics::Off {
-                self.project.read(cx).diagnostic_summaries(false, cx).fold(
-                    HashMap::default(),
-                    |mut counts, (project_path, _, summary)| {
-                        let entry = counts
-                            .entry((project_path.worktree_id, project_path.path))
-                            .or_default();
-                        entry.error_count += summary.error_count;
-                        if show_diagnostics_setting == ShowDiagnostics::All {
-                            entry.warning_count += summary.warning_count;
-                        }
-                        counts
-                    },
-                )
-            } else {
-                Default::default()
-            };
+        // Diagnostics stripped — no-op (spec §8.2 M3)
+        let _ = cx;
     }
 
-    fn update_strongest_diagnostic_severity(
-        diagnostics: &mut HashMap<(WorktreeId, Arc<RelPath>), DiagnosticSeverity>,
-        project_path: &ProjectPath,
-        path_buffer: Arc<RelPath>,
-        diagnostic_severity: DiagnosticSeverity,
-    ) {
-        diagnostics
-            .entry((project_path.worktree_id, path_buffer))
-            .and_modify(|strongest_diagnostic_severity| {
-                *strongest_diagnostic_severity =
-                    cmp::min(*strongest_diagnostic_severity, diagnostic_severity);
-            })
-            .or_insert(diagnostic_severity);
-    }
+
 
     fn focus_in(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if !self.focus_handle.contains_focused(window, cx) {
@@ -1087,7 +1009,7 @@ impl ProjectPanel {
             let is_remote = project.is_remote();
             let is_collab = project.is_via_collab();
             let is_local = project.is_local() || project.is_via_wsl_with_host_interop(cx);
-            let is_markdown = !is_dir && MarkdownPreviewView::is_markdown_path(&*entry.path);
+            let is_markdown = !is_dir && Self::is_markdown_path(&entry.path);
 
             let settings = ProjectPanelSettings::get_global(cx);
             let visible_worktrees_count = project.visible_worktrees(cx).count();
@@ -1780,7 +1702,7 @@ impl ProjectPanel {
         let Some((worktree, entry)) = self.selected_entry(cx) else {
             return;
         };
-        if !entry.is_file() || !MarkdownPreviewView::is_markdown_path(&*entry.path) {
+        if !entry.is_file() || !Self::is_markdown_path(&entry.path) {
             return;
         }
         let project_path = ProjectPath {
@@ -1788,8 +1710,8 @@ impl ProjectPanel {
             path: entry.path.clone(),
         };
         self.workspace
-            .update(cx, |workspace, cx| {
-                MarkdownPreviewView::open_for_project_path(project_path, workspace, window, cx);
+            .update(cx, |_, _| {
+                // markdown_preview crate removed — no-op
             })
             .ok();
     }
@@ -2671,7 +2593,7 @@ impl ProjectPanel {
                 })?;
 
                 for (worktree_id, task) in tasks {
-                    match Self::resolve_delete_entry(task, worktree_id, trash).await {
+                    match Self::resolve_delete_entry(Some(task), worktree_id, trash).await {
                         DeleteEntryOutcome::Deleted => {}
                         DeleteEntryOutcome::Trashed(change) => changes.push(change),
                         DeleteEntryOutcome::Failed => failed_count += 1,
@@ -3375,7 +3297,7 @@ impl ProjectPanel {
                     to: ProjectPath,
                 },
                 Copy {
-                    task: Task<Result<Option<Entry>>>,
+                    task: Task<Result<CreatedEntry>>,
                     destination: ProjectPath,
                 },
             }
@@ -3427,7 +3349,7 @@ impl ProjectPanel {
                             }
                         }
                         PasteTask::Copy { task, destination } => {
-                            if let Some(Some(entry)) = task
+                            if let Some(CreatedEntry::Included(entry)) = task
                                 .await
                                 .notify_workspace_async_err(workspace.clone(), &mut cx)
                             {
@@ -3638,7 +3560,7 @@ impl ProjectPanel {
                         let download_task = this.update(cx, |this, cx| {
                             let project = this.project.clone();
                             project.update(cx, |project, cx| {
-                                project.download_file(worktree_id, entry_path, destination_path, cx)
+                                project.download_file(worktree_id, project::ProjectPath { worktree_id, path: entry_path }, destination_path, cx)
                             })
                         });
                         if let Ok(task) = download_task {
@@ -3931,7 +3853,10 @@ impl ProjectPanel {
             let rename_task = (new_path.as_rel_path() != source_path.path.as_ref()).then(|| {
                 project.rename_entry(
                     entry_to_move,
-                    (destination_worktree_id, new_path).into(),
+                    project::ProjectPath {
+                        worktree_id: destination_worktree_id,
+                        path: new_path.into(),
+                    },
                     cx,
                 )
             });
@@ -4221,6 +4146,8 @@ impl ProjectPanel {
         let mut new_state = State::derive(&self.state);
         new_state.last_worktree_root_id = project
             .visible_worktrees(cx)
+            .collect::<Vec<_>>()
+            .into_iter()
             .next_back()
             .and_then(|worktree| worktree.read(cx).root_entry())
             .map(|entry| entry.id);
@@ -4766,7 +4693,7 @@ impl ProjectPanel {
                     )?;
 
                     let task = self.project.update(cx, |project, cx| {
-                        project.copy_entry(selection.entry_id, (worktree_id, new_path).into(), cx)
+                        project.copy_entry(selection.entry_id, project::ProjectPath { worktree_id, path: new_path.into() }, cx)
                     });
                     copy_tasks.push(task);
                     disambiguation_range = new_disambiguation_range.or(disambiguation_range);
@@ -4778,9 +4705,9 @@ impl ProjectPanel {
                     let mut last_succeed = None;
                     let mut changes = Vec::new();
                     for task in copy_tasks.into_iter() {
-                        if let Some(Some(entry)) = task.await.log_err() {
+                        if let Some(CreatedEntry::Included(entry)) = task.await.log_err() {
                             last_succeed = Some(entry.id);
-                            changes.push(Change::Created((worktree_id, entry.path).into()));
+                            changes.push(Change::Created(project::ProjectPath { worktree_id, path: entry.path }));
                         }
                     }
                     // update selection
@@ -7607,6 +7534,15 @@ impl ProjectPanel {
             worktree_id: project_path.worktree_id,
             entry_id: entry.id,
         });
+    }
+
+    /// Check whether the given path is a markdown file
+    fn is_markdown_path(path: &util::rel_path::RelPath) -> bool {
+        if let Some(ext) = path.extension() {
+            matches!(ext, "md" | "markdown" | "mdx")
+        } else {
+            false
+        }
     }
 }
 

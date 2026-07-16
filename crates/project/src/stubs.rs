@@ -1081,6 +1081,7 @@ impl Project {
 
     pub fn diagnostic_summaries(
         &mut self,
+        _only_local: bool,
         _cx: &mut gpui::Context<Self>,
     ) -> Task<anyhow::Result<BTreeMap<WorktreeId, DiagnosticSummary>>> {
         Task::ready(Ok(BTreeMap::new()))
@@ -1210,13 +1211,143 @@ impl Project {
         false
     }
 
-    /// 根据 entry_id 获取路径
+    /// 根据 entry_id 获取 ProjectPath
     pub fn path_for_entry(
         &self,
         _entry_id: ProjectEntryId,
         _cx: &App,
-    ) -> Option<std::path::PathBuf> {
+    ) -> Option<crate::ProjectPath> {
         None
+    }
+
+    /// 根据 entry_id 获取 worktree_id
+    pub fn worktree_id_for_entry(
+        &self,
+        _entry_id: ProjectEntryId,
+        _cx: &App,
+    ) -> Option<worktree::WorktreeId> {
+        None
+    }
+
+    /// 判断 entry 是否是 worktree root
+    pub fn entry_is_worktree_root(
+        &self,
+        _entry_id: ProjectEntryId,
+        _cx: &App,
+    ) -> bool {
+        false
+    }
+
+    /// 创建 entry (stub)
+    pub fn create_entry(
+        &mut self,
+        _path: crate::ProjectPath,
+        _is_dir: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<worktree::CreatedEntry>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: create_entry")))
+    }
+
+    /// 重命名 entry (stub)
+    pub fn rename_entry(
+        &mut self,
+        _entry_id: ProjectEntryId,
+        _new_path: crate::ProjectPath,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<worktree::CreatedEntry>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: rename_entry")))
+    }
+
+    /// 删除 entry (stub)
+    pub fn delete_entry(
+        &mut self,
+        _entry_id: ProjectEntryId,
+        _trash: bool,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<Option<fs::TrashedEntry>>> {
+        gpui::Task::ready(Ok(None))
+    }
+
+    /// 恢复 entry (stub)
+    pub fn restore_entry(
+        &mut self,
+        _worktree_id: worktree::WorktreeId,
+        _trashed_entry: fs::TrashedEntry,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<crate::ProjectPath>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: restore_entry")))
+    }
+
+    /// 复制 entry (stub)
+    pub fn copy_entry(
+        &mut self,
+        _entry_id: ProjectEntryId,
+        _path: crate::ProjectPath,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<worktree::CreatedEntry>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: copy_entry")))
+    }
+
+    /// 展开 entry (stub)
+    pub fn expand_entry(
+        &mut self,
+        _worktree_id: worktree::WorktreeId,
+        _entry_id: ProjectEntryId,
+        _cx: &mut gpui::Context<Self>,
+    ) {
+    }
+
+    /// 展开所有子目录 (stub)
+    pub fn expand_all_for_entry(
+        &mut self,
+        _worktree_id: worktree::WorktreeId,
+        _entry_id: ProjectEntryId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<gpui::Task<anyhow::Result<()>>> {
+        None
+    }
+
+    /// 获取 buffer (stub)
+    pub fn buffer_for_id(
+        &mut self,
+        _buffer_id: text::BufferId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<gpui::Entity<language::Buffer>> {
+        None
+    }
+
+    /// 获取脏 buffers (stub)
+    pub fn dirty_buffers(
+        &self,
+        _cx: &App,
+    ) -> impl Iterator<Item = crate::ProjectPath> {
+        std::iter::empty()
+    }
+
+    /// WSL 互操作性检查 (stub)
+    pub fn is_via_wsl_with_host_interop(&self, _cx: &App) -> bool {
+        false
+    }
+
+    /// 下载文件 (stub)
+    pub fn download_file(
+        &mut self,
+        _worktree_id: worktree::WorktreeId,
+        _entry_path: crate::ProjectPath,
+        _destination_path: PathBuf,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<()>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: download_file")))
+    }
+
+    /// 移动 worktree (stub)
+    pub fn move_worktree(
+        &mut self,
+        _worktree_id: worktree::WorktreeId,
+        _destination_id: worktree::WorktreeId,
+        _cx: &mut gpui::Context<Self>,
+    ) -> gpui::Task<anyhow::Result<()>> {
+        gpui::Task::ready(Err(anyhow::anyhow!("stub: move_worktree")))
     }
 
     /// 获取符号列表

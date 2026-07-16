@@ -499,23 +499,23 @@ impl Inner {
             return Err(anyhow!("Failed to obtain workspace."));
         };
 
-        workspace
+        let entry_id = workspace.update(cx, |workspace, cx| {
+            let project = workspace.project().read(cx);
+            project.entry_for_path(project_path, cx)
+                .map(|entry| entry.id)
+        }).ok_or_else(|| anyhow!("No entry for path."))?;
+
+        let trashed = workspace
             .update(cx, |workspace, cx| {
                 workspace.project().update(cx, |project, cx| {
-                    let entry_id = project
-                        .entry_for_path(&project_path, cx)
-                        .map(|entry| entry.id)
-                        .ok_or_else(|| anyhow!("No entry for path."))?;
-
-                    project
-                        .delete_entry(entry_id, true, cx)
-                        .ok_or_else(|| anyhow!("Worktree entry should exist"))
+                    project.delete_entry(entry_id, true, cx)
                 })
-            })?
-            .await
-            .and_then(|entry| {
-                entry.ok_or_else(|| anyhow!("When trashing we should always get a trashentry"))
             })
+            .await
+            .ok()
+            .flatten()
+            .ok_or_else(|| anyhow!("When trashing we should always get a trashentry"))?;
+        Ok(trashed)
     }
 
     async fn restore(
