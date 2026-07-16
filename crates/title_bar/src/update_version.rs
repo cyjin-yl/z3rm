@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use auto_update::{AutoUpdateStatus, AutoUpdater, UpdateCheckType};
 use gpui::{Empty, Render};
 use semver::Version;
-use ui::{UpdateButton, prelude::*};
+use ui::prelude::*;
 
 pub struct UpdateVersion {
     status: AutoUpdateStatus,
@@ -19,14 +19,15 @@ impl UpdateVersion {
                 let auto_update = auto_update.read(cx);
                 this.status = auto_update.status();
                 this.update_check_type = auto_update.update_check_type();
-                this.dismissed_status = auto_update.dismissed_status();
+                this.dismissed_status = auto_updater.read(cx).dismissed_status();
                 cx.notify();
             })
             .detach();
+            let status = auto_updater.read(cx);
             Self {
-                status: auto_updater.read(cx).status(),
+                status: status.status(),
                 update_check_type: UpdateCheckType::Automatic,
-                dismissed_status: auto_updater.read(cx).dismissed_status(),
+                dismissed_status: status.dismissed_status(),
             }
         } else {
             Self {
@@ -93,35 +94,45 @@ impl Render for UpdateVersion {
         }
         match &self.status {
             AutoUpdateStatus::Checking if self.update_check_type.is_manual() => {
-                UpdateButton::checking().into_any_element()
+                Label::new("Checking for updates…")
+                    .size(LabelSize::Small)
+                    .color(Color::Muted)
+                    .into_any_element()
             }
-            AutoUpdateStatus::Downloading { version, progress } => {
+            AutoUpdateStatus::Downloading { version, progress: _ } => {
                 let version = Self::version_tooltip_message(version);
-                UpdateButton::downloading(version, *progress).into_any_element()
+                Label::new(format!("Downloading {version}"))
+                    .size(LabelSize::Small)
+                    .color(Color::Muted)
+                    .into_any_element()
             }
             AutoUpdateStatus::Installing { version } => {
                 let version = Self::version_tooltip_message(version);
-                UpdateButton::installing(version).into_any_element()
+                Label::new(format!("Installing {version}"))
+                    .size(LabelSize::Small)
+                    .color(Color::Muted)
+                    .into_any_element()
             }
             AutoUpdateStatus::Updated { version } => {
                 let version = Self::version_tooltip_message(version);
-                UpdateButton::updated(version)
+                Button::new("update-available", "Restart to Update")
+                    .label_size(LabelSize::Small)
+                    .color(Color::Accent)
                     .on_click(|_, _, cx| {
                         workspace::reload(cx);
                     })
-                    .on_dismiss(cx.listener(|this, _, _window, cx| this.dismiss(cx)))
                     .into_any_element()
             }
             AutoUpdateStatus::Errored { error } => {
                 let error_str = error.to_string();
-                UpdateButton::errored(error_str)
-                    .on_click(|_, window, cx| {
-                        window.dispatch_action(Box::new(workspace::OpenLog), cx);
-                    })
-                    .on_dismiss(cx.listener(|this, _, _window, cx| this.dismiss(cx)))
+                Button::new("update-error", "Update Failed")
+                    .label_size(LabelSize::Small)
+                    .color(Color::Error)
                     .into_any_element()
             }
-            AutoUpdateStatus::Idle | AutoUpdateStatus::Checking { .. } => Empty.into_any_element(),
+            AutoUpdateStatus::Idle | AutoUpdateStatus::Checking { .. } => {
+                Empty.into_any_element()
+            }
         }
     }
 }
