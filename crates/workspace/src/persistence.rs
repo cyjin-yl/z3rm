@@ -1257,7 +1257,7 @@ impl WorkspaceDb {
         log::debug!("Saving workspace at location: {:?}", workspace.location);
         self.write(move |conn| {
             conn.with_savepoint("update_worktrees", || {
-                let remote_connection_id = match workspace.location.clone() {
+                let remote_connection_id: Option<i64> = match workspace.location.clone() {
                     SerializedWorkspaceLocation::Local => None,
                     SerializedWorkspaceLocation::Remote(_name) => {
                         // 规范 §8.2：远程连接已移除，跳过
