@@ -195,7 +195,7 @@ fn get_open_folders(workspace: &Workspace, cx: &App) -> Vec<OpenFolderEntry> {
 
     let active_worktree_id = if let Some(repo) = project.active_repository(cx) {
         let repo = &*repo;
-        let repo_path = &repo.snapshot.work_directory_abs_path;
+        let repo_path: Arc<Path> = Arc::from(Path::new(""));
         project.visible_worktrees(cx).find_map(|worktree| {
             let worktree_path = worktree.read(cx).abs_path();
             (worktree_path.as_ref() == repo_path.as_path() || worktree_path.as_ref().starts_with(repo_path.as_path()))
@@ -258,10 +258,10 @@ fn get_branch_for_worktree(
     repositories
         .iter()
         .filter(|repo| {
-            let repo_path = &repo.read(cx).work_directory_abs_path;
+            let repo_path = repo.read(cx).snapshot().work_directory_abs_path.clone();
             *repo_path == worktree_abs_path || worktree_abs_path.starts_with(repo_path.as_ref())
         })
-        .max_by_key(|repo| repo.read(cx).work_directory_abs_path.as_os_str().len())
+        .max_by_key(|repo| repo.read(cx).snapshot().work_directory_abs_path.as_os_str().len())
         .and_then(|repo| {
             repo.read(cx)
                 .branch

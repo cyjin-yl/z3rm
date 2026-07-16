@@ -1698,7 +1698,7 @@ impl Item for TerminalView {
                 .collect::<Vec<_>>();
 
             if !paths.is_empty() {
-                self.add_paths_to_terminal(&paths.iter().map(|p| p.path.to_path_buf()).collect::<Vec<_>>(), window, cx);
+                self.add_paths_to_terminal(&paths.iter().map(|p| p.path.to_rel_path_buf()).collect::<Vec<_>>(), window, cx);
             }
 
             return true;
