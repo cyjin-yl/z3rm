@@ -11,7 +11,7 @@ Build a release .tar.gz for Linux.
 
 Options:
   -h, --help     Display this help and exit.
-  --flatpak      Set ZERMINAL_BUNDLE_TYPE=flatpak so that this can be included in system info
+  --flatpak      Set Z3RM_BUNDLE_TYPE=flatpak so that this can be included in system info
   "
 }
 
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         --flatpak)
-            export ZERMINAL_BUNDLE_TYPE=flatpak
+            export Z3RM_BUNDLE_TYPE=flatpak
             shift
             ;;
         --)
@@ -43,12 +43,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-export ZERMINAL_BUNDLE=true
+export Z3RM_BUNDLE=true
 
-channel=$(<crates/zerminal/RELEASE_CHANNEL)
+channel=$(<crates/z3rm/RELEASE_CHANNEL)
 target_dir="${CARGO_TARGET_DIR:-target}"
 
-version="$(script/get-crate-version zerminal)"
+version="$(script/get-crate-version z3rm)"
 # Set RELEASE_VERSION so it's compiled into GPUI and it knows about the version.
 export RELEASE_VERSION="${version}"
 
@@ -83,7 +83,7 @@ if [[ "$(uname -m)" == "aarch64" ]]; then
 else
     export RUSTFLAGS="${RUSTFLAGS:-} -C link-args=-Wl,--disable-new-dtags,-rpath,\$ORIGIN/../lib"
 fi
-cargo build --release --target "${target_triple}" --package zerminal --package cli
+cargo build --release --target "${target_triple}" --package z3rm --package cli
 # Build remote_server in separate invocation to prevent feature unification from other crates
 # from influencing dynamic libraries required by it.
 if [[ "$remote_server_triple" == "$musl_triple" ]]; then
@@ -97,13 +97,13 @@ if ! command -v sentry-cli >/dev/null 2>&1; then
     echo "install with: 'curl -sL https://sentry.io/get-cli | bash'"
 else
     if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
-        echo "Uploading zerminal debug symbols to sentry..."
+        echo "Uploading z3rm debug symbols to sentry..."
         # note: this uploads the unstripped binary which is needed because it contains
         # .eh_frame data for stack unwinding. see https://github.com/getsentry/symbolic/issues/783
         for attempt in 1 2 3; do
             echo "Attempting sentry upload (attempt $attempt/3)..."
             if sentry-cli debug-files upload --include-sources --wait -p zed -o zed-dev \
-                "${target_dir}/${target_triple}"/release/zerminal \
+                "${target_dir}/${target_triple}"/release/z3rm \
                 "${target_dir}/${remote_server_triple}"/release/remote_server; then
                 echo "Sentry upload successful on attempt $attempt"
                 break
@@ -122,7 +122,7 @@ fi
 # Strip debug symbols and save them for upload to DigitalOcean.
 # We use llvm-objcopy because GNU objcopy on older distros (e.g. Ubuntu 20.04)
 # doesn't understand CREL sections produced by newer LLVM.
-llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/zerminal"
+llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/z3rm"
 llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/cli"
 llvm-objcopy --strip-debug "${target_dir}/${remote_server_triple}/release/remote_server"
 
@@ -143,65 +143,65 @@ fi
 # Move everything that should end up in the final package
 # into a temp directory.
 temp_dir=$(mktemp -d)
-zerminal_dir="${temp_dir}/zerminal$suffix.app"
+z3rm_dir="${temp_dir}/z3rm$suffix.app"
 
 # Binary
-mkdir -p "${zerminal_dir}/bin" "${zerminal_dir}/libexec"
-cp "${target_dir}/${target_triple}/release/zerminal" "${zerminal_dir}/libexec/zerminal"
-cp "${target_dir}/${target_triple}/release/cli" "${zerminal_dir}/bin/zerminal"
+mkdir -p "${z3rm_dir}/bin" "${z3rm_dir}/libexec"
+cp "${target_dir}/${target_triple}/release/z3rm" "${z3rm_dir}/libexec/z3rm"
+cp "${target_dir}/${target_triple}/release/cli" "${z3rm_dir}/bin/z3rm"
 
 # Libs
 # Bundle libstdc++ so older supported systems can run binaries built with our
 # toolchain even when their system libstdc++.so.6 lacks required GLIBCXX symbols.
 find_libs() {
-    ldd ${target_dir}/${target_triple}/release/zerminal |\
+    ldd ${target_dir}/${target_triple}/release/z3rm |\
         cut -d' ' -f3 |\
         grep -v '\<\(libc.so\|libgcc_s.so\|libm.so\|libpthread.so\|libdl.so\|libasound.so\)'
 }
 
-mkdir -p "${zerminal_dir}/lib"
-rm -rf "${zerminal_dir}/lib/*"
-cp $(find_libs) "${zerminal_dir}/lib"
+mkdir -p "${z3rm_dir}/lib"
+rm -rf "${z3rm_dir}/lib/*"
+cp $(find_libs) "${z3rm_dir}/lib"
 
 # Icons
-mkdir -p "${zerminal_dir}/share/icons/hicolor/512x512/apps"
-cp "crates/zerminal/resources/app-icon$suffix.png" "${zerminal_dir}/share/icons/hicolor/512x512/apps/zerminal.png"
-mkdir -p "${zerminal_dir}/share/icons/hicolor/1024x1024/apps"
-cp "crates/zerminal/resources/app-icon$suffix@2x.png" "${zerminal_dir}/share/icons/hicolor/1024x1024/apps/zerminal.png"
+mkdir -p "${z3rm_dir}/share/icons/hicolor/512x512/apps"
+cp "crates/z3rm/resources/app-icon$suffix.png" "${z3rm_dir}/share/icons/hicolor/512x512/apps/z3rm.png"
+mkdir -p "${z3rm_dir}/share/icons/hicolor/1024x1024/apps"
+cp "crates/z3rm/resources/app-icon$suffix@2x.png" "${z3rm_dir}/share/icons/hicolor/1024x1024/apps/z3rm.png"
 
 # .desktop
 export DO_STARTUP_NOTIFY="true"
-export APP_CLI="zerminal"
-export APP_ICON="zerminal"
+export APP_CLI="z3rm"
+export APP_ICON="z3rm"
 export APP_ARGS="%U"
 if [[ "$channel" == "preview" ]]; then
-  export APP_NAME="Zerminal Preview"
-  APP_ID="dev.zerminal.Zerminal-Preview"
+  export APP_NAME="Z3rm Preview"
+  APP_ID="dev.z3rm.Z3rm-Preview"
 elif [[ "$channel" == "nightly" ]]; then
-  export APP_NAME="Zerminal Nightly"
-  APP_ID="dev.zerminal.Zerminal-Nightly"
+  export APP_NAME="Z3rm Nightly"
+  APP_ID="dev.z3rm.Z3rm-Nightly"
 elif [[ "$channel" == "dev" ]]; then
-  export APP_NAME="Zerminal Dev"
-  APP_ID="dev.zerminal.Zerminal-Dev"
+  export APP_NAME="Z3rm Dev"
+  APP_ID="dev.z3rm.Z3rm-Dev"
 else
-  export APP_NAME="Zerminal"
-  APP_ID="dev.zerminal.Zerminal"
+  export APP_NAME="Z3rm"
+  APP_ID="dev.z3rm.Z3rm"
 fi
 
-mkdir -p "${zerminal_dir}/share/applications"
-envsubst < "crates/zerminal/resources/zerminal.desktop.in" > "${zerminal_dir}/share/applications/$APP_ID.desktop"
-chmod +x "${zerminal_dir}/share/applications/$APP_ID.desktop"
+mkdir -p "${z3rm_dir}/share/applications"
+envsubst < "crates/z3rm/resources/z3rm.desktop.in" > "${z3rm_dir}/share/applications/$APP_ID.desktop"
+chmod +x "${z3rm_dir}/share/applications/$APP_ID.desktop"
 
 # Copy generated licenses so they'll end up in archive too
-cp "assets/licenses.md" "${zerminal_dir}/licenses.md"
+cp "assets/licenses.md" "${z3rm_dir}/licenses.md"
 
 # Create archive out of everything that's in the temp directory
 arch=$(uname -m)
-archive="zerminal-linux-${arch}.tar.gz"
+archive="z3rm-linux-${arch}.tar.gz"
 
 rm -rf "${archive}"
-remove_match="zerminal(-[a-zA-Z0-9]+)?-linux-$(uname -m)\.tar\.gz"
+remove_match="z3rm(-[a-zA-Z0-9]+)?-linux-$(uname -m)\.tar\.gz"
 ls "${target_dir}/release" | grep -E ${remove_match} | xargs -d "\n" -I {} rm -f "${target_dir}/release/{}" || true
-tar -czvf "${target_dir}/release/$archive" -C ${temp_dir} "zerminal$suffix.app"
+tar -czvf "${target_dir}/release/$archive" -C ${temp_dir} "z3rm$suffix.app"
 
-gzip -f --stdout --best "${target_dir}/${remote_server_triple}/release/remote_server" > "${target_dir}/zerminal-remote-server-linux-${arch}.gz"
+gzip -f --stdout --best "${target_dir}/${remote_server_triple}/release/remote_server" > "${target_dir}/z3rm-remote-server-linux-${arch}.gz"

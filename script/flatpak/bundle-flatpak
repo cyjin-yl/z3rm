@@ -5,33 +5,33 @@ cd "$(dirname "$0")/../.."
 shopt -s extglob
 
 script/bundle-linux --flatpak
-archive_match="zerminal(-[a-zA-Z0-9]+)?-linux-$(uname -m)\\.tar\\.gz"
+archive_match="z3rm(-[a-zA-Z0-9]+)?-linux-$(uname -m)\\.tar\\.gz"
 archive=$(ls "target/release" | grep -E ${archive_match})
-channel=$(<crates/zerminal/RELEASE_CHANNEL)
+channel=$(<crates/z3rm/RELEASE_CHANNEL)
 
 export CHANNEL="$channel"
 export ARCHIVE="$archive"
 if [[ "$channel" == "dev" ]]; then
-    export APP_ID="dev.zerminal.ZerminalDev"
-    export APP_NAME="Zerminal Dev"
+    export APP_ID="dev.z3rm.Z3rmDev"
+    export APP_NAME="Z3rm Dev"
     export BRANDING_LIGHT="#99c1f1"
     export BRANDING_DARK="#1a5fb4"
     export ICON_FILE="app-icon-dev"
 elif [[ "$channel" == "nightly" ]]; then
-    export APP_ID="dev.zerminal.ZerminalNightly"
-    export APP_NAME="Zerminal Nightly"
+    export APP_ID="dev.z3rm.Z3rmNightly"
+    export APP_NAME="Z3rm Nightly"
     export BRANDING_LIGHT="#e9aa6a"
     export BRANDING_DARK="#1a5fb4"
     export ICON_FILE="app-icon-nightly"
 elif [[ "$channel" == "preview" ]]; then
-    export APP_ID="dev.zerminal.ZerminalPreview"
-    export APP_NAME="Zerminal Preview"
+    export APP_ID="dev.z3rm.Z3rmPreview"
+    export APP_NAME="Z3rm Preview"
     export BRANDING_LIGHT="#99c1f1"
     export BRANDING_DARK="#1a5fb4"
     export ICON_FILE="app-icon-preview"
 elif [[ "$channel" == "stable" ]]; then
-    export APP_ID="dev.zerminal.Zerminal"
-    export APP_NAME="Zerminal"
+    export APP_ID="dev.z3rm.Z3rm"
+    export APP_NAME="Z3rm"
     export BRANDING_LIGHT="#99c1f1"
     export BRANDING_DARK="#1a5fb4"
     export ICON_FILE="app-icon"
@@ -40,7 +40,7 @@ else
     exit
 fi
 
-envsubst < "crates/zerminal/resources/flatpak/manifest-template.json" > "$APP_ID.json"
+envsubst < "crates/z3rm/resources/flatpak/manifest-template.json" > "$APP_ID.json"
 flatpak-builder --user --install --force-clean build "$APP_ID.json"
 flatpak build-bundle ~/.local/share/flatpak/repo "target/release/$APP_ID.flatpak" "$APP_ID"
 echo "Created 'target/release/$APP_ID.flatpak'"

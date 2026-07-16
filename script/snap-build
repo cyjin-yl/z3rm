@@ -14,10 +14,10 @@ export APP_NAME="Zed"
 export APP_CLI="zed"
 export APP_ICON="\${SNAP}/meta/gui/zed.png"
 export APP_ARGS="%U"
-envsubst < "crates/zerminal/resources/zerminal.desktop.in" > "snap/gui/zerminal.desktop"
-cp "crates/zerminal/resources/app-icon.png" "snap/gui/zerminal.png"
+envsubst < "crates/z3rm/resources/z3rm.desktop.in" > "snap/gui/z3rm.desktop"
+cp "crates/z3rm/resources/app-icon.png" "snap/gui/z3rm.png"
 
-RELEASE_VERSION="$1" envsubst < crates/zerminal/resources/snap/snapcraft.yaml.in > snap/snapcraft.yaml
+RELEASE_VERSION="$1" envsubst < crates/z3rm/resources/snap/snapcraft.yaml.in > snap/snapcraft.yaml
 
 # Clean seems to be needed to actually check that the snapcraft.yaml
 # works.  For example, when a `stage-package` is removed, it will

@@ -158,7 +158,7 @@ const instanceWidth = Math.floor(screenWidth / columns);
 const instanceHeight = Math.floor(screenHeight / rows);
 
 // If a user is specified, make sure it's first in the list
-const user = process.env.ZERMINAL_IMPERSONATE;
+const user = process.env.Z3RM_IMPERSONATE;
 if (user) {
   users = [user].concat(users.filter((u) => u !== user));
 }
@@ -201,15 +201,15 @@ setTimeout(() => {
     spawn(binaryPath, i == 0 ? args : [], {
       stdio: "inherit",
       env: Object.assign({}, process.env, {
-        ZERMINAL_IMPERSONATE: users[i],
-        ZERMINAL_WINDOW_POSITION: position,
-        ZERMINAL_STATELESS: isStateful && i == 0 ? "" : "1",
-        ZERMINAL_ALWAYS_ACTIVE: "1",
-        ZERMINAL_SERVER_URL: "http://localhost:3000",
-        ZERMINAL_RPC_URL: "http://localhost:8080/rpc",
-        ZERMINAL_ADMIN_API_TOKEN: "internal-api-key-secret",
-        ZERMINAL_WINDOW_SIZE: size,
-        ZERMINAL_CLIENT_CHECKSUM_SEED: "development-checksum-seed",
+        Z3RM_IMPERSONATE: users[i],
+        Z3RM_WINDOW_POSITION: position,
+        Z3RM_STATELESS: isStateful && i == 0 ? "" : "1",
+        Z3RM_ALWAYS_ACTIVE: "1",
+        Z3RM_SERVER_URL: "http://localhost:3000",
+        Z3RM_RPC_URL: "http://localhost:8080/rpc",
+        Z3RM_ADMIN_API_TOKEN: "internal-api-key-secret",
+        Z3RM_WINDOW_SIZE: size,
+        Z3RM_CLIENT_CHECKSUM_SEED: "development-checksum-seed",
         RUST_LOG: process.env.RUST_LOG || "info",
       }),
     });

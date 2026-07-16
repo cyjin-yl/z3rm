@@ -10,7 +10,7 @@ local_install=false
 can_code_sign=false
 
 # This must match the team in the provisioning profile.
-IDENTITY="Zerminal"
+IDENTITY="Z3rm"
 APPLE_NOTARIZATION_TEAM="MQ55VZLNZQ"
 
 # Function for displaying help info
@@ -49,12 +49,12 @@ shift $((OPTIND-1))
 
 
 # Get release channel
-pushd crates/zerminal
+pushd crates/z3rm
 channel=$(<RELEASE_CHANNEL)
-export ZERMINAL_RELEASE_CHANNEL="${channel}"
+export Z3RM_RELEASE_CHANNEL="${channel}"
 popd
 
-export ZERMINAL_BUNDLE=true
+export Z3RM_BUNDLE=true
 
 cargo_bundle_version=$(cargo -q bundle --help 2>&1 | head -n 1 || echo "")
 if [ "$cargo_bundle_version" != "cargo-bundle v0.6.1-zed" ]; then
@@ -86,14 +86,14 @@ script/generate-licenses
 
 rustup target add $target_triple
 
-echo "Compiling zerminal binaries"
-cargo build ${build_flag} --package zerminal --package cli --target $target_triple
+echo "Compiling z3rm binaries"
+cargo build ${build_flag} --package z3rm --package cli --target $target_triple
 # Build remote_server in separate invocation to prevent feature unification from other crates
 # from influencing dynamic libraries required by it.
 cargo build ${build_flag} --package remote_server --target $target_triple
 
 echo "Creating application bundle"
-pushd crates/zerminal
+pushd crates/z3rm
 cp Cargo.toml Cargo.toml.backup
 sed \
     -i.backup \
@@ -108,7 +108,7 @@ echo "Bundled ${app_path}"
 
 # DocumentTypes.plist references CFBundleTypeIconFile "Document", so the bundle must contain Document.icns.
 # We use the app icon as a placeholder document icon for now.
-document_icon_source="crates/zerminal/resources/Document.icns"
+document_icon_source="crates/z3rm/resources/Document.icns"
 document_icon_target="${app_path}/Contents/Resources/Document.icns"
 if [[ -f "${document_icon_source}" ]]; then
     mkdir -p "$(dirname "${document_icon_target}")"
@@ -121,20 +121,20 @@ if [[ -n "${MACOS_CERTIFICATE:-}" && -n "${MACOS_CERTIFICATE_PASSWORD:-}" && -n 
     can_code_sign=true
 
     echo "Setting up keychain for code signing..."
-    security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" zerminal.keychain || echo ""
-    security default-keychain -s zerminal.keychain
-    security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" zerminal.keychain
+    security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" z3rm.keychain || echo ""
+    security default-keychain -s z3rm.keychain
+    security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" z3rm.keychain
     # Calling set-keychain-settings without `-t` disables the auto-lock timeout
-    security set-keychain-settings zerminal.keychain
-    echo "$MACOS_CERTIFICATE" | base64 --decode > /tmp/zerminal-certificate.p12
-    security import /tmp/zerminal-certificate.p12 -k zerminal.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-    rm /tmp/zerminal-certificate.p12
-    security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" zerminal.keychain
+    security set-keychain-settings z3rm.keychain
+    echo "$MACOS_CERTIFICATE" | base64 --decode > /tmp/z3rm-certificate.p12
+    security import /tmp/z3rm-certificate.p12 -k z3rm.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+    rm /tmp/z3rm-certificate.p12
+    security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" z3rm.keychain
 
     function cleanup() {
         echo "Cleaning up keychain"
         security default-keychain -s login.keychain
-        security delete-keychain zerminal.keychain
+        security delete-keychain z3rm.keychain
     }
 
     trap cleanup EXIT
@@ -196,15 +196,15 @@ function sign_app_binaries() {
     download_git "${target_triple}" "${app_path}/Contents/MacOS/git"
 
     # Note: The app identifier for our development builds is the same as the app identifier for nightly.
-    cp crates/zerminal/contents/$channel/embedded.provisionprofile "${app_path}/Contents/"
+    cp crates/z3rm/contents/$channel/embedded.provisionprofile "${app_path}/Contents/"
 
     if [[ $can_code_sign = true ]]; then
         echo "Code signing binaries"
         # sequence of codesign commands modeled after this example: https://developer.apple.com/forums/thread/701514
         /usr/bin/codesign --deep --force --timestamp --options runtime --sign "$IDENTITY" "${app_path}/Contents/MacOS/cli" -v
         /usr/bin/codesign --deep --force --timestamp --options runtime --sign "$IDENTITY" "${app_path}/Contents/MacOS/git" -v
-        /usr/bin/codesign --deep --force --timestamp --options runtime --entitlements crates/zerminal/resources/zerminal.entitlements --sign "$IDENTITY" "${app_path}/Contents/MacOS/zerminal" -v
-        /usr/bin/codesign --force --timestamp --options runtime --entitlements crates/zerminal/resources/zerminal.entitlements --sign "$IDENTITY" "${app_path}" -v
+        /usr/bin/codesign --deep --force --timestamp --options runtime --entitlements crates/z3rm/resources/z3rm.entitlements --sign "$IDENTITY" "${app_path}/Contents/MacOS/z3rm" -v
+        /usr/bin/codesign --force --timestamp --options runtime --entitlements crates/z3rm/resources/z3rm.entitlements --sign "$IDENTITY" "${app_path}" -v
     else
         echo "One or more of the following variables are missing: MACOS_CERTIFICATE, MACOS_CERTIFICATE_PASSWORD, APPLE_NOTARIZATION_KEY, APPLE_NOTARIZATION_KEY_ID, APPLE_NOTARIZATION_ISSUER_ID"
 
@@ -217,9 +217,9 @@ function sign_app_binaries() {
         # - get a signing key for the MQ55VZLNZQ team from Nathan.
         # - create your own signing key, and update references to MQ55VZLNZQ to your own team ID
         # then comment out this line.
-        cat crates/zerminal/resources/zerminal.entitlements | sed '/com.apple.developer.associated-domains/,+1d' > "${app_path}/Contents/Resources/zerminal.entitlements"
+        cat crates/z3rm/resources/z3rm.entitlements | sed '/com.apple.developer.associated-domains/,+1d' > "${app_path}/Contents/Resources/z3rm.entitlements"
 
-        codesign --force --deep --entitlements "${app_path}/Contents/Resources/zerminal.entitlements" --sign ${MACOS_SIGNING_KEY:- -} "${app_path}" -v
+        codesign --force --deep --entitlements "${app_path}/Contents/Resources/z3rm.entitlements" --sign ${MACOS_SIGNING_KEY:- -} "${app_path}" -v
     fi
 
     bundle_name=$(basename "$app_path")
@@ -288,7 +288,7 @@ function sign_binary() {
 
     if [[ $can_code_sign = true ]]; then
         echo "Code signing executable $binary_path"
-        /usr/bin/codesign --deep --force --timestamp --options runtime --entitlements crates/zerminal/resources/zerminal.entitlements --sign "$IDENTITY" "${binary_path}" -v
+        /usr/bin/codesign --deep --force --timestamp --options runtime --entitlements crates/z3rm/resources/z3rm.entitlements --sign "$IDENTITY" "${binary_path}" -v
     fi
 }
 
@@ -296,9 +296,9 @@ function upload_debug_symbols() {
     if [ "$local_install" = true ]; then
         echo "local install; skipping sentry upload."
     elif [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
-        echo "Uploading zerminal debug symbols to sentry..."
+        echo "Uploading z3rm debug symbols to sentry..."
         exe_path="target/${target_triple}/release/Zed"
-        if ! dsymutil --flat "target/${target_triple}/${target_dir}/zerminal" 2> target/dsymutil.log; then
+        if ! dsymutil --flat "target/${target_triple}/${target_dir}/z3rm" 2> target/dsymutil.log; then
             echo "dsymutil failed"
             cat target/dsymutil.log
             exit 1
@@ -314,7 +314,7 @@ function upload_debug_symbols() {
         for attempt in 1 2 3; do
             echo "Sentry upload attempt $attempt..."
             if sentry-cli debug-files upload --include-sources --wait -p zed -o zed-dev \
-                "target/${target_triple}/${target_dir}/zerminal.dwarf" \
+                "target/${target_triple}/${target_dir}/z3rm.dwarf" \
                 "target/${target_triple}/${target_dir}/remote_server.dwarf"; then
                 break
             else
@@ -332,9 +332,9 @@ function upload_debug_symbols() {
 
 upload_debug_symbols
 
-cp target/${target_triple}/${target_dir}/zerminal "${app_path}/Contents/MacOS/zerminal"
+cp target/${target_triple}/${target_dir}/z3rm "${app_path}/Contents/MacOS/z3rm"
 cp target/${target_triple}/${target_dir}/cli "${app_path}/Contents/MacOS/cli"
 sign_app_binaries
 
 sign_binary "target/$target_triple/release/remote_server"
-gzip -f --stdout --best target/$target_triple/release/remote_server > target/zerminal-remote-server-macos-$arch_suffix.gz
+gzip -f --stdout --best target/$target_triple/release/remote_server > target/z3rm-remote-server-macos-$arch_suffix.gz

@@ -2,10 +2,10 @@
 AppId={#AppId}
 AppName={#AppName}
 AppVerName={#AppDisplayName}
-AppPublisher=Zerminal
-AppPublisherURL=https://zerminal.dev/
-AppSupportURL=https://zerminal.dev/
-AppUpdatesURL=https://zerminal.dev/
+AppPublisher=Z3rm
+AppPublisherURL=https://z3rm.dev/
+AppSupportURL=https://z3rm.dev/
+AppUpdatesURL=https://z3rm.dev/
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 DisableReadyPage=yes
@@ -65,7 +65,7 @@ Name: "addtopath"; Description: "{cm:AddToPath}"; GroupDescription: "{cm:Other}"
 Name: "{app}"; AfterInstall: DisableAppDirInheritance
 
 [Files]
-Source: "{#ResourcesDir}\zerminal.exe"; DestDir: "{code:GetInstallDir}"; Flags: ignoreversion
+Source: "{#ResourcesDir}\z3rm.exe"; DestDir: "{code:GetInstallDir}"; Flags: ignoreversion
 Source: "{#ResourcesDir}\bin\*"; DestDir: "{code:GetInstallDir}\bin"; Flags: ignoreversion
 Source: "{#ResourcesDir}\tools\*"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "{#ResourcesDir}\appx\*"; DestDir: "{app}\appx";  BeforeInstall: RemoveAppxPackage; AfterInstall: AddAppxPackage; Flags: ignoreversion; Check: IsWindows11OrLater
@@ -1256,10 +1256,10 @@ Root: HKCU; Subkey: "Software\Classes\Drive\shell\{#RegValueName}\command"; Valu
 Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{code:AddToPath|{app}\bin}"; Tasks: addtopath; Check: NeedsAddToPath(ExpandConstant('{app}\bin'))
 
 ; URI Scheme
-Root: HKCU; Subkey: "Software\Classes\zerminal"; ValueType: "string"; ValueData: "URL:zed Protocol"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\Classes\zerminal"; ValueType: "string"; ValueName: "URL Protocol"; ValueData: ""
-Root: HKCU; Subkey: "Software\Classes\zerminal\DefaultIcon"; ValueType: "string"; ValueData: "{app}\zerminal.exe,1"
-Root: HKCU; Subkey: "Software\Classes\zerminal\shell\open\command"; ValueType: "string"; ValueData: """{app}\zerminal.exe"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\z3rm"; ValueType: "string"; ValueData: "URL:zed Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\z3rm"; ValueType: "string"; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\z3rm\DefaultIcon"; ValueType: "string"; ValueData: "{app}\z3rm.exe,1"
+Root: HKCU; Subkey: "Software\Classes\z3rm\shell\open\command"; ValueType: "string"; ValueData: """{app}\z3rm.exe"" ""%1"""
 
 [Code]
 function WizardNotSilent(): Boolean;

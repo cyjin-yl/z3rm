@@ -6,11 +6,11 @@
 
     <name>$APP_NAME</name>
     <summary>High-performance GPU-rendered terminal with a built-in multiplexer</summary>
-    <developer id="dev.zerminal">
-        <name translate="no">Zerminal</name>
+    <developer id="dev.z3rm">
+        <name translate="no">Z3rm</name>
     </developer>
     <description>
-        <p>Zerminal is a GPU-rendered terminal and multiplexer forked from Zed, focused on speed and CLI-centric workflows.</p>
+        <p>Z3rm is a GPU-rendered terminal and multiplexer forked from Zed, focused on speed and CLI-centric workflows.</p>
         <p>Features:</p>
         <ul>
             <li>Performance: Efficiently uses every CPU core and your GPU for instant startup, quick file loading, and responsive keystrokes.</li>
@@ -32,13 +32,13 @@
         <content_attribute id="social-audio">intense</content_attribute>
     </content_rating>
 
-    <url type="homepage">https://zerminal.dev</url>
-    <url type="bugtracker">https://github.com/zerminal/zerminal/issues</url>
-    <url type="faq">https://zerminal.dev/faq</url>
-    <url type="help">https://zerminal.dev/docs</url>
-    <url type="contact">https://zerminal.dev/community</url>
-    <url type="vcs-browser">https://github.com/zerminal/zerminal</url>
-    <url type="contribute">https://github.com/zerminal/zerminal/blob/main/CONTRIBUTING.md</url>
+    <url type="homepage">https://z3rm.dev</url>
+    <url type="bugtracker">https://github.com/z3rm/z3rm/issues</url>
+    <url type="faq">https://z3rm.dev/faq</url>
+    <url type="help">https://z3rm.dev/docs</url>
+    <url type="contact">https://z3rm.dev/community</url>
+    <url type="vcs-browser">https://github.com/z3rm/z3rm</url>
+    <url type="contribute">https://github.com/z3rm/z3rm/blob/main/CONTRIBUTING.md</url>
 
     <supports>
         <internet>offline-only</internet>

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cargo build -p zed && cargo run -p cli -- --foreground --zerminal=${CARGO_TARGET_DIR:-target}/debug/zerminal "$@"
+cargo build -p zed && cargo run -p cli -- --foreground --z3rm=${CARGO_TARGET_DIR:-target}/debug/z3rm "$@"
