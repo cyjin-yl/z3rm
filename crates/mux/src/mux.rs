@@ -25,6 +25,15 @@ use mux_protocol::{
     FetchScrollbackResponse, AttachResponse, ShellCommand,
 };
 
+// §16.6 SSH 远程连接模块（Plan 19）。
+mod ssh;
+mod remote_install;
+mod sync;
+
+// §16.6 导出 SSH 连接入口和同步函数。
+pub use ssh::{connect_ssh, SshConnectionOptions, SshSession};
+pub use sync::sync_extensions_to_remote;
+
 // §9 公共类型导出
 pub use mux_protocol::attach_request::AttachMode;
 // ============================================================================
@@ -57,17 +66,11 @@ struct DomainInner {
 // §9 MuxTransport: 传输层枚举
 // ============================================================================
 
-/// §9 传输层：本地 Unix socket 或 SSH 通道。
+/// §9 传输层：本地 Unix socket。
 pub enum MuxTransport {
     /// §9 本地 Unix socket 连接。
     Local,
-    /// §9 SSH 通道连接（Plan 19 实现远程连接）。
-    Ssh,
 }
-
-/// §9 SSH 通道占位符（Plan 19 实现）。
-pub struct SshChannel;
-
 // ============================================================================
 // §9 connect_local: 建立本地 socket 连接
 // ============================================================================
@@ -301,13 +304,13 @@ impl MuxDomain {
         }
     }
 
-    /// §9 分配新的 request_id。
-    fn next_request_id(&self) -> u64 {
+    /// §9 分配新的 request_id（§16.6 公开供扩展安装使用）。
+    pub fn next_request_id(&self) -> u64 {
         self.inner.read().next_request_id.fetch_add(1, Ordering::SeqCst)
     }
 
-    /// §9 发送请求并等待响应。
-    async fn send_request(&self, body: RequestBody) -> Result<Response> {
+    /// §9 发送请求并等待响应（§16.6 公开供扩展安装使用）。
+    pub async fn send_request(&self, body: RequestBody) -> Result<Response> {
         let request_id = self.next_request_id();
 
         let (tx, rx) = oneshot::channel();

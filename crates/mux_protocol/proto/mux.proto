@@ -379,6 +379,20 @@ message ExtensionChromeUpdate {
     bytes vdom_payload = 3;  // serialized VDOM JSON
 }
 
+// §16.6 远程扩展安装请求（Plan 19）。
+message InstallExtensionRequest {
+    string name = 1;
+    bytes manifest = 2;   // extension.json bytes
+    bytes source = 3;     // tar.gz of extension directory
+}
+
+// §16.6 远程扩展安装响应。
+message InstallExtensionResponse {
+    string name = 1;
+    bool success = 2;
+    string error = 3;
+}
+
 // === Notifications (server → client push) ===
 
 // §9 / §16 服务端主动推送通知。
@@ -458,6 +472,7 @@ message Request {
         GetClipboardRequest get_clipboard = 20;
         RenameSessionRequest rename_session = 21;
         SetPaneTitleRequest set_pane_title = 22;
+        InstallExtensionRequest install_extension = 23;
     }
 }
 
@@ -476,5 +491,6 @@ message Response {
         ListDirResponse dir_listing = 10;
         StatFileResponse file_stat = 11;
         GetClipboardResponse clipboard = 12;
+        InstallExtensionResponse extension_installed = 13;
     }
 }

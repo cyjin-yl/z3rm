@@ -16,7 +16,15 @@ prost = { workspace = true }
 anyhow = { workspace = true }
 parking_lot = { workspace = true }
 tracing = { workspace = true }
-
+base64 = { workspace = true }
+sha2 = { workspace = true }
+dirs = { workspace = true }
+tar = "0.4"
+flate2 = "1.0"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tempfile = { workspace = true }
+which = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 interprocess = { workspace = true, features = ["tokio"] }

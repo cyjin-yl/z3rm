@@ -137,7 +137,6 @@ fn test_notification_events() {
 #[test]
 fn test_transport_enum() {
     let _local = MuxTransport::Local;
-    let _ssh = MuxTransport::Ssh;
 }
 
 /// §9 编译时测试：frame/unframe 函数。
