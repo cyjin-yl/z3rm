@@ -109,6 +109,194 @@ pub enum GridUpdate {
     NoChange(u64),
 }
 
+// === §16.9 Scrollback Buffer ===
+
+/// 回滚缓冲区 (§16.9) — 存储 alacritty 历史行。
+/// 每行保存为 RowChange, 按时间倒序排列 (最新行在末尾)。
+#[derive(Clone, Debug)]
+pub struct ScrollbackBuffer {
+    /// 历史行列表 (从旧到新)
+    pub rows: Vec<RowChange>,
+    /// 容量上限 (默认 10_000 行)
+    capacity: usize,
+}
+
+/// 回滚版本 (§16.9) — counter + timestamp 对, 用于缓存失效检测。
+/// Counter 在环形缓冲区 wrap 时递增, timestamp 为 Unix 秒。
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ScrollbackVersion {
+    /// 环形缓冲区 wrap 计数器
+    pub counter: u64,
+    /// Unix 时间戳 (秒)
+    pub timestamp: u64,
+}
+
+impl ScrollbackVersion {
+    /// 创建新版本 (§16.9)
+    pub fn new() -> Self {
+        Self {
+            counter: 1,
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        }
+    }
+
+    /// 递增 counter, 更新 timestamp (§16.9 ring wrap)
+    pub fn bump(&mut self) {
+        self.counter += 1;
+        self.timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+    }
+
+    /// 将版本编码为单个 u64 (counter << 32 | timestamp)
+    pub fn encode(&self) -> u64 {
+        (self.counter << 32) | (self.timestamp & 0xFFFFFFFF)
+    }
+
+    /// 从编码值解码版本
+    pub fn decode(encoded: u64) -> Self {
+        Self {
+            counter: (encoded >> 32) as u64,
+            timestamp: (encoded & 0xFFFFFFFF) as u64,
+        }
+    }
+}
+
+impl ScrollbackBuffer {
+    /// 创建回滚缓冲区 (§16.9 默认 10_000 行)
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            rows: Vec::with_capacity(capacity),
+            capacity,
+        }
+    }
+
+    /// 追加一行到缓冲区 (§16.9)
+    pub fn push_row(&mut self, row: RowChange) {
+        self.rows.push(row);
+        // 超出容量时移除最早的历史行
+        while self.rows.len() > self.capacity {
+            self.rows.remove(0);
+        }
+    }
+
+    /// 获取总行数 (§16.9)
+    pub fn total_lines(&self) -> u32 {
+        self.rows.len() as u32
+    }
+
+    /// 获取指定范围的行 (§16.9 fetch_scrollback)
+    /// from_line: 起始行号 (0 = 最早的历史行)
+    /// count: 要获取的行数
+    /// direction: 0 = 向上 (from_line 往旧方向), 1 = 向下 (from_line 往新方向)
+    pub fn fetch_lines(&self, from_line: u32, count: u32, direction: u32) -> Vec<RowChange> {
+        if self.rows.is_empty() {
+            return Vec::new();
+        }
+
+        let total = self.rows.len();
+        let from = from_line as usize;
+        let count = count as usize;
+
+        match direction {
+            0 => {
+                // §16.9 向上: 从 from_line 往旧方向 (行号减小)
+                let start = if from + 1 >= count { from + 1 - count } else { 0 };
+                self.rows[start..=from]
+                    .iter()
+                    .cloned()
+                    .collect()
+            }
+            _ => {
+                // §16.9 向下: 从 from_line 往新方向 (行号增大)
+                let end = std::cmp::min(from + count, total);
+                if from >= total {
+                    return Vec::new();
+                }
+                self.rows[from..end]
+                    .iter()
+                    .cloned()
+                    .collect()
+            }
+        }
+    }
+
+    /// §16.9 正则搜索回滚缓冲区
+    /// 返回匹配行号列表 + 对应的 RowChange
+    pub fn search(
+        &self,
+        regex: &str,
+        from_line: u32,
+        direction: u32,
+        max_results: u32,
+    ) -> Vec<(u32, RowChange)> {
+        if self.rows.is_empty() {
+            return Vec::new();
+        }
+
+        // 编译正则表达式 (§16.9)
+        let re = match regex::Regex::new(regex) {
+            Ok(re) => re,
+            Err(_) => return Vec::new(),
+        };
+
+        // 构建搜索顺序
+        let total = self.rows.len();
+        let from = from_line as usize;
+        let max = max_results as usize;
+
+        let indices: Vec<usize> = match direction {
+            0 => {
+                // §16.9 向上搜索: 从 from_line 往 0
+                if from >= total {
+                    (0..total).rev().collect()
+                } else {
+                    (0..=from).rev().collect()
+                }
+            }
+            _ => {
+                // §16.9 向下搜索: 从 from_line 往末尾
+                if from >= total {
+                    Vec::new()
+                } else {
+                    (from..total).collect()
+                }
+            }
+        };
+
+        let mut results = Vec::new();
+        for idx in indices {
+            if results.len() >= max {
+                break;
+            }
+            // 将行内容拼接为字符串, 用正则匹配 (§16.9)
+            let text = self.rows[idx]
+                .cells
+                .iter()
+                .map(|c| c.character.as_str())
+                .collect::<String>();
+            if re.is_match(&text) {
+                results.push((idx as u32, self.rows[idx].clone()));
+            }
+        }
+        results
+    }
+
+    /// 检查缓冲区是否已满, 需要 bump version (§16.9 wrap detection)
+    pub fn is_full(&self) -> bool {
+        self.rows.len() >= self.capacity
+    }
+
+    /// 清空缓冲区 (§16.9)
+    pub fn clear(&mut self) {
+        self.rows.clear();
+    }
+}
+
 impl GridDiffRing {
     /// 创建 diff ring (§3.3 默认 64 entries)
     pub fn new(capacity: usize) -> Self {

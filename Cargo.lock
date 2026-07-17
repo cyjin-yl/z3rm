@@ -7474,6 +7474,7 @@ dependencies = [
  "parking_lot",
  "portable-pty",
  "prost",
+ "regex",
  "serde",
  "sqlez",
  "tempfile",

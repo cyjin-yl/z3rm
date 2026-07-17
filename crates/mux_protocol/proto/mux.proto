@@ -294,6 +294,33 @@ message FetchScrollbackResponse {
     uint64 scrollback_version = 3;  // counter + timestamp for cache invalidation
 }
 
+// §16.9 搜索回滚缓冲区。
+message SearchScrollbackRequest {
+    string pane_id = 1;
+    string regex = 2;         // 正则表达式
+    uint32 from_line = 3;     // 起始行号
+    uint32 direction = 4;     // 0 = up, 1 = down
+    uint32 max_results = 5;   // 最大结果数
+}
+
+// §16.9 搜索结果: 匹配行号 + 上下文片段。
+message SearchScrollbackResponse {
+    repeated SearchMatch matches = 1;
+    uint64 scrollback_version = 2;
+}
+
+// §16.9 单个搜索结果。
+message SearchMatch {
+    uint32 line_number = 1;   // 匹配行号
+    repeated Cell context = 2; // 上下文单元格
+}
+
+// §16.9 会话级同步滚动通知 (server → client)。
+message SyncScrollbackNotification {
+    string pane_id = 1;
+    uint32 scroll_offset = 2;
+}
+
 // === File Fetch (for remote file viewer) ===
 
 // §3.10 读取远程/本地文件。
@@ -406,6 +433,7 @@ message Notification {
         SessionLayoutChanged session_layout_changed = 6;
         ClipboardChanged clipboard_changed = 7;
         ExtensionChromeUpdate extension_chrome = 8;
+        SyncScrollbackNotification sync_scrollback = 9;
     }
 }
 
@@ -473,6 +501,7 @@ message Request {
         RenameSessionRequest rename_session = 21;
         SetPaneTitleRequest set_pane_title = 22;
         InstallExtensionRequest install_extension = 23;
+        SearchScrollbackRequest search_scrollback = 24;
     }
 }
 
@@ -492,5 +521,6 @@ message Response {
         StatFileResponse file_stat = 11;
         GetClipboardResponse clipboard = 12;
         InstallExtensionResponse extension_installed = 13;
+        SearchScrollbackResponse search_scrollback = 14;
     }
 }

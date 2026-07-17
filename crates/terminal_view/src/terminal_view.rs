@@ -103,6 +103,11 @@ actions!(
 #[action(namespace = terminal)]
 pub struct RenameTerminal;
 
+/// §16.9 切换滚动锁定 (Ctrl-Shift-S)
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Action)]
+#[action(namespace = terminal)]
+pub struct ToggleScrollLock;
+
 pub fn init(cx: &mut App) {
     terminal_panel::init(cx);
 
@@ -151,6 +156,10 @@ pub struct TerminalView {
     scroll_top: Pixels,
     scroll_handle: TerminalScrollHandle,
     ime_state: Option<ImeState>,
+    // §16.9 回滚缓冲区状态
+    scrollback_offset: Option<usize>,
+    scrollback_version: Option<(u64, u64)>,
+    scroll_locked: bool,
     self_handle: WeakEntity<Self>,
     rename_editor: Option<Entity<Editor>>,
     rename_editor_subscription: Option<Subscription>,
@@ -190,6 +199,49 @@ impl ContentMode {
     pub fn is_scrollable(&self) -> bool {
         matches!(self, ContentMode::Scrollable)
     }
+}
+
+/// §16.9 回滚缓冲区状态
+#[derive(Clone, Debug)]
+pub struct TerminalViewState {
+    /// 滚动偏移量 (None = 固定在底部)
+    pub scroll_offset: Option<usize>,
+    /// 回滚版本 (counter, timestamp) 用于缓存失效
+    pub scrollback_version: Option<(u64, u64)>,
+    /// 滚动模式
+    pub scroll_mode: ScrollMode,
+}
+
+impl TerminalViewState {
+    /// 创建默认状态 (§16.9)
+    pub fn new() -> Self {
+        Self {
+            scroll_offset: None,
+            scrollback_version: None,
+            scroll_mode: ScrollMode::PerClient,
+        }
+    }
+
+    /// 跳到底部 (§16.9 auto-jump)
+    pub fn jump_to_bottom(&mut self) {
+        self.scroll_offset = None;
+    }
+}
+
+impl Default for TerminalViewState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// §16.9 滚动模式
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScrollMode {
+    /// 每客户端独立滚动 (默认)
+    #[default]
+    PerClient,
+    /// 会话级同步滚动 (协作)
+    SessionSync,
 }
 
 #[derive(Debug)]
@@ -298,6 +350,9 @@ impl TerminalView {
             needs_serialize: false,
             custom_title: None,
             ime_state: None,
+            scrollback_offset: None,
+            scrollback_version: None,
+            scroll_locked: false,
             self_handle: cx.entity().downgrade(),
             rename_editor: None,
             rename_editor_subscription: None,
@@ -830,9 +885,61 @@ impl TerminalView {
         cx.notify();
     }
 
+    /// §16.9 获取回滚偏移量
+    pub fn get_scrollback_offset(&self) -> Option<usize> {
+        self.scrollback_offset
+    }
+
+    /// §16.9 设置回滚偏移量
+    pub fn set_scrollback_offset(&mut self, offset: Option<usize>, cx: &mut Context<Self>) {
+        self.scrollback_offset = offset;
+        cx.notify();
+    }
+
+    /// §16.9 跳到底部 (自动跟踪新输出)
+    pub fn jump_to_bottom(&mut self, cx: &mut Context<Self>) {
+        self.scrollback_offset = None;
+        self.terminal.update(cx, |term, _| term.scroll_to_bottom());
+        cx.notify();
+    }
+
+    /// §16.9 切换滚动锁定
+    pub fn do_toggle_scroll_lock(&mut self, cx: &mut Context<Self>) {
+        self.scroll_locked = !self.scroll_locked;
+        cx.notify();
+    }
+
+    /// §16.9 检查是否在回滚缓冲区中
+    pub fn is_in_scrollback(&self) -> bool {
+        self.scrollback_offset.is_some()
+    }
+
+    /// §16.9 处理 PaneDirty 通知: 如果未锁定则跳到底部
+    pub fn handle_pane_dirty(&mut self, cx: &mut Context<Self>) {
+        // §16.9 如果在回滚中且未锁定 → 自动跳到底部
+        if self.is_in_scrollback() && !self.scroll_locked {
+            self.jump_to_bottom(cx);
+        }
+    }
+
+    /// §16.9 更新回滚版本 (缓存失效检测)
+    pub fn update_scrollback_version(&mut self, version: (u64, u64), cx: &mut Context<Self>) {
+        // §16.9 如果版本变更, 清除缓存 (重置 offset)
+        if self.scrollback_version != Some(version) {
+            self.scrollback_offset = None;
+        }
+        self.scrollback_version = Some(version);
+        cx.notify();
+    }
+
     fn toggle_vi_mode(&mut self, _: &ToggleViMode, _: &mut Window, cx: &mut Context<Self>) {
         self.terminal.update(cx, |term, _| term.toggle_vi_mode());
         cx.notify();
+    }
+
+    /// §16.9 切换滚动锁定 (Ctrl-Shift-S)
+    fn toggle_scroll_lock(&mut self, _: &ToggleScrollLock, _: &mut Window, cx: &mut Context<Self>) {
+        self.do_toggle_scroll_lock(cx);
     }
 
     pub fn should_show_cursor(&self, focused: bool, cx: &mut Context<Self>) -> bool {
@@ -1134,6 +1241,8 @@ fn subscribe_for_terminal_events(
 
             match event {
                 Event::Wakeup => {
+                    // §16.9 新输出时自动跳到底部 (如果未锁定)
+                    terminal_view.handle_pane_dirty(cx);
                     cx.notify();
                     window.invalidate_character_coordinates();
                     cx.emit(Event::Wakeup);
@@ -1366,6 +1475,7 @@ impl Render for TerminalView {
             .on_action(cx.listener(TerminalView::scroll_to_top))
             .on_action(cx.listener(TerminalView::scroll_to_bottom))
             .on_action(cx.listener(TerminalView::toggle_vi_mode))
+            .on_action(cx.listener(TerminalView::toggle_scroll_lock))
             .on_action(cx.listener(TerminalView::show_character_palette))
             .on_action(cx.listener(TerminalView::select_all))
             .on_action(cx.listener(TerminalView::rerun_task))

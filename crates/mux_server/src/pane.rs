@@ -1,7 +1,7 @@
 // §3.1 Pane 模块 — PTY + alacritty 终端模拟器封装 + grid diff ring。
 // mux_server 作为 server-canonical 拥有 PTY fd、VT 终端、grid 状态 (§3.1)。
 
-use crate::grid_sync::GridDiffRing;
+use crate::grid_sync::{GridDiffRing, ScrollbackBuffer, ScrollbackVersion};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
@@ -28,6 +28,10 @@ pub struct Pane {
     pub rows: u32,
     /// §16.6 Bracketed paste 模式 (ESC [ ? 2004 h / l)
     pub bracketed_paste_mode: AtomicBool,
+    /// §16.9 回滚缓冲区
+    pub scrollback_buffer: Arc<parking_lot::RwLock<ScrollbackBuffer>>,
+    /// §16.9 回滚版本 (用于缓存失效)
+    pub scrollback_version: Arc<parking_lot::RwLock<ScrollbackVersion>>,
 }
 
 /// alacritty 终端包装器
@@ -81,6 +85,8 @@ impl Pane {
             cols,
             rows,
             bracketed_paste_mode: AtomicBool::new(false),
+            scrollback_buffer: Arc::new(parking_lot::RwLock::new(ScrollbackBuffer::new(10_000))),
+            scrollback_version: Arc::new(parking_lot::RwLock::new(ScrollbackVersion::new())),
         }
     }
 
@@ -155,6 +161,58 @@ impl Pane {
     /// §16.6 设置 bracketed paste 模式
     pub fn set_bracketed_paste_mode(&self, active: bool) {
         self.bracketed_paste_mode.store(active, Ordering::SeqCst);
+    }
+
+    /// §16.9 获取回滚缓冲区历史行
+    pub fn fetch_scrollback(
+        &self,
+        from_line: u32,
+        direction: u32,
+        count: u32,
+    ) -> (Vec<crate::grid_sync::RowChange>, u32, u64) {
+        let buf = self.scrollback_buffer.read();
+        let version = self.scrollback_version.read();
+        let lines = buf.fetch_lines(from_line, count, direction);
+        let total = buf.total_lines();
+        let sv = version.encode();
+        (lines, total, sv)
+    }
+
+    /// §16.9 搜索回滚缓冲区
+    pub fn search_scrollback(
+        &self,
+        regex: &str,
+        from_line: u32,
+        direction: u32,
+        max_results: u32,
+    ) -> (Vec<(u32, crate::grid_sync::RowChange)>, u64) {
+        let buf = self.scrollback_buffer.read();
+        let version = self.scrollback_version.read();
+        let matches = buf.search(regex, from_line, direction, max_results);
+        let sv = version.encode();
+        (matches, sv)
+    }
+
+    /// §16.9 获取回滚版本
+    pub fn get_scrollback_version(&self) -> u64 {
+        let version = self.scrollback_version.read();
+        version.encode()
+    }
+
+    /// §16.9 向回滚缓冲区追加一行 (模拟 alacritty history 更新)
+    pub fn push_scrollback_row(&self, row: crate::grid_sync::RowChange) {
+        let mut buf = self.scrollback_buffer.write();
+        let old_len = buf.rows.len();
+        buf.push_row(row);
+        // 检测环形缓冲区 wrap (§16.9)
+        if buf.is_full() {
+            let mut version = self.scrollback_version.write();
+            version.bump();
+        }
+        // 行号偏移: 如果移除了旧行, 需要重新编号
+        if buf.rows.len() < old_len {
+            // 行号已自动调整 (push_row 处理了移除)
+        }
     }
 }
 

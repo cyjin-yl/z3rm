@@ -144,14 +144,8 @@ async fn dispatch_request(
         RequestBody::SendInput(r) => handle_send_input(r, sessions, clipboard, notification_tx).await?,
         RequestBody::Paste(r) => handle_paste(r, sessions, clipboard, notification_tx).await?,
         RequestBody::FetchGridUpdate(r) => handle_fetch_grid_update(r, sessions).await?,
-        RequestBody::FetchScrollback(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "fetch_scrollback not implemented yet".to_string(),
-                )),
-            });
-        }
+        RequestBody::FetchScrollback(r) => handle_fetch_scrollback(r, sessions).await?,
+        RequestBody::SearchScrollback(r) => handle_search_scrollback(r, sessions).await?,
         RequestBody::ReadFile(_) => {
             return Ok(Response {
                 request_id,
@@ -477,6 +471,98 @@ async fn handle_get_clipboard(
 }
 
 /// §3.3 获取 grid 更新
+/// §16.9 获取回滚缓冲区历史行
+async fn handle_fetch_scrollback(
+    req: &FetchScrollbackRequest,
+    sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
+) -> anyhow::Result<ResponseBody> {
+    let sessions_r = sessions.read();
+    for session in sessions_r.iter() {
+        let panes = session.panes.clone();
+        if let Some(pane) = panes.read().get(&req.pane_id) {
+            let (lines, total, version) = pane.fetch_scrollback(
+                req.from_line,
+                req.direction,
+                req.count,
+            );
+            let resp = FetchScrollbackResponse {
+                lines: lines
+                    .into_iter()
+                    .map(|r| RowChange {
+                        row: r.row,
+                        cells: r.cells
+                            .into_iter()
+                            .map(|c| Cell {
+                                char: c.character,
+                                style: Some(CellStyle {
+                                    bold: c.style.bold,
+                                    italic: c.style.italic,
+                                    underline: c.style.underline,
+                                    strikethrough: c.style.strikethrough,
+                                    dim: c.style.dim,
+                                    reverse: c.style.reverse,
+                                }),
+                                foreground: c.foreground,
+                                background: c.background,
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+                total_lines: total,
+                scrollback_version: version,
+            };
+            return Ok(ResponseBody::Scrollback(resp));
+        }
+    }
+    Ok(ResponseBody::Error("pane not found".to_string()))
+}
+
+/// §16.9 搜索回滚缓冲区
+async fn handle_search_scrollback(
+    req: &SearchScrollbackRequest,
+    sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
+) -> anyhow::Result<ResponseBody> {
+    let sessions_r = sessions.read();
+    for session in sessions_r.iter() {
+        let panes = session.panes.clone();
+        if let Some(pane) = panes.read().get(&req.pane_id) {
+            let (matches, version) = pane.search_scrollback(
+                &req.regex,
+                req.from_line,
+                req.direction,
+                req.max_results,
+            );
+            let resp = SearchScrollbackResponse {
+                matches: matches
+                    .into_iter()
+                    .map(|(line_num, row)| SearchMatch {
+                        line_number: line_num,
+                        context: row.cells
+                            .into_iter()
+                            .map(|c| Cell {
+                                char: c.character,
+                                style: Some(CellStyle {
+                                    bold: c.style.bold,
+                                    italic: c.style.italic,
+                                    underline: c.style.underline,
+                                    strikethrough: c.style.strikethrough,
+                                    dim: c.style.dim,
+                                    reverse: c.style.reverse,
+                                }),
+                                foreground: c.foreground,
+                                background: c.background,
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+                scrollback_version: version,
+            };
+            return Ok(ResponseBody::SearchScrollback(resp));
+        }
+    }
+    Ok(ResponseBody::Error("pane not found".to_string()))
+}
+
 async fn handle_fetch_grid_update(
     req: &FetchGridUpdateRequest,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,

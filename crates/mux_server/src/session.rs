@@ -29,6 +29,8 @@ pub struct Session {
     pub attached_clients: Arc<parking_lot::RwLock<Vec<AttachedClient>>>,
     /// Pane 注册表: pane_id → Pane
     pub panes: Arc<parking_lot::RwLock<HashMap<String, Pane>>>,
+    /// §16.9 会话级同步滚动状态
+    pub sync_scrollback: Arc<parking_lot::RwLock<SyncScrollbackState>>,
 }
 
 /// 标签页 (§3.10 TabInfo)
@@ -62,6 +64,17 @@ pub enum AttachMode {
     ReadOnly,
 }
 
+/// §16.9 会话级同步滚动状态
+#[derive(Clone, Debug, Default)]
+pub struct SyncScrollbackState {
+    /// 当前同步滚动 pane 的 ID
+    pub pane_id: Option<String>,
+    /// 同步滚动偏移量
+    pub scroll_offset: u32,
+    /// 是否启用同步滚动
+    pub enabled: bool,
+}
+
 impl Session {
     /// 创建新 session (§3.2)
     pub fn new(id: String, name: String, cwd: String) -> Self {
@@ -79,6 +92,7 @@ impl Session {
             focused_tab: None,
             attached_clients: Arc::new(parking_lot::RwLock::new(Vec::new())),
             panes: Arc::new(parking_lot::RwLock::new(HashMap::new())),
+            sync_scrollback: Arc::new(parking_lot::RwLock::new(SyncScrollbackState::default())),
         }
     }
 
@@ -122,5 +136,26 @@ impl Session {
     /// 检查 session 是否为空 (§3.7 idle behavior)
     pub fn is_empty(&self) -> bool {
         self.panes.read().is_empty()
+    }
+
+    /// §16.9 设置同步滚动偏移 (触发广播)
+    pub fn set_sync_scrollback_offset(&self, pane_id: String, offset: u32) {
+        let mut state = self.sync_scrollback.write();
+        state.pane_id = Some(pane_id);
+        state.scroll_offset = offset;
+        state.enabled = true;
+    }
+
+    /// §16.9 获取当前同步滚动状态
+    pub fn get_sync_scrollback(&self) -> SyncScrollbackState {
+        self.sync_scrollback.read().clone()
+    }
+
+    /// §16.9 禁用同步滚动
+    pub fn disable_sync_scrollback(&self) {
+        let mut state = self.sync_scrollback.write();
+        state.enabled = false;
+        state.pane_id = None;
+        state.scroll_offset = 0;
     }
 }

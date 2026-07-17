@@ -235,3 +235,175 @@ fn test_pane_title() {
     pane.set_title("my-title".to_string());
     assert_eq!(pane.get_title(), "my-title");
 }
+
+/// §16.9 Scrollback buffer: push + fetch
+#[test]
+fn test_scrollback_push_and_fetch() {
+    let mut buf = crate::grid_sync::ScrollbackBuffer::new(100);
+
+    for i in 0..5 {
+        buf.push_row(RowChange {
+            row: i,
+            cells: vec![crate::grid_sync::Cell {
+                character: format!("Line {}", i),
+                style: Default::default(),
+                foreground: 0,
+                background: 0,
+            }],
+        });
+    }
+
+    assert_eq!(buf.total_lines(), 5);
+
+    // §16.9 向下获取 (direction = 1)
+    let lines = buf.fetch_lines(0, 3, 1);
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0].row, 0);
+    assert_eq!(lines[2].row, 2);
+
+    // §16.9 向上获取 (direction = 0)
+    let lines = buf.fetch_lines(4, 3, 0);
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0].row, 2);
+    assert_eq!(lines[2].row, 4);
+}
+
+/// §16.9 Scrollback buffer: capacity overflow
+#[test]
+fn test_scrollback_capacity_overflow() {
+    let mut buf = crate::grid_sync::ScrollbackBuffer::new(3);
+
+    for i in 0..5 {
+        buf.push_row(RowChange {
+            row: i,
+            cells: vec![crate::grid_sync::Cell {
+                character: format!("Line {}", i),
+                style: Default::default(),
+                foreground: 0,
+                background: 0,
+            }],
+        });
+    }
+
+    assert_eq!(buf.total_lines(), 3);
+    assert!(buf.is_full());
+    // 最早的行被移除, 剩下行 2, 3, 4
+    assert_eq!(buf.rows[0].row, 2);
+    assert_eq!(buf.rows[2].row, 4);
+}
+
+/// §16.9 Scrollback version: encode/decode roundtrip
+#[test]
+fn test_scrollback_version_roundtrip() {
+    let mut version = crate::grid_sync::ScrollbackVersion::new();
+    let encoded = version.encode();
+    let decoded = crate::grid_sync::ScrollbackVersion::decode(encoded);
+    assert_eq!(decoded.counter, version.counter);
+    assert_eq!(decoded.timestamp, version.timestamp);
+
+    version.bump();
+    assert_eq!(version.counter, 2);
+}
+
+/// §16.9 Scrollback search: regex match
+#[test]
+fn test_scrollback_search() {
+    let mut buf = crate::grid_sync::ScrollbackBuffer::new(100);
+
+    for i in 0..10 {
+        buf.push_row(RowChange {
+            row: i,
+            cells: vec![crate::grid_sync::Cell {
+                character: format!("Line {} test", i),
+                style: Default::default(),
+                foreground: 0,
+                background: 0,
+            }],
+        });
+    }
+
+    // §16.9 搜索包含 "test" 的行
+    let matches = buf.search("test", 9, 0, 100);
+    assert_eq!(matches.len(), 10); // 所有行都包含 "test"
+
+    // §16.9 搜索特定模式
+    let matches = buf.search("Line 5", 9, 0, 100);
+    assert_eq!(matches.len(), 1);
+    assert_eq!(matches[0].0, 5);
+
+    // §16.9 向下搜索
+    let matches = buf.search("Line 3", 0, 1, 100);
+    assert_eq!(matches.len(), 1);
+    assert_eq!(matches[0].0, 3);
+
+    // §16.9 无效正则
+    let matches = buf.search("[invalid", 0, 1, 100);
+    assert!(matches.is_empty());
+}
+
+/// §16.9 Pane: scrollback integration
+#[test]
+fn test_pane_scrollback() {
+    let pane = crate::pane::Pane::spawn(
+        "pane-1".to_string(),
+        "/home/user".to_string(),
+        80,
+        24,
+        None,
+    );
+
+    // §16.9 初始版本
+    let initial_version = pane.get_scrollback_version();
+    assert_ne!(initial_version, 0);
+
+    // §16.9 获取空回滚
+    let (lines, total, version) = pane.fetch_scrollback(0, 1, 10);
+    assert!(lines.is_empty());
+    assert_eq!(total, 0);
+    assert_eq!(version, initial_version);
+
+    // §16.9 推入行
+    pane.push_scrollback_row(RowChange {
+        row: 0,
+        cells: vec![crate::grid_sync::Cell {
+            character: "Hello".to_string(),
+            style: Default::default(),
+            foreground: 0,
+            background: 0,
+        }],
+    });
+
+    let (lines, total, _) = pane.fetch_scrollback(0, 1, 10);
+    assert_eq!(total, 1);
+    assert_eq!(lines.len(), 1);
+    assert_eq!(lines[0].cells[0].character, "Hello");
+}
+
+/// §16.9 Session: sync scrollback
+#[test]
+fn test_session_sync_scrollback() {
+    let session = crate::session::Session::new(
+        "sess-1".to_string(),
+        "test".to_string(),
+        "/home/user".to_string(),
+    );
+
+    // §16.9 初始状态
+    let state = session.get_sync_scrollback();
+    assert!(!state.enabled);
+    assert!(state.pane_id.is_none());
+
+    // §16.9 设置同步滚动
+    session.set_sync_scrollback_offset("pane-1".to_string(), 42);
+    let state = session.get_sync_scrollback();
+    assert!(state.enabled);
+    assert_eq!(state.pane_id, Some("pane-1".to_string()));
+    assert_eq!(state.scroll_offset, 42);
+
+    // §16.9 禁用同步滚动
+    session.disable_sync_scrollback();
+    let state = session.get_sync_scrollback();
+    assert!(!state.enabled);
+    assert!(state.pane_id.is_none());
+    assert_eq!(state.scroll_offset, 0);
+}

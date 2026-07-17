@@ -28,6 +28,7 @@ dirs = "6.0"
 libc = { workspace = true }
 nanoid = "0.4"
 base64 = "0.22"
+regex = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
