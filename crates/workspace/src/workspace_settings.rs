@@ -3,7 +3,7 @@ use std::{num::NonZeroUsize, time::Duration};
 use crate::DockPosition;
 pub use crate::settings_stubs::{
     ActivateOnClose, AutosaveSetting, BottomDockLayout, CenteredLayoutSettings,
-    CliDefaultOpenBehavior, CloseWindowWhenNoItems, DefaultOpenBehavior, EncodingDisplayOptions,
+    CliDefaultOpenBehavior, CloseWindowWhenNoItems, DefaultOpenBehavior,
     InactiveOpacity, PaneSplitDirectionHorizontal, PaneSplitDirectionVertical,
     RestoreOnStartupBehavior,
 };
@@ -11,7 +11,7 @@ use collections::HashMap;
 use gpui::{App, Subscription};
 use serde::Deserialize;
 pub use settings::{RegisterSetting, Settings};
-use settings::{CommandAliasTarget, SettingsStore};
+pub use settings::{CommandAliasTarget, EncodingDisplayOptions, SettingsStore};
 
 /// 工作区设置 (spec §16 Plan 16)
 /// 原 settings 字段已大幅精简，保留向后兼容桩值
@@ -207,6 +207,14 @@ pub struct StatusBarSettings {
     pub working_directory: bool,
     /// 会话状态显示
     pub session_status: bool,
+    /// 当前语言按钮
+    pub active_language_button: bool,
+    /// 当前编码按钮 (原 EncodingDisplayOptions)
+    pub active_encoding_button: EncodingDisplayOptions,
+    /// 光标位置按钮
+    pub cursor_position_button: bool,
+    /// 行尾按钮
+    pub line_endings_button: bool,
 }
 
 impl Settings for StatusBarSettings {
@@ -217,6 +225,10 @@ impl Settings for StatusBarSettings {
             stack_size: status_bar.stack_size,
             working_directory: status_bar.working_directory,
             session_status: status_bar.session_status,
+            active_language_button: status_bar.active_language_button,
+            active_encoding_button: status_bar.active_encoding_button,
+            cursor_position_button: status_bar.cursor_position_button,
+            line_endings_button: status_bar.line_endings_button,
         }
     }
 }

@@ -2,16 +2,72 @@ use editor::{EditorSettings, ui_scrollbar_settings_from_raw};
 use gpui::Pixels;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use settings::{
-    DockSide, ProjectPanelEntrySpacing, ProjectPanelSortMode, ProjectPanelSortOrder,
-    RegisterSetting, Settings, ShowDiagnostics, ShowIndentGuides,
-};
+use settings::{RegisterSetting, Settings};
 use ui::{
     px,
     scrollbars::{ScrollbarVisibility, ShowScrollbar},
 };
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, RegisterSetting)]
+/// 项目面板停靠位置 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum DockSide {
+    #[default]
+    Left,
+    Right,
+}
+
+/// 项目面板条目间距 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum ProjectPanelEntrySpacing {
+    #[default]
+    Comfortable,
+    Standard,
+}
+
+/// 项目面板排序模式 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectPanelSortMode {
+    #[default]
+    DirectoriesFirst,
+    Mixed,
+    FilesFirst,
+}
+
+/// 项目面板排序顺序 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectPanelSortOrder {
+    #[default]
+    Default,
+    Upper,
+    Lower,
+    Unicode,
+}
+
+/// 缩进引导线显示模式 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ShowIndentGuides {
+    #[default]
+    Always,
+    Never,
+}
+
+
+/// 诊断显示模式 (spec §16 Plan 16)
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ShowDiagnostics {
+    #[default]
+    Off,
+    Errors,
+    All,
+}
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Default, RegisterSetting)]
 pub struct ProjectPanelSettings {
     pub button: bool,
     pub hide_gitignore: bool,
@@ -40,12 +96,12 @@ pub struct ProjectPanelSettings {
     pub git_status_indicator: bool,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct IndentGuidesSettings {
     pub show: ShowIndentGuides,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct ScrollbarSettings {
     /// When to show the scrollbar in the project panel.
     ///
@@ -58,7 +114,7 @@ pub struct ScrollbarSettings {
     pub horizontal_scroll: bool,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct AutoOpenSettings {
     pub on_create: bool,
     pub on_paste: bool,
@@ -95,56 +151,32 @@ impl ScrollbarVisibility for ProjectPanelScrollbarProxy {
 }
 
 impl Settings for ProjectPanelSettings {
-    fn from_settings(content: &settings::SettingsContent) -> Self {
-        let project_panel = content.project_panel.clone().unwrap();
-        Self {
-            button: project_panel.button.unwrap(),
-            hide_gitignore: project_panel.hide_gitignore.unwrap(),
-            default_width: px(project_panel.default_width.unwrap()),
-            dock: project_panel.dock.unwrap(),
-            entry_spacing: project_panel.entry_spacing.unwrap(),
-            file_icons: project_panel.file_icons.unwrap(),
-            folder_icons: project_panel.folder_icons.unwrap(),
-            git_status: project_panel.git_status.unwrap()
-                && content
-                    .git
-                    .as_ref()
-                    .unwrap()
-                    .enabled
-                    .unwrap()
-                    .is_git_status_enabled(),
-            indent_size: project_panel.indent_size.unwrap(),
-            indent_guides: IndentGuidesSettings {
-                show: project_panel.indent_guides.unwrap().show.unwrap(),
-            },
-            sticky_scroll: project_panel.sticky_scroll.unwrap(),
-            auto_reveal_entries: project_panel.auto_reveal_entries.unwrap(),
-            auto_fold_dirs: project_panel.auto_fold_dirs.unwrap(),
-            bold_folder_labels: project_panel.bold_folder_labels.unwrap(),
-            starts_open: project_panel.starts_open.unwrap(),
-            scrollbar: {
-                let scrollbar = project_panel.scrollbar.unwrap();
-                ScrollbarSettings {
-                    show: scrollbar.show.map(ui_scrollbar_settings_from_raw),
-                    horizontal_scroll: scrollbar.horizontal_scroll.unwrap(),
-                }
-            },
-            show_diagnostics: project_panel.show_diagnostics.unwrap(),
-            hide_root: project_panel.hide_root.unwrap(),
-            hide_hidden: project_panel.hide_hidden.unwrap(),
-            drag_and_drop: project_panel.drag_and_drop.unwrap(),
-            auto_open: {
-                let auto_open = project_panel.auto_open.unwrap();
-                AutoOpenSettings {
-                    on_create: auto_open.on_create.unwrap(),
-                    on_paste: auto_open.on_paste.unwrap(),
-                    on_drop: auto_open.on_drop.unwrap(),
-                }
-            },
-            sort_mode: project_panel.sort_mode.unwrap(),
-            sort_order: project_panel.sort_order.unwrap(),
-            diagnostic_badges: project_panel.diagnostic_badges.unwrap(),
-            git_status_indicator: project_panel.git_status_indicator.unwrap(),
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        // 项目面板设置已从 SettingsContent 中移除 (spec §16 Plan 16)
+        // 返回默认值
+        Self::default()
+    }
+}
+
+/// From trait for ProjectPanelSortMode -> util::paths::SortMode
+impl From<ProjectPanelSortMode> for util::paths::SortMode {
+    fn from(mode: ProjectPanelSortMode) -> Self {
+        match mode {
+            ProjectPanelSortMode::DirectoriesFirst => util::paths::SortMode::DirectoriesFirst,
+            ProjectPanelSortMode::Mixed => util::paths::SortMode::Mixed,
+            ProjectPanelSortMode::FilesFirst => util::paths::SortMode::FilesFirst,
+        }
+    }
+}
+
+/// From trait for ProjectPanelSortOrder -> util::paths::SortOrder
+impl From<ProjectPanelSortOrder> for util::paths::SortOrder {
+    fn from(order: ProjectPanelSortOrder) -> Self {
+        match order {
+            ProjectPanelSortOrder::Default => util::paths::SortOrder::Default,
+            ProjectPanelSortOrder::Upper => util::paths::SortOrder::Upper,
+            ProjectPanelSortOrder::Lower => util::paths::SortOrder::Lower,
+            ProjectPanelSortOrder::Unicode => util::paths::SortOrder::Unicode,
         }
     }
 }

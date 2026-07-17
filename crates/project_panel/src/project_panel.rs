@@ -38,13 +38,14 @@ use project::{
     project_settings::GoToDiagnosticSeverityFilter,
 };
 use project_panel_settings::ProjectPanelSettings;
+use project_panel_settings::{
+    DockSide, ProjectPanelEntrySpacing, ProjectPanelSortMode, ProjectPanelSortOrder, ShowDiagnostics,
+    ShowIndentGuides,
+};
 use rayon::slice::ParallelSliceMut;
 use schemars::JsonSchema;
 use serde::Deserialize;
-use settings::{
-    DockSide, ProjectPanelEntrySpacing, Settings, SettingsStore, ShowDiagnostics, ShowIndentGuides,
-    update_settings_file,
-};
+use settings::{Settings, SettingsStore, update_settings_file};
 use smallvec::SmallVec;
 use std::{
     any::TypeId,
@@ -469,40 +470,13 @@ pub fn init(cx: &mut App) {
             }
         });
 
-        workspace.register_action(|workspace, _: &ToggleHideGitIgnore, _, cx| {
-            let fs = workspace.app_state().fs.clone();
-            update_settings_file(fs, cx, move |setting, _| {
-                setting.project_panel.get_or_insert_default().hide_gitignore = Some(
-                    !setting
-                        .project_panel
-                        .get_or_insert_default()
-                        .hide_gitignore
-                        .unwrap_or(false),
-                );
-            })
+        workspace.register_action(|_, _: &ToggleHideGitIgnore, _, _| {
+            // 项目面板设置已从 SettingsContent 中移除 (spec §16 Plan 16)
         });
 
-        workspace.register_action(|workspace, _: &ToggleHideHidden, _, cx| {
-            let fs = workspace.app_state().fs.clone();
-            update_settings_file(fs, cx, move |setting, _| {
-                setting.project_panel.get_or_insert_default().hide_hidden = Some(
-                    !setting
-                        .project_panel
-                        .get_or_insert_default()
-                        .hide_hidden
-                        .unwrap_or(false),
-                );
-            })
+        workspace.register_action(|_, _: &ToggleHideHidden, _, _| {
+            // 项目面板设置已从 SettingsContent 中移除 (spec §16 Plan 16)
         });
-
-        workspace.register_action(|workspace, action: &CollapseAllEntries, window, cx| {
-            if let Some(panel) = workspace.panel::<ProjectPanel>(cx) {
-                panel.update(cx, |panel, cx| {
-                    panel.collapse_all_entries(action, window, cx);
-                });
-            }
-        });
-
         workspace.register_action(|workspace, action: &ExpandAllEntries, window, cx| {
             if let Some(panel) = workspace.panel::<ProjectPanel>(cx) {
                 panel.update(cx, |panel, cx| {
@@ -7458,14 +7432,9 @@ impl Panel for ProjectPanel {
         matches!(position, DockPosition::Left | DockPosition::Right)
     }
 
-    fn set_position(&mut self, position: DockPosition, _: &mut Window, cx: &mut Context<Self>) {
-        settings::update_settings_file(self.fs.clone(), cx, move |settings, _| {
-            let dock = match position {
-                DockPosition::Left | DockPosition::Bottom => DockSide::Left,
-                DockPosition::Right => DockSide::Right,
-            };
-            settings.project_panel.get_or_insert_default().dock = Some(dock);
-        });
+    fn set_position(&mut self, _: DockPosition, _: &mut Window, _: &mut Context<Self>) {
+        // 项目面板设置已从 SettingsContent 中移除 (spec §16 Plan 16)
+        // 停靠位置变更不再持久化到设置文件
     }
 
     fn default_size(&self, _: &Window, cx: &App) -> Pixels {
@@ -7512,9 +7481,8 @@ impl Panel for ProjectPanel {
     }
 
     fn hide_button_setting(&self, _: &App) -> Option<workspace::HideStatusItem> {
-        Some(workspace::HideStatusItem::new(|settings| {
-            settings.project_panel.get_or_insert_default().button = Some(false);
-        }))
+        // 项目面板设置已从 SettingsContent 中移除 (spec §16 Plan 16)
+        None
     }
 }
 
@@ -7575,8 +7543,8 @@ impl ClipboardEntry {
 fn cmp_worktree_entries(
     a: &Entry,
     b: &Entry,
-    mode: &settings::ProjectPanelSortMode,
-    order: &settings::ProjectPanelSortOrder,
+    mode: &ProjectPanelSortMode,
+    order: &ProjectPanelSortOrder,
 ) -> cmp::Ordering {
     let a = (&*a.path, a.is_file());
     let b = (&*b.path, b.is_file());
@@ -7585,16 +7553,16 @@ fn cmp_worktree_entries(
 
 pub fn sort_worktree_entries(
     entries: &mut [impl AsRef<Entry>],
-    mode: settings::ProjectPanelSortMode,
-    order: settings::ProjectPanelSortOrder,
+    mode: ProjectPanelSortMode,
+    order: ProjectPanelSortOrder,
 ) {
     entries.sort_by(|lhs, rhs| cmp_worktree_entries(lhs.as_ref(), rhs.as_ref(), &mode, &order));
 }
 
 pub fn par_sort_worktree_entries(
     entries: &mut Vec<GitEntry>,
-    mode: settings::ProjectPanelSortMode,
-    order: settings::ProjectPanelSortOrder,
+    mode: ProjectPanelSortMode,
+    order: ProjectPanelSortOrder,
 ) {
     entries.par_sort_by(|lhs, rhs| cmp_worktree_entries(lhs, rhs, &mode, &order));
 }

@@ -51,9 +51,11 @@ pub enum ClosePosition {
 #[serde(rename_all = "snake_case")]
 pub enum ShowDiagnostics {
     #[default]
+    Off,
+    Errors,
+    All,
     Inline,
     OnHover,
-    Off,
 }
 
 /// 种子查询设置 (原 settings::SeedQuerySetting)
@@ -132,6 +134,7 @@ pub enum EncodingDisplayOptions {
     #[default]
     NonUtf8,
     All,
+    Disabled,
     Never,
 }
 

@@ -138,7 +138,7 @@ impl StatusItemView for ActiveBufferEncoding {
             settings
                 .status_bar
                 .get_or_insert_default()
-                .active_encoding_button = Some(EncodingDisplayOptions::Disabled);
+                .active_encoding_button = EncodingDisplayOptions::Disabled;
         }))
     }
 }

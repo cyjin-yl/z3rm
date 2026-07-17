@@ -111,4 +111,46 @@ pub struct StatusBarSettingsContent {
 
     /// Whether to show the session status on the status bar. Default: false
     pub session_status: bool,
+
+    /// Whether to show the active language button on the status bar. Default: true
+    pub active_language_button: bool,
+
+    /// Encoding display option. Default: NonUtf8
+    pub active_encoding_button: EncodingDisplayOptions,
+
+    /// Whether to show the cursor position button on the status bar. Default: true
+    pub cursor_position_button: bool,
+
+    /// Whether to show the line endings button on the status bar. Default: false
+    pub line_endings_button: bool,
+}
+
+/// 行号指示器格式 (spec §16 Plan 16)
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum LineIndicatorFormat {
+    #[default]
+    Short,
+    Long,
+}
+
+/// 编码显示选项 (spec §16 Plan 16)
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum EncodingDisplayOptions {
+    #[default]
+    NonUtf8,
+    All,
+    Disabled,
+    Never,
+}
+
+impl EncodingDisplayOptions {
+    pub fn should_show(&self, is_utf8: bool, has_bom: bool) -> bool {
+        match self {
+            EncodingDisplayOptions::NonUtf8 => !is_utf8 || has_bom,
+            EncodingDisplayOptions::All => true,
+            EncodingDisplayOptions::Disabled | EncodingDisplayOptions::Never => false,
+        }
+    }
 }

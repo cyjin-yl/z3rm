@@ -1,4 +1,4 @@
-use settings::{RegisterSetting, Settings, SettingsContent, WhichKeySettingsContent};
+use settings::{RegisterSetting, Settings, SettingsContent};
 
 #[derive(Debug, Clone, Copy, RegisterSetting)]
 pub struct WhichKeySettings {
@@ -7,12 +7,12 @@ pub struct WhichKeySettings {
 }
 
 impl Settings for WhichKeySettings {
-    fn from_settings(content: &SettingsContent) -> Self {
-        let which_key: &WhichKeySettingsContent = content.which_key.as_ref().unwrap();
-
+    fn from_settings(_content: &SettingsContent) -> Self {
+        // which_key 设置已从 SettingsContent 中移除 (spec §16 Plan 16)
+        // 返回默认值
         Self {
-            enabled: which_key.enabled.unwrap(),
-            delay_ms: which_key.delay_ms.unwrap(),
+            enabled: false,
+            delay_ms: 1000,
         }
     }
 }

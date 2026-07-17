@@ -94,7 +94,7 @@ impl StatusItemView for ActiveBufferLanguage {
             settings
                 .status_bar
                 .get_or_insert_default()
-                .active_language_button = Some(false);
+                .active_language_button = false;
         }))
     }
 }

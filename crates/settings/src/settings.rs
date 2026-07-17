@@ -66,7 +66,10 @@ pub use settings_content::{
     RewrapBehavior, SemanticTokenRules, SemanticTokens, ShowWhitespaceSetting, SshConnection,
     SshPortForwardOption, SoftWrap, TaskSettingsContent, WhitespaceMapContent, WordsCompletionMode,
     DocumentFoldingRanges, DocumentSymbols, WslConnection, ExtensionsSettingsContent, IconThemeName,
+    LineIndicatorFormat, DiagnosticsSettingsContent,
+    EncodingDisplayOptions,
 };
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ActiveSettingsProfileName(pub String);

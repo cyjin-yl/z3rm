@@ -74,7 +74,7 @@ impl StatusItemView for LineEndingIndicator {
             settings
                 .status_bar
                 .get_or_insert_default()
-                .line_endings_button = Some(false);
+                .line_endings_button = false;
         }))
     }
 }

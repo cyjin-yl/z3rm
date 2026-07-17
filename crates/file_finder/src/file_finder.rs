@@ -70,7 +70,7 @@ impl Settings for FileFinderSettings {
         let default_cf = settings_content::FileFinderSettingsContent::default();
         let cf = content.file_finder.as_ref().unwrap_or(&default_cf);
         Self {
-            file_icons: cf.file_icons.unwrap_or(true),
+            file_icons: cf.file_icons,
             modal_max_width: match cf.modal_max_width {
                 Some(settings_content::FileFinderWidthContent::Small) => FileFinderWidth::Small,
                 Some(settings_content::FileFinderWidthContent::Medium) => FileFinderWidth::Medium,
@@ -79,7 +79,7 @@ impl Settings for FileFinderSettings {
                 Some(settings_content::FileFinderWidthContent::Full) => FileFinderWidth::Full,
                 None => FileFinderWidth::Small,
             },
-            skip_focus_for_active_in_search: cf.skip_focus_for_active_in_search.unwrap_or(true),
+            skip_focus_for_active_in_search: cf.skip_focus_for_active_in_search,
             include_ignored: None, // Smart mode default
         }
     }

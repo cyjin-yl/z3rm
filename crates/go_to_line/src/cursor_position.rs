@@ -301,7 +301,7 @@ impl StatusItemView for CursorPosition {
             settings
                 .status_bar
                 .get_or_insert_default()
-                .cursor_position_button = Some(false);
+                .cursor_position_button = false;
         }))
     }
 }

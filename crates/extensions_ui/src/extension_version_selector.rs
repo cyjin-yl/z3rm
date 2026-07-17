@@ -9,7 +9,6 @@ use gpui::{App, DismissEvent, Entity, EventEmitter, Focusable, Task, WeakEntity,
 use picker::{Picker, PickerDelegate};
 use release_channel::ReleaseChannel;
 use semver::Version;
-use settings::update_settings_file;
 use ui::{HighlightedLabel, ListItem, ListItemSpacing, prelude::*};
 use util::ResultExt;
 use workspace::ModalView;
@@ -187,15 +186,8 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
             let extension_id = extension_version.id.clone();
             let version = extension_version.manifest.version.clone();
 
-            update_settings_file(self.fs.clone(), cx, {
-                let extension_id = extension_id.clone();
-                move |settings, _| {
-                    settings
-                        .extension
-                        .auto_update_extensions
-                        .insert(extension_id, false);
-                }
-            });
+            // 扩展设置已通过 extension_host::ExtensionSettings 管理 (spec §16 Plan 16)
+            // SettingsContent 不再包含 auto_update_extensions 字段
 
             store.install_extension(extension_id, version, cx);
         });

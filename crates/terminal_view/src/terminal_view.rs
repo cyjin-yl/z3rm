@@ -19,9 +19,8 @@ use persistence::TerminalDb;
 use project::{Project, ProjectEntryId, search::SearchQuery};
 use schemars::JsonSchema;
 use serde::Deserialize;
-use settings::{
-    SeedQuerySetting, Settings, SettingsStore, TerminalBell, TerminalBlink, WorkingDirectory,
-};
+use settings::{Settings, SettingsStore, TerminalBell, TerminalBlink, WorkingDirectory};
+use workspace::settings_stubs::SeedQuerySetting;
 use std::{
     any::Any,
     cmp,

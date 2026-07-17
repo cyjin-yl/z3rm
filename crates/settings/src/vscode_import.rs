@@ -138,6 +138,10 @@ impl VsCodeSettings {
             telemetry: Some(self.telemetry_settings_content()),
             log: Some(HashMap::default()),
             feature_flags: Some(FeatureFlagsMap(HashMap::default())),
+            vim_mode: Some(false),
+            line_indicator_format: Some(LineIndicatorFormat::Short),
+            diagnostics: Some(DiagnosticsSettingsContent::default()),
+            file_finder: Some(FileFinderSettingsContent::default()),
         }
     }
 
@@ -218,6 +222,10 @@ impl VsCodeSettings {
             stack_size: false,
             working_directory: true,
             session_status: false,
+            active_language_button: true,
+            active_encoding_button: EncodingDisplayOptions::NonUtf8,
+            cursor_position_button: true,
+            line_endings_button: false,
         }
     }
 

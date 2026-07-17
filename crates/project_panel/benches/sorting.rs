@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use project::{Entry, EntryKind, GitEntry, ProjectEntryId};
 use project_panel::par_sort_worktree_entries;
-use settings::{ProjectPanelSortMode, ProjectPanelSortOrder};
+use project_panel::project_panel_settings::{ProjectPanelSortMode, ProjectPanelSortOrder};
 use std::sync::Arc;
 use util::rel_path::RelPath;
 

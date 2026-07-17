@@ -144,6 +144,47 @@ pub struct SettingsContent {
 
     /// 功能标志本地覆盖
     pub feature_flags: Option<FeatureFlagsMap>,
+
+    /// Vim 模式开关 (spec §16 Plan 16)
+    pub vim_mode: Option<bool>,
+
+    /// 行号指示器格式 (spec §16 Plan 16)
+    pub line_indicator_format: Option<LineIndicatorFormat>,
+
+    /// 诊断设置 (spec §16 Plan 16)
+    pub diagnostics: Option<DiagnosticsSettingsContent>,
+
+    /// 文件查找器设置 (spec §16 Plan 16)
+    pub file_finder: Option<FileFinderSettingsContent>,
+}
+
+/// 诊断设置内容 (spec §16 Plan 16)
+#[with_fallible_options]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct DiagnosticsSettingsContent {
+    /// 是否在状态栏显示诊断按钮
+    pub button: bool,
+}
+
+/// 文件查找器宽度 (spec §16 Plan 16)
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum FileFinderWidthContent {
+    #[default]
+    Small,
+    Medium,
+    Large,
+    XLarge,
+    Full,
+}
+
+/// 文件查找器设置 (spec §16 Plan 16)
+#[with_fallible_options]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct FileFinderSettingsContent {
+    pub file_icons: bool,
+    pub modal_max_width: Option<FileFinderWidthContent>,
+    pub skip_focus_for_active_in_search: bool,
 }
 
 /// 远程连接设置 (spec §16 Plan 16)

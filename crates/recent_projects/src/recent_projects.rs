@@ -29,8 +29,9 @@ use picker::{
     highlighted_match_with_paths::{HighlightedMatch, HighlightedMatchWithPaths},
 };
 use project::{Worktree, git_store::Repository};
-use settings::{DefaultOpenBehavior, Settings, WorktreeId};
+use settings::{Settings, WorktreeId};
 use workspace::ProjectGroupKey;
+use workspace::settings_stubs::DefaultOpenBehavior;
 
 // use dev_container::{DevContainerContext, find_devcontainer_configs};  // removed-crate: dev_container
 use ui::{
