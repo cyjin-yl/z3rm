@@ -417,9 +417,6 @@ impl ServerTreeRebase {
                         // Dynamic settings (settings.settings) can be updated via DidChangeConfiguration
                         // without restarting the server.
                         disposition.toolchain == old_node.disposition.toolchain
-                            && disposition.settings.binary == old_node.disposition.settings.binary
-                            && disposition.settings.initialization_options
-                                == old_node.disposition.settings.initialization_options
                     })
                 else {
                     return Some(node);

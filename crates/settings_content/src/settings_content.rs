@@ -31,6 +31,7 @@ pub use workspace::*;
 use collections::{HashMap, IndexMap};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
 use settings_macros::{MergeFrom, with_fallible_options};
 
 /// 定义设置覆盖结构体，每个字段为 `Option<Box<SettingsContent>>`，
@@ -371,10 +372,60 @@ pub struct ExtensionsSettingsContent {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
 pub struct LanguageToSettingsMap {
     pub settings: HashMap<String, LanguageSettingsContent>,
+    pub defaults: LanguageSettingsContent,
+    pub languages: HashMap<String, LanguageSettingsContent>,
+    pub edit_predictions: Option<EditPredictionSettingsContent>,
+    pub file_types: Vec<LanguageFileTypeContent>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
-pub struct LanguageSettingsContent {}
+pub struct LanguageSettingsContent {
+    // 兼容占位字段 - Option<T> 保持下游 unwrap() 调用 (spec §16 Plan 16)
+    pub tab_size: Option<NonZeroU32>,
+    pub hard_tabs: Option<bool>,
+    pub soft_wrap: Option<SoftWrap>,
+    pub preferred_line_length: Option<u32>,
+    pub show_wrap_guides: Option<bool>,
+    pub wrap_guides: Option<Vec<usize>>,
+    pub format_on_save: Option<FormatOnSave>,
+    pub remove_trailing_whitespace_on_save: Option<bool>,
+    pub ensure_final_newline_on_save: Option<bool>,
+    pub line_ending: Option<LineEndingSetting>,
+    pub formatter: Option<FormatterList>,
+    pub jsx_tag_auto_close: Option<JsxTagAutoCloseContent>,
+    pub enable_language_server: Option<bool>,
+    pub language_servers: Option<Vec<String>>,
+    pub semantic_tokens: Option<SemanticTokens>,
+    pub document_folding_ranges: Option<DocumentFoldingRanges>,
+    pub document_symbols: Option<DocumentSymbols>,
+    pub allow_rewrap: Option<RewrapBehavior>,
+    pub show_edit_predictions: Option<bool>,
+    pub edit_predictions_disabled_in: Option<Vec<String>>,
+    pub show_whitespaces: Option<ShowWhitespaceSetting>,
+    pub extend_comment_on_newline: Option<bool>,
+    pub extend_list_on_newline: Option<bool>,
+    pub indent_list_on_tab: Option<bool>,
+    pub use_autoclose: Option<bool>,
+    pub use_auto_surround: Option<bool>,
+    pub use_on_type_format: Option<bool>,
+    pub auto_indent: Option<AutoIndentMode>,
+    pub auto_indent_on_paste: Option<bool>,
+    pub always_treat_brackets_as_autoclosed: Option<bool>,
+    pub code_actions_on_format: Option<HashMap<String, bool>>,
+    pub linked_edits: Option<bool>,
+    pub show_completions_on_input: Option<bool>,
+    pub show_completion_documentation: Option<bool>,
+    pub colorize_brackets: Option<bool>,
+    pub debuggers: Option<Vec<String>>,
+    pub word_diff_enabled: Option<bool>,
+    // 子设置结构体 - Option<T>
+    pub inlay_hints: Option<InlayHintsSettingsContent>,
+    pub completions: Option<CompletionSettingsContent>,
+    pub prettier: Option<PrettierSettingsContent>,
+    pub indent_guides: Option<IndentGuidesSettingsContent>,
+    pub tasks: Option<TaskSettingsContent>,
+    pub whitespace_map: Option<WhitespaceMapContent>,
+}
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
 pub struct LspSettings {}
@@ -383,3 +434,414 @@ pub struct LspSettings {}
 pub struct LspSettingsMap {
     pub settings: HashMap<String, LspSettings>,
 }
+
+// ============================================================
+// 兼容占位类型 - 保持下游 crate 编译 (spec §16 Plan 16)
+// 这些类型已删除但下游代码仍引用，保留 stub 避免编译错误。
+// ============================================================
+
+/// 软换行模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum SoftWrap {
+    #[default]
+    None,
+    PreferLine,
+    EditorWidth,
+    Bounded,
+}
+
+/// 光标形状
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum CursorShape {
+    Bar,
+    #[default]
+    Block,
+    Underline,
+    Hollow,
+}
+
+/// 缩进引导线着色
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum IndentGuideColoring {
+    /// Use the same color for all indent guides.
+    #[default]
+    SingleHue,
+    /// Use a different color for each indent level.
+    DistinctHues,
+    Disabled,
+}
+
+/// 缩进引导背景着色
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum IndentGuideBackgroundColoring {
+    #[default]
+    Off,
+    Active,
+}
+
+/// 文档折叠范围
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum DocumentFoldingRanges {
+    #[default]
+    TreeSitterAndIndent,
+    LanguageServer,
+}
+
+/// 文档符号来源
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum DocumentSymbols {
+    #[default]
+    TreeSitter,
+    LanguageServer,
+}
+
+/// 语义 token 高亮模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticTokens {
+    #[default]
+    Off,
+    On,
+    TreeSitterFallback,
+}
+
+/// 自动缩进模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum AutoIndentMode {
+    #[default]
+    On,
+    Off,
+    OnFormatting,
+    OnTyping,
+    SyntaxAware,
+    None,
+}
+
+/// 保存时格式化模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum FormatOnSave {
+    #[default]
+    Off,
+    On,
+    OnWithExtraLspActions,
+}
+
+/// 格式化器
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct Formatter {
+    pub name: String,
+}
+
+/// 格式化器列表
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct FormatterList {
+    pub formatters: Vec<Formatter>,
+}
+
+/// 空白显示设置
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum ShowWhitespaceSetting {
+    #[default]
+    Selected,
+    All,
+    Off,
+    Trailing,
+}
+
+/// 单词补全模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum WordsCompletionMode {
+    #[default]
+    Enabled,
+    LspOnly,
+    Disabled,
+}
+
+/// 行尾设置
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum LineEndingSetting {
+    #[default]
+    Auto,
+    Lf,
+    Crlf,
+    EnforceLf,
+    EnforceCrlf,
+}
+
+/// LSP 插入模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum LspInsertMode {
+    #[default]
+    AsSnippet,
+    AsPlainText,
+}
+
+/// 内联提示类型
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum InlayHintKind {
+    #[default]
+    All,
+    OnlyParameters,
+    OnlyTypes,
+    Off,
+    Type,
+    Parameter,
+}
+
+/// 重排行为
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum RewrapBehavior {
+    #[default]
+    Enabled,
+    VimModeOnly,
+    Disabled,
+}
+
+/// 编辑预测提供者
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum EditPredictionProvider {
+    #[default]
+    None,
+    Copilot,
+    Codestral,
+    OpenAiCompatible,
+}
+
+/// 编辑预测模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum EditPredictionsMode {
+    #[default]
+    Off,
+    Inline,
+    Preview,
+}
+
+/// 数据收集选项
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum EditPredictionDataCollectionChoice {
+    #[default]
+    Allow,
+    Disallow,
+}
+
+/// 提示格式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum EditPredictionPromptFormatContent {
+    #[default]
+    Context,
+    Zeta1,
+    Zeta2,
+    Zeta3,
+    Infer,
+    Zeta,
+    Zeta2_1,
+    CodeLlama,
+    StarCoder,
+    DeepseekCoder,
+    Qwen,
+    CodeGemma,
+    Codestral,
+    Glm,
+}
+
+/// 补全设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct CompletionSettingsContent {
+    pub words: Option<WordsCompletionMode>,
+    pub words_min_length: Option<u32>,
+    pub lsp: Option<bool>,
+    pub lsp_fetch_timeout_ms: Option<u32>,
+    pub lsp_insert_mode: Option<LspInsertMode>,
+}
+
+/// 内联提示设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct InlayHintsSettingsContent {
+    pub enabled: Option<bool>,
+    pub show_value_hints: Option<bool>,
+    pub show_type_hints: Option<bool>,
+    pub show_parameter_hints: Option<bool>,
+    pub show_other_hints: Option<bool>,
+    pub show_background: Option<bool>,
+    pub edit_debounce_ms: Option<u32>,
+    pub scroll_debounce_ms: Option<u32>,
+    pub toggle_on_modifiers_press: Option<ModifiersContent>,
+}
+
+/// Prettier 设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct PrettierSettingsContent {
+    pub allowed: Option<bool>,
+    pub parser: Option<String>,
+    pub plugins: Option<Vec<String>>,
+    pub options: Option<serde_json::Value>,
+}
+
+/// 缩进引导设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct IndentGuidesSettingsContent {
+    pub enabled: Option<bool>,
+    pub line_width: Option<u32>,
+    pub active_line_width: Option<u32>,
+    pub coloring: Option<IndentGuideColoring>,
+    pub background_coloring: Option<IndentGuideBackgroundColoring>,
+}
+
+/// 任务设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct TaskSettingsContent {
+    pub variables: Option<HashMap<String, String>>,
+    pub enabled: Option<bool>,
+    pub prefer_lsp: Option<bool>,
+}
+
+/// 空白映射设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct WhitespaceMapContent {
+    pub space: Option<String>,
+    pub tab: Option<String>,
+}
+
+/// JSX 标签自动关闭设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct JsxTagAutoCloseContent {
+    pub enabled: Option<bool>,
+}
+
+/// 编辑预测设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct EditPredictionSettingsContent {
+    pub provider: Option<EditPredictionProvider>,
+    pub mode: Option<EditPredictionsMode>,
+    pub disabled_globs: Option<Vec<String>>,
+    pub allow_data_collection: Option<EditPredictionDataCollectionChoice>,
+    pub prompt_format: Option<EditPredictionPromptFormatContent>,
+    pub copilot: Option<CopilotSettingsContent>,
+    pub codestral: Option<CodestralSettingsContent>,
+    pub ollama: Option<OllamaSettingsContent>,
+    pub open_ai_compatible_api: Option<OpenAiCompatibleApiSettingsContent>,
+}
+
+/// Copilot 设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct CopilotSettingsContent {
+    pub token: Option<String>,
+    pub organization_id: Option<String>,
+    pub proxy: Option<String>,
+    pub proxy_no_verify: Option<bool>,
+    pub enterprise_uri: Option<String>,
+    pub enable_next_edit_suggestions: Option<bool>,
+}
+
+/// Codestral 设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct CodestralSettingsContent {
+    pub model: Option<String>,
+    pub max_tokens: Option<u32>,
+    pub api_url: Option<String>,
+}
+
+/// Ollama 设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct OllamaSettingsContent {
+    pub model: Option<String>,
+    pub max_output_tokens: Option<u32>,
+    pub api_url: Option<String>,
+    pub prompt_format: Option<EditPredictionPromptFormatContent>,
+}
+
+/// OpenAI 兼容 API 设置内容 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct OpenAiCompatibleApiSettingsContent {
+    pub model: Option<String>,
+    pub api_url: Option<String>,
+    pub prompt_format: Option<EditPredictionPromptFormatContent>,
+}
+
+/// 语言文件类型内容
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct LanguageFileTypeContent {
+    pub extensions: Vec<String>,
+}
+
+/// Git 托管提供者配置
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct GitHostingProviderConfig {
+    pub name: String,
+    pub provider: GitHostingProviderKind,
+    pub base_url: String,
+}
+
+/// Git 托管提供者类型
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+#[serde(rename_all = "snake_case")]
+pub enum GitHostingProviderKind {
+    #[default]
+    Github,
+    Gitlab,
+    Bitbucket,
+    Gitea,
+    Forgejo,
+    SourceHut,
+}
+
+/// SSH 端口转发选项 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct SshPortForwardOption {
+    pub local_host: String,
+    pub remote_host: String,
+    pub local_port: u16,
+    pub remote_port: u16,
+}
+
+/// SSH 连接配置 (spec §16 Plan 16)
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct SshConnection {
+    pub host: String,
+    pub username: Option<String>,
+    pub port: Option<u16>,
+    pub args: Option<Vec<String>>,
+    pub nickname: Option<String>,
+    pub upload_binary_over_ssh: Option<bool>,
+    pub port_forwards: Option<Vec<SshPortForwardOption>>,
+    pub connection_timeout: Option<u16>,
+}
+
+/// WSL 连接配置
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct WslConnection {
+    pub distro_name: String,
+    pub user: Option<String>,
+}
+
+/// 其余语言服务器占位常量
+pub const REST_OF_LANGUAGE_SERVERS: &str = "...";
+/// 修饰键设置 (spec §16 Plan 16) - 兼容 gpui::Modifiers
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom)]
+pub struct ModifiersContent {
+    pub control: bool,
+    pub alt: bool,
+    pub shift: bool,
+    pub platform: bool,
+    pub function: bool,
+}
+/// 兼容类型别名 - 保持下游引用 AllLanguageSettingsContent 编译通过
+pub type AllLanguageSettingsContent = LanguageToSettingsMap;

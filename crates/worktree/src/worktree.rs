@@ -5949,7 +5949,7 @@ impl BackgroundScanner {
     fn should_scan_directory(&self, state: &BackgroundScannerState, entry: &Entry) -> bool {
         let scannable = state.scanning_enabled
             && (!entry.is_external
-                || self.settings.scan_symlinks == settings::ScanSymlinksSetting::Always)
+                || self.settings.scan_symlinks == settings::ScanSymlinksSetting::All)
             && (!entry.is_ignored || entry.is_always_included);
 
         scannable

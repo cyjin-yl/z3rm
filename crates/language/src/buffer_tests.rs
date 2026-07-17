@@ -2322,7 +2322,7 @@ fn test_autoindent_language_without_indents_query(cx: &mut App) {
 #[gpui::test]
 fn test_autoindent_with_injected_languages(cx: &mut App) {
     init_settings(cx, |settings| {
-        settings.languages.0.extend([
+        settings.languages.extend([
             (
                 "HTML".into(),
                 LanguageSettingsContent {

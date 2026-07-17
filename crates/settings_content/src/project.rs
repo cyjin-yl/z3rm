@@ -3,7 +3,7 @@ use collections::HashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use settings_macros::{MergeFrom, with_fallible_options};
-use crate::{LanguageToSettingsMap, SaturatingBool};
+use crate::{GitHostingProviderConfig, LanguageToSettingsMap, ProjectTerminalSettingsContent, SaturatingBool};
 use std::path::PathBuf;
 
 /// 项目基础设置 (spec §16 Plan 16)
@@ -20,9 +20,11 @@ pub struct ProjectSettingsContent {
     /// Whether to scan symlinks when indexing content. Default: local_only
     pub scan_symlinks: ScanSymlinksSetting,
 
-    // 兼容字段 - 已删除模块占位
+    // 兼容字段 - 已删除模块占位 (spec §16 Plan 16)
     pub all_languages: LanguageToSettingsMap,
     pub disable_ai: SaturatingBool,
+    pub git_hosting_providers: Option<Vec<GitHostingProviderConfig>>,
+    pub terminal: Option<ProjectTerminalSettingsContent>,
 }
 
 /// Settings for a linked project directory.

@@ -4,7 +4,7 @@ use gpui::{
 };
 use settings_content::{
     FontFamilyName, FontFeaturesContent, FontSize, FontStyleContent, FontWeightContent,
-    WindowBackgroundContent,
+    ModifiersContent, WindowBackgroundContent,
 };
 use std::sync::Arc;
 
@@ -68,6 +68,20 @@ impl IntoGpui for FontFamilyName {
 
     fn into_gpui(self) -> Self::Output {
         SharedString::from(self.0)
+    }
+}
+
+impl IntoGpui for ModifiersContent {
+    type Output = gpui::Modifiers;
+
+    fn into_gpui(self) -> Self::Output {
+        gpui::Modifiers {
+            control: self.control,
+            alt: self.alt,
+            shift: self.shift,
+            platform: self.platform,
+            function: self.function,
+        }
     }
 }
 

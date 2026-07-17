@@ -54,8 +54,18 @@ pub use vscode_import::{VsCodeSettings, VsCodeSettingsSource};
 
 pub use keymap_file::ActionSequence;
 pub use settings_content::{
-    ExtensionsSettingsContent, IconThemeName, LanguageSettingsContent, LanguageToSettingsMap,
-    LspSettings, LspSettingsMap, SemanticTokenRules,
+    AllLanguageSettingsContent, AutoIndentMode, CompletionSettingsContent, CopilotSettingsContent,
+    CodestralSettingsContent, CursorShape, EditPredictionDataCollectionChoice,
+    EditPredictionPromptFormatContent, EditPredictionProvider, EditPredictionSettingsContent,
+    EditPredictionsMode, FormatOnSave, Formatter, FormatterList,
+    GitHostingProviderConfig, GitHostingProviderKind, IndentGuideBackgroundColoring,
+    IndentGuideColoring, IndentGuidesSettingsContent, InlayHintKind, InlayHintsSettingsContent,
+    JsxTagAutoCloseContent, LanguageFileTypeContent, LanguageSettingsContent, LanguageToSettingsMap,
+    LineEndingSetting, LspInsertMode, LspSettings, LspSettingsMap, ModifiersContent,
+    OpenAiCompatibleApiSettingsContent, PrettierSettingsContent, REST_OF_LANGUAGE_SERVERS,
+    RewrapBehavior, SemanticTokenRules, SemanticTokens, ShowWhitespaceSetting, SshConnection,
+    SshPortForwardOption, SoftWrap, TaskSettingsContent, WhitespaceMapContent, WordsCompletionMode,
+    DocumentFoldingRanges, DocumentSymbols, WslConnection, ExtensionsSettingsContent, IconThemeName,
 };
 
 #[derive(Clone, Debug, PartialEq)]

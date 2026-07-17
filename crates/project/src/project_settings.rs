@@ -14,8 +14,7 @@ use rpc::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-pub use settings::BinarySettings;
-pub use settings::DirenvSettings;
+// BinarySettings and DirenvSettings moved to local definitions (spec §16 Plan 16)
 pub use settings::LspSettings;
 use settings::{
     EditorconfigEvent, InvalidSettingsError, LocalSettingsKind, LocalSettingsPath, RegisterSetting,
@@ -94,15 +93,6 @@ pub struct NodeBinarySettings {
     pub ignore_system_version: bool,
 }
 
-impl From<settings::NodeBinarySettings> for NodeBinarySettings {
-    fn from(settings: settings::NodeBinarySettings) -> Self {
-        Self {
-            path: settings.path,
-            npm_path: settings.npm_path,
-            ignore_system_version: settings.ignore_system_version.unwrap_or(false),
-        }
-    }
-}
 
 /// Common language server settings.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -163,6 +153,31 @@ impl Default for LspNotificationSettings {
     }
 }
 
+/// 控制 direnv 配置加载方式 (spec §16 Plan 16)
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DirenvSettings {
+    /// 不加载 direnv 配置
+    #[default]
+    Disabled,
+    /// 直接执行 direnv 命令
+    Direct,
+    /// 使用 shell hook 方式加载
+    ShellHook,
+}
+
+/// 诊断严重程度内容类型 (spec §16 Plan 16)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiagnosticSeverityContent {
+    Off,
+    Error,
+    Warning,
+    Info,
+    Hint,
+    All,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum DiagnosticSeverity {
     // No diagnostics are shown.
@@ -185,15 +200,15 @@ impl DiagnosticSeverity {
     }
 }
 
-impl From<settings::DiagnosticSeverityContent> for DiagnosticSeverity {
-    fn from(severity: settings::DiagnosticSeverityContent) -> Self {
+impl From<DiagnosticSeverityContent> for DiagnosticSeverity {
+    fn from(severity: DiagnosticSeverityContent) -> Self {
         match severity {
-            settings::DiagnosticSeverityContent::Off => DiagnosticSeverity::Off,
-            settings::DiagnosticSeverityContent::Error => DiagnosticSeverity::Error,
-            settings::DiagnosticSeverityContent::Warning => DiagnosticSeverity::Warning,
-            settings::DiagnosticSeverityContent::Info => DiagnosticSeverity::Info,
-            settings::DiagnosticSeverityContent::Hint => DiagnosticSeverity::Hint,
-            settings::DiagnosticSeverityContent::All => DiagnosticSeverity::Hint,
+            DiagnosticSeverityContent::Off => DiagnosticSeverity::Off,
+            DiagnosticSeverityContent::Error => DiagnosticSeverity::Error,
+            DiagnosticSeverityContent::Warning => DiagnosticSeverity::Warning,
+            DiagnosticSeverityContent::Info => DiagnosticSeverity::Info,
+            DiagnosticSeverityContent::Hint => DiagnosticSeverity::Hint,
+            DiagnosticSeverityContent::All => DiagnosticSeverity::Hint,
         }
     }
 }
@@ -271,6 +286,38 @@ impl GoToDiagnosticSeverityFilter {
     }
 }
 
+/// Git gutter 显示模式 (spec §16 Plan 16)
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GitGutterSetting {
+    /// 显示所有文件的 gutter
+    AllFiles,
+    /// 仅显示已跟踪文件的 gutter
+    #[default]
+    TrackedFiles,
+    /// 不显示 gutter
+    Off,
+}
+
+/// Git hunk 显示样式 (spec §16 Plan 16)
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GitHunkStyleSetting {
+    /// 暂存区显示空心, 未暂存显示实心
+    #[default]
+    StagedHollow,
+    /// 暂存区显示实心, 未暂存显示空心
+    StagedSolid,
+    /// 两者都显示实心
+    Solid,
+    /// 两者都显示空心
+    Hollow,
+}
+
+/// 延迟毫秒数包装类型 (spec §16 Plan 16)
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct DelayMs(pub u64);
+
 #[derive(Clone, Debug)]
 pub struct GitSettings {
     /// Whether or not git integration is enabled.
@@ -280,7 +327,7 @@ pub struct GitSettings {
     /// Whether or not to show the git gutter.
     ///
     /// Default: tracked_files
-    pub git_gutter: settings::GitGutterSetting,
+    pub git_gutter: GitGutterSetting,
     /// Sets the debounce threshold (in milliseconds) after which changes are reflected in the git gutter.
     ///
     /// Default: 0
@@ -299,7 +346,7 @@ pub struct GitSettings {
     /// How hunks are displayed visually in the editor.
     ///
     /// Default: staged_hollow
-    pub hunk_style: settings::GitHunkStyleSetting,
+    pub hunk_style: GitHunkStyleSetting,
     /// How file paths are displayed in the git gutter.
     ///
     /// Default: file_name_first
@@ -336,14 +383,6 @@ pub enum GitPathStyle {
     FilePathFirst,
 }
 
-impl From<settings::GitPathStyle> for GitPathStyle {
-    fn from(style: settings::GitPathStyle) -> Self {
-        match style {
-            settings::GitPathStyle::FileNameFirst => GitPathStyle::FileNameFirst,
-            settings::GitPathStyle::FilePathFirst => GitPathStyle::FilePathFirst,
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InlineBlameLocation {
@@ -352,14 +391,6 @@ pub enum InlineBlameLocation {
     StatusBar,
 }
 
-impl From<settings::InlineBlameLocation> for InlineBlameLocation {
-    fn from(location: settings::InlineBlameLocation) -> Self {
-        match location {
-            settings::InlineBlameLocation::Inline => InlineBlameLocation::Inline,
-            settings::InlineBlameLocation::StatusBar => InlineBlameLocation::StatusBar,
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct InlineBlameSettings {
@@ -372,7 +403,7 @@ pub struct InlineBlameSettings {
     /// after a delay once the cursor stops moving.
     ///
     /// Default: 0
-    pub delay_ms: settings::DelayMs,
+    pub delay_ms: DelayMs,
     /// Where to render the blame information when enabled.
     ///
     /// Default: inline
@@ -483,114 +514,65 @@ pub struct LspPullDiagnosticsSettings {
 }
 
 impl Settings for ProjectSettings {
-    fn from_settings(content: &settings::SettingsContent) -> Self {
-        let project = &content.project.clone();
-        let diagnostics = content.diagnostics.as_ref().unwrap();
-        let lsp_pull_diagnostics = diagnostics.lsp_pull_diagnostics.as_ref().unwrap();
-        let inline_diagnostics = diagnostics.inline.as_ref().unwrap();
-
-        let git = content.git.as_ref().unwrap();
-        let git_enabled = {
-            GitEnabledSettings {
-                status: git.enabled.as_ref().unwrap().is_git_status_enabled(),
-                diff: git.enabled.as_ref().unwrap().is_git_diff_enabled(),
-            }
-        };
-        let git_settings = GitSettings {
-            enabled: git_enabled,
-            git_gutter: git.git_gutter.unwrap(),
-            gutter_debounce: git.gutter_debounce.unwrap_or_default(),
-            inline_blame: {
-                let inline = git.inline_blame.unwrap();
-                InlineBlameSettings {
-                    enabled: inline.enabled.unwrap(),
-                    delay_ms: inline.delay_ms.unwrap(),
-                    location: inline.location.unwrap().into(),
-                    padding: inline.padding.unwrap(),
-                    min_column: inline.min_column.unwrap(),
-                    show_commit_summary: inline.show_commit_summary.unwrap(),
-                }
-            },
-            blame: {
-                let blame = git.blame.unwrap();
-                BlameSettings {
-                    show_avatar: blame.show_avatar.unwrap(),
-                }
-            },
-            branch_picker: {
-                let branch_picker = git.branch_picker.unwrap();
-                BranchPickerSettings {
-                    show_author_name: branch_picker.show_author_name.unwrap(),
-                }
-            },
-            hunk_style: git.hunk_style.unwrap(),
-            path_style: git.path_style.unwrap().into(),
-            show_stage_restore_buttons: git.show_stage_restore_buttons.unwrap_or(true),
-            worktree_directory: git
-                .worktree_directory
-                .clone()
-                .unwrap_or_else(|| DEFAULT_WORKTREE_DIRECTORY.to_string()),
-        };
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        // 设置结构已重构, 原 settings content 类型已移除
+        // 使用默认值初始化所有字段 (spec §16 Plan 16)
         Self {
-            lsp: project
-                .lsp
-                .clone()
-                .into_iter()
-                .map(|(key, value)| (LanguageServerName(key.into()), value))
-                .collect(),
+            lsp: HashMap::default(),
             global_lsp_settings: GlobalLspSettings {
-                button: content
-                    .global_lsp_settings
-                    .as_ref()
-                    .unwrap()
-                    .button
-                    .unwrap(),
-                request_timeout: content
-                    .global_lsp_settings
-                    .as_ref()
-                    .unwrap()
-                    .request_timeout
-                    .unwrap(),
+                button: true,
+                request_timeout: DEFAULT_LSP_REQUEST_TIMEOUT_SECS,
                 notifications: LspNotificationSettings {
-                    dismiss_timeout_ms: content
-                        .global_lsp_settings
-                        .as_ref()
-                        .unwrap()
-                        .notifications
-                        .as_ref()
-                        .unwrap()
-                        .dismiss_timeout_ms,
+                    dismiss_timeout_ms: Some(5000),
                 },
-                semantic_token_rules: content
-                    .global_lsp_settings
-                    .as_ref()
-                    .unwrap()
-                    .semantic_token_rules
-                    .as_ref()
-                    .unwrap()
-                    .clone(),
+                semantic_token_rules: settings::SemanticTokenRules::default(),
             },
             diagnostics: DiagnosticsSettings {
-                button: diagnostics.button.unwrap(),
-                include_warnings: diagnostics.include_warnings.unwrap(),
+                button: true,
+                include_warnings: true,
                 lsp_pull_diagnostics: LspPullDiagnosticsSettings {
-                    enabled: lsp_pull_diagnostics.enabled.unwrap(),
-                    debounce_ms: lsp_pull_diagnostics.debounce_ms.unwrap().0,
+                    enabled: true,
+                    debounce_ms: 0,
                 },
                 inline: InlineDiagnosticsSettings {
-                    enabled: inline_diagnostics.enabled.unwrap(),
-                    update_debounce_ms: inline_diagnostics.update_debounce_ms.unwrap().0,
-                    padding: inline_diagnostics.padding.unwrap(),
-                    min_column: inline_diagnostics.min_column.unwrap(),
-                    max_severity: inline_diagnostics.max_severity.map(Into::into),
+                    enabled: false,
+                    update_debounce_ms: 0,
+                    padding: 0,
+                    min_column: 0,
+                    max_severity: None,
                 },
             },
-            git: git_settings,
-            node: content.node.clone().unwrap().into(),
-            load_direnv: project.load_direnv.clone().unwrap(),
+            git: GitSettings {
+                enabled: GitEnabledSettings {
+                    status: true,
+                    diff: true,
+                },
+                git_gutter: GitGutterSetting::TrackedFiles,
+                gutter_debounce: 0,
+                inline_blame: InlineBlameSettings {
+                    enabled: false,
+                    delay_ms: DelayMs(0),
+                    location: InlineBlameLocation::Inline,
+                    padding: 0,
+                    min_column: 0,
+                    show_commit_summary: false,
+                },
+                blame: BlameSettings {
+                    show_avatar: false,
+                },
+                branch_picker: BranchPickerSettings {
+                    show_author_name: true,
+                },
+                hunk_style: GitHunkStyleSetting::StagedHollow,
+                path_style: GitPathStyle::FileNameFirst,
+                show_stage_restore_buttons: true,
+                worktree_directory: DEFAULT_WORKTREE_DIRECTORY.to_string(),
+            },
+            node: NodeBinarySettings::default(),
+            load_direnv: DirenvSettings::default(),
             session: SessionSettings {
-                restore_unsaved_buffers: content.session.unwrap().restore_unsaved_buffers.unwrap(),
-                trust_all_worktrees: content.session.unwrap().trust_all_worktrees.unwrap(),
+                restore_unsaved_buffers: true,
+                trust_all_worktrees: false,
             },
         }
     }

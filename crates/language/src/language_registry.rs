@@ -1118,7 +1118,7 @@ impl LanguageRegistryState {
         if let Some(theme) = self.theme.as_ref() {
             language.set_theme(theme.syntax());
         }
-        self.language_settings.languages.0.insert(
+        self.language_settings.languages.insert(
             language.name().0.to_string(),
             LanguageSettingsContent {
                 tab_size: language.config.tab_size,

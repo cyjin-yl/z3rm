@@ -130,7 +130,7 @@ impl From<settings::SshConnection> for SshConnectionOptions {
             username: val.username,
             port: val.port,
             password: None,
-            args: Some(val.args),
+            args: val.args,
             nickname: val.nickname,
             upload_binary_over_ssh: val.upload_binary_over_ssh.unwrap_or_default(),
             port_forwards: val.port_forwards,
@@ -1584,9 +1584,9 @@ fn parse_port_forward_spec(spec: &str) -> Result<SshPortForwardOption> {
             let remote_port = parse_port_number(&tokens[3])?;
 
             Ok(SshPortForwardOption {
-                local_host: Some(tokens[0].clone()),
+                local_host: tokens[0].clone(),
                 local_port,
-                remote_host: Some(tokens[2].clone()),
+                remote_host: tokens[2].clone(),
                 remote_port,
             })
         }
@@ -1595,9 +1595,9 @@ fn parse_port_forward_spec(spec: &str) -> Result<SshPortForwardOption> {
             let remote_port = parse_port_number(&tokens[2])?;
 
             Ok(SshPortForwardOption {
-                local_host: None,
+                local_host: "localhost".to_string(),
                 local_port,
-                remote_host: Some(tokens[1].clone()),
+                remote_host: tokens[1].clone(),
                 remote_port,
             })
         }
@@ -1756,14 +1756,8 @@ impl SshConnectionOptions {
 
         if let Some(forwards) = &self.port_forwards {
             args.extend(forwards.iter().map(|pf| {
-                let local_host = match &pf.local_host {
-                    Some(host) => host,
-                    None => "localhost",
-                };
-                let remote_host = match &pf.remote_host {
-                    Some(host) => host,
-                    None => "localhost",
-                };
+                let local_host = &pf.local_host;
+                let remote_host = &pf.remote_host;
 
                 format!(
                     "-L{}:{}:{}:{}",
@@ -2167,9 +2161,9 @@ mod tests {
                 "StrictHostKeyChecking=no".to_string(),
             ]),
             port_forwards: Some(vec![SshPortForwardOption {
-                local_host: Some("127.0.0.1".to_string()),
+                local_host: "127.0.0.1".to_string(),
                 local_port: 8080,
-                remote_host: Some("127.0.0.1".to_string()),
+                remote_host: "127.0.0.1".to_string(),
                 remote_port: 80,
             }]),
             ..Default::default()
@@ -2236,27 +2230,27 @@ mod tests {
     #[test]
     fn test_parse_port_forward_spec_ipv6() -> Result<()> {
         let pf = parse_port_forward_spec("[::1]:8080:[::1]:80")?;
-        assert_eq!(pf.local_host, Some("::1".to_string()));
+        assert_eq!(pf.local_host, "::1".to_string());
         assert_eq!(pf.local_port, 8080);
-        assert_eq!(pf.remote_host, Some("::1".to_string()));
+        assert_eq!(pf.remote_host, "::1".to_string());
         assert_eq!(pf.remote_port, 80);
 
         let pf = parse_port_forward_spec("8080:[::1]:80")?;
-        assert_eq!(pf.local_host, None);
+        assert_eq!(pf.local_host, "localhost".to_string());
         assert_eq!(pf.local_port, 8080);
-        assert_eq!(pf.remote_host, Some("::1".to_string()));
+        assert_eq!(pf.remote_host, "::1".to_string());
         assert_eq!(pf.remote_port, 80);
 
         let pf = parse_port_forward_spec("[2001:db8::1]:3000:[fe80::1]:4000")?;
-        assert_eq!(pf.local_host, Some("2001:db8::1".to_string()));
+        assert_eq!(pf.local_host, "2001:db8::1".to_string());
         assert_eq!(pf.local_port, 3000);
-        assert_eq!(pf.remote_host, Some("fe80::1".to_string()));
+        assert_eq!(pf.remote_host, "fe80::1".to_string());
         assert_eq!(pf.remote_port, 4000);
 
         let pf = parse_port_forward_spec("127.0.0.1:8080:localhost:80")?;
-        assert_eq!(pf.local_host, Some("127.0.0.1".to_string()));
+        assert_eq!(pf.local_host, "127.0.0.1".to_string());
         assert_eq!(pf.local_port, 8080);
-        assert_eq!(pf.remote_host, Some("localhost".to_string()));
+        assert_eq!(pf.remote_host, "localhost".to_string());
         assert_eq!(pf.remote_port, 80);
 
         Ok(())
@@ -2267,9 +2261,9 @@ mod tests {
         let options = SshConnectionOptions {
             host: "example.com".into(),
             port_forwards: Some(vec![SshPortForwardOption {
-                local_host: Some("::1".to_string()),
+                local_host: "::1".to_string(),
                 local_port: 8080,
-                remote_host: Some("::1".to_string()),
+                remote_host: "::1".to_string(),
                 remote_port: 80,
             }]),
             ..Default::default()

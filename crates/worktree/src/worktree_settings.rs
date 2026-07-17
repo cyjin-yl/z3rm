@@ -58,45 +58,25 @@ impl WorktreeSettings {
 
 impl Settings for WorktreeSettings {
     fn from_settings(content: &settings::SettingsContent) -> Self {
-        let worktree = content.project.worktree.clone();
-        let file_scan_exclusions = worktree.file_scan_exclusions.unwrap();
-        let file_scan_inclusions = worktree.file_scan_inclusions.unwrap();
-        let private_files = worktree.private_files.unwrap().0;
-        let hidden_files = worktree.hidden_files.unwrap();
-        let read_only_files = worktree.read_only_files.unwrap_or_default();
-        let scan_symlinks = worktree.scan_symlinks.unwrap();
-        let parsed_file_scan_inclusions: Vec<String> = file_scan_inclusions
+        // 项目设置结构已重构, worktree 子模块已移除
+        // 使用 project 级别的字段和默认值填充 WorktreeSettings (spec §16 Plan 16)
+        let scan_symlinks = content.project.scan_symlinks.clone();
+        let excluded_paths = content.project.excluded_paths.clone().unwrap_or_default();
+        let file_scan_exclusions: Vec<String> = excluded_paths
             .iter()
-            .flat_map(|glob| {
-                Path::new(glob)
-                    .ancestors()
-                    .skip(1)
-                    .map(|a| a.to_string_lossy().into())
-            })
-            .filter(|p: &String| !p.is_empty())
+            .map(|p| p.to_string_lossy().into())
             .collect();
 
         Self {
-            prevent_sharing_in_public_channels: worktree.prevent_sharing_in_public_channels,
+            prevent_sharing_in_public_channels: false,
             file_scan_exclusions: path_matchers(file_scan_exclusions, "file_scan_exclusions")
                 .log_err()
                 .unwrap_or_default(),
-            parent_dir_scan_inclusions: path_matchers(
-                parsed_file_scan_inclusions,
-                "file_scan_inclusions",
-            )
-            .unwrap(),
-            file_scan_inclusions: path_matchers(file_scan_inclusions, "file_scan_inclusions")
-                .unwrap(),
-            private_files: path_matchers(private_files, "private_files")
-                .log_err()
-                .unwrap_or_default(),
-            hidden_files: path_matchers(hidden_files, "hidden_files")
-                .log_err()
-                .unwrap_or_default(),
-            read_only_files: path_matchers(read_only_files, "read_only_files")
-                .log_err()
-                .unwrap_or_default(),
+            parent_dir_scan_inclusions: PathMatcher::default(),
+            file_scan_inclusions: PathMatcher::default(),
+            private_files: PathMatcher::default(),
+            hidden_files: PathMatcher::default(),
+            read_only_files: PathMatcher::default(),
             scan_symlinks,
         }
     }

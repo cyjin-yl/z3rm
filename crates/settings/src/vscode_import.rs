@@ -152,6 +152,8 @@ impl VsCodeSettings {
             scan_symlinks: ScanSymlinksSetting::default(),
             all_languages: LanguageToSettingsMap::default(),
             disable_ai: SaturatingBool::default(),
+            git_hosting_providers: Some(Vec::default()),
+            terminal: None,
         }
     }
 

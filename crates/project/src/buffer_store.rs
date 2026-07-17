@@ -1719,9 +1719,9 @@ fn apply_initial_line_ending(buffer: &mut Buffer, cx: &mut Context<Buffer>) {
     let language = buffer.language().map(|l| l.name());
     let settings = AllLanguageSettings::get(location, cx).language(location, language.as_ref(), cx);
     let desired = match settings.line_ending {
-        LineEndingSetting::Detect => return,
-        LineEndingSetting::PreferLf | LineEndingSetting::EnforceLf => LineEnding::Unix,
-        LineEndingSetting::PreferCrlf | LineEndingSetting::EnforceCrlf => LineEnding::Windows,
+        LineEndingSetting::Auto => return,
+        LineEndingSetting::Lf | LineEndingSetting::EnforceLf => LineEnding::Unix,
+        LineEndingSetting::Crlf | LineEndingSetting::EnforceCrlf => LineEnding::Windows,
     };
     if buffer.line_ending() != desired {
         buffer.set_line_ending(desired, cx);

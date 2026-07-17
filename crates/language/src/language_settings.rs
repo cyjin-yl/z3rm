@@ -563,9 +563,12 @@ impl From<EditPredictionPromptFormatContent> for EditPredictionPromptFormat {
     fn from(value: EditPredictionPromptFormatContent) -> Self {
         match value {
             EditPredictionPromptFormatContent::Infer => Self::Infer,
+            EditPredictionPromptFormatContent::Context => Self::Infer,
             EditPredictionPromptFormatContent::Zeta => Self::Zeta(ZetaVersion::Zeta1),
+            EditPredictionPromptFormatContent::Zeta1 => Self::Zeta(ZetaVersion::Zeta1),
             EditPredictionPromptFormatContent::Zeta2 => Self::Zeta(ZetaVersion::Zeta2),
             EditPredictionPromptFormatContent::Zeta2_1 => Self::Zeta(ZetaVersion::Zeta2_1),
+            EditPredictionPromptFormatContent::Zeta3 => Self::Zeta(ZetaVersion::Zeta2_1),
             EditPredictionPromptFormatContent::CodeLlama => Self::CodeLlama,
             EditPredictionPromptFormatContent::StarCoder => Self::StarCoder,
             EditPredictionPromptFormatContent::DeepseekCoder => Self::DeepseekCoder,
@@ -740,8 +743,11 @@ impl settings::Settings for AllLanguageSettings {
                 prettier: PrettierSettings {
                     allowed: prettier.allowed.unwrap(),
                     parser: prettier.parser.filter(|parser| !parser.is_empty()),
-                    plugins: prettier.plugins.unwrap_or_default(),
-                    options: prettier.options.unwrap_or_default(),
+                    plugins: prettier.plugins.unwrap_or_default().into_iter().collect(),
+                    options: match prettier.options.unwrap_or_default() {
+                        serde_json::Value::Object(map) => map.into_iter().collect(),
+                        _ => Default::default(),
+                    },
                 },
                 jsx_tag_auto_close: settings.jsx_tag_auto_close.unwrap().enabled.unwrap(),
                 enable_language_server: settings.enable_language_server.unwrap(),
@@ -767,8 +773,8 @@ impl settings::Settings for AllLanguageSettings {
                     show_parameter_hints: inlay_hints.show_parameter_hints.unwrap(),
                     show_other_hints: inlay_hints.show_other_hints.unwrap(),
                     show_background: inlay_hints.show_background.unwrap(),
-                    edit_debounce_ms: inlay_hints.edit_debounce_ms.unwrap(),
-                    scroll_debounce_ms: inlay_hints.scroll_debounce_ms.unwrap(),
+                    edit_debounce_ms: inlay_hints.edit_debounce_ms.unwrap() as u64,
+                    scroll_debounce_ms: inlay_hints.scroll_debounce_ms.unwrap() as u64,
                     toggle_on_modifiers_press: inlay_hints
                         .toggle_on_modifiers_press
                         .map(|m| m.into_gpui()),
@@ -795,7 +801,7 @@ impl settings::Settings for AllLanguageSettings {
                     words: completions.words.unwrap(),
                     words_min_length: completions.words_min_length.unwrap() as usize,
                     lsp: completions.lsp.unwrap(),
-                    lsp_fetch_timeout_ms: completions.lsp_fetch_timeout_ms.unwrap(),
+                    lsp_fetch_timeout_ms: completions.lsp_fetch_timeout_ms.unwrap() as u64,
                     lsp_insert_mode: completions.lsp_insert_mode.unwrap(),
                 },
                 debuggers: settings.debuggers.unwrap(),
@@ -806,7 +812,7 @@ impl settings::Settings for AllLanguageSettings {
         let default_language_settings = load_from_content(all_languages.defaults.clone());
 
         let mut languages = HashMap::default();
-        for (language_name, settings) in &all_languages.languages.0 {
+        for (language_name, settings) in &all_languages.languages {
             let mut language_settings = all_languages.defaults.clone();
             settings::merge_from::MergeFrom::merge_from(&mut language_settings, settings);
             languages.insert(
@@ -848,9 +854,9 @@ impl settings::Settings for AllLanguageSettings {
         let ollama = edit_predictions.ollama.unwrap();
         let ollama_settings = ollama
             .model
-            .filter(|model| !model.0.is_empty())
+            .filter(|model| !model.is_empty())
             .map(|model| OpenAiCompatibleEditPredictionSettings {
-                model: model.0,
+                model: model,
                 max_output_tokens: ollama.max_output_tokens.unwrap(),
                 api_url: ollama.api_url.unwrap().into(),
                 prompt_format: ollama.prompt_format.unwrap().into(),
@@ -866,25 +872,14 @@ impl settings::Settings for AllLanguageSettings {
             )
             .map(|(model, api_url)| OpenAiCompatibleEditPredictionSettings {
                 model,
-                max_output_tokens: openai_compatible_settings.max_output_tokens.unwrap(),
+                max_output_tokens: 0,
                 api_url: api_url.into(),
                 prompt_format: openai_compatible_settings.prompt_format.unwrap().into(),
             });
 
-        let mut file_types: FxHashMap<Arc<str>, (GlobSet, Vec<String>)> = FxHashMap::default();
-
-        for (language, patterns) in all_languages.file_types.iter().flatten() {
-            let mut builder = GlobSetBuilder::new();
-
-            for pattern in &patterns.0 {
-                builder.add(Glob::new(pattern).unwrap());
-            }
-
-            file_types.insert(
-                language.clone(),
-                (builder.build().unwrap(), patterns.0.clone()),
-            );
-        }
+        // 文件类型映射: 当前设置结构为 Vec<LanguageFileTypeContent>,
+        // 不包含语言名称关联, 使用语言定义中的扩展名进行检测
+        let file_types: FxHashMap<Arc<str>, (GlobSet, Vec<String>)> = FxHashMap::default();
 
         Self {
             edit_predictions: EditPredictionSettings {
