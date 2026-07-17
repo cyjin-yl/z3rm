@@ -48,6 +48,9 @@ workspace = true
 [dependencies.cli]
 workspace = true
 
+[dependencies.clap]
+workspace = true
+
 [dependencies.collections]
 workspace = true
 
@@ -169,12 +172,18 @@ workspace = true
 
 [dependencies.mux]
 workspace = true
+[dependencies.mux_protocol]
+workspace = true
+
+[dependencies.nanoid]
+workspace = true
 
 [dependencies.dirs]
 workspace = true
 
 [dependencies.tokio]
 workspace = true
+features = [ "macros"]
 
 [dependencies.notifications]
 workspace = true
@@ -342,7 +351,6 @@ features = [ "test-support"]
 
 [dev-dependencies.title_bar]
 workspace = true
-features = [ "test-support"]
 
 [dev-dependencies.workspace]
 workspace = true
@@ -350,7 +358,6 @@ features = [ "test-support"]
 
 [dev-dependencies.search]
 workspace = true
-features = [ "test-support"]
 
 [dev-dependencies.mux_protocol]
 workspace = true

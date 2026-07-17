@@ -4,6 +4,7 @@
 mod daemon;
 mod zed;
 mod input;
+mod cli;
 
 use std::sync::Arc;
 
@@ -156,6 +157,17 @@ fn watch_themes(fs: Arc<dyn Fs>, cx: &mut App) {
 fn main() {
     // §16.1 沙盒与权限检查
     sandbox::run_sandbox_launcher_if_invoked();
+
+    // §3.10 CLI 子命令处理: 如果是 CLI 命令, 执行后直接退出
+    if let Some(cmd) = cli::parse_cli_args() {
+        let rt = tokio::runtime::Runtime::new()
+            .expect("failed to create tokio runtime for CLI");
+        if let Err(e) = rt.block_on(async { cli::run_cli_command(cmd).await }) {
+            eprintln!("error: {}", e);
+            std::process::exit(1);
+        }
+        std::process::exit(0);
+    }
 
     #[cfg(unix)]
     util::prevent_root_execution();
