@@ -3,10 +3,11 @@ use crate::{
     EditorSettings, ExcerptRange, FormatTarget, MultiBuffer, MultiBufferSnapshot, NavigationData,
     ReportEditorEvent, SelectionEffects, ToPoint as _,
     display_map::HighlightKey,
-    editor_settings::SeedQuerySetting,
+    editor_settings::DiffViewStyle,
     persistence::{EditorDb, SerializedEditor},
     scroll::{ScrollAnchor, ScrollOffset},
 };
+use workspace::settings_stubs::SeedQuerySetting;
 use crate::stubs::ProjectBufferExt;
 use anyhow::{Context as _, Result, anyhow};
 use collections::{HashMap, HashSet};
@@ -1456,16 +1457,17 @@ impl SearchableItem for Editor {
         let snapshot = self.snapshot(window, cx);
         let selection = self.selections.newest_adjusted(&snapshot.display_snapshot);
         let buffer_snapshot = snapshot.buffer_snapshot();
-
         match setting {
-            SeedQuerySetting::Never => String::new(),
-            SeedQuerySetting::Selection | SeedQuerySetting::Always if !selection.is_empty() => {
+            SeedQuerySetting::None => String::new(),
+            SeedQuerySetting::Selection if !selection.is_empty() => {
                 buffer_snapshot
                     .text_for_range(selection.start..selection.end)
                     .collect()
             }
-            SeedQuerySetting::Selection => String::new(),
-            SeedQuerySetting::Always => {
+            SeedQuerySetting::Line => {
+                // Seed from current line text
+                // MultiBufferSnapshot lacks TextBufferSnapshot ToPoint/ToOffset traits,
+                // so we use surrounding_word with the selection anchor
                 let (range, kind) = buffer_snapshot
                     .surrounding_word(selection.start, Some(CharScopeContext::Completion));
                 if kind == Some(CharKind::Word) {
@@ -1476,6 +1478,18 @@ impl SearchableItem for Editor {
                 }
                 String::new()
             }
+            SeedQuerySetting::Surround => {
+                let (range, kind) = buffer_snapshot
+                    .surrounding_word(selection.start, Some(CharScopeContext::Completion));
+                if kind == Some(CharKind::Word) {
+                    let text: String = buffer_snapshot.text_for_range(range).collect();
+                    if !text.trim().is_empty() {
+                        return text;
+                    }
+                }
+                String::new()
+            }
+            _ => String::new(),
         }
     }
 
@@ -1993,17 +2007,17 @@ fn compute_format_target(
         let buffer = buffer_entity.read(cx);
         let settings = LanguageSettings::for_buffer(buffer, cx);
         match settings.format_on_save {
-            FormatOnSave::On | FormatOnSave::Off => {
+            FormatOnSave::On => {
                 return Some(FormatTarget::Buffers(buffers.clone()));
             }
-            FormatOnSave::Modifications | FormatOnSave::ModificationsIfAvailable => {}
+            FormatOnSave::Off | FormatOnSave::OnWithExtraLspActions => {}
         }
 
         let Some(diff_snapshot) = git_store
             .get_unstaged_diff(buffer.remote_id(), cx)
             .map(|diff| diff.read(cx).snapshot(cx))
         else {
-            if settings.format_on_save == FormatOnSave::ModificationsIfAvailable {
+            if settings.format_on_save == FormatOnSave::OnWithExtraLspActions {
                 fall_back_to_full_format = true;
             }
             continue;

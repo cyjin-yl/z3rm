@@ -301,14 +301,9 @@ impl Editor {
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(workspace) = self.workspace() else {
-            return;
-        };
-        let fs = workspace.read(cx).app_state().fs.clone();
-        let current_show = TabBarSettings::get_global(cx).show;
-        update_settings_file(fs, cx, move |setting, _| {
-            setting.tab_bar.get_or_insert_default().show = Some(!current_show);
-        });
+        // TabBarSettingsContent 不再有 show 字段,
+        // TabBarSettings::show 在 from_settings 中硬编码为 true (spec §16 Plan 16)
+        let _ = cx;
     }
 
     pub(super) fn toggle_indent_guides(

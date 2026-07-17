@@ -63,10 +63,8 @@ use multi_buffer::{
 
 use crate::stubs::{Breakpoint, BreakpointSessionState};
 use project::project_settings::ProjectSettings;
-use settings::{
-    GitGutterSetting, GitHunkStyleSetting, IndentGuideBackgroundColoring, IndentGuideColoring,
-    Settings,
-};
+use settings::{IndentGuideBackgroundColoring, IndentGuideColoring, Settings};
+use project::project_settings::{GitGutterSetting, GitHunkStyleSetting};
 use smallvec::{SmallVec, smallvec};
 use std::{
     any::TypeId,
@@ -5047,27 +5045,27 @@ impl EditorElement {
 
             let line_color = match (settings.coloring, indent_guide.active) {
                 (IndentGuideColoring::Disabled, _) => None,
-                (IndentGuideColoring::Fixed, false) => {
+                (IndentGuideColoring::SingleHue, false) => {
                     Some(cx.theme().colors().editor_indent_guide)
                 }
-                (IndentGuideColoring::Fixed, true) => {
+                (IndentGuideColoring::SingleHue, true) => {
                     Some(cx.theme().colors().editor_indent_guide_active)
                 }
-                (IndentGuideColoring::IndentAware, false) => {
+                (IndentGuideColoring::DistinctHues, false) => {
                     Some(faded_color(indent_accent_colors, INDENT_AWARE_ALPHA))
                 }
-                (IndentGuideColoring::IndentAware, true) => {
+                (IndentGuideColoring::DistinctHues, true) => {
                     Some(faded_color(indent_accent_colors, INDENT_AWARE_ACTIVE_ALPHA))
                 }
             };
 
             let background_color = match (settings.background_coloring, indent_guide.active) {
-                (IndentGuideBackgroundColoring::Disabled, _) => None,
-                (IndentGuideBackgroundColoring::IndentAware, false) => Some(faded_color(
+                (IndentGuideBackgroundColoring::Off, _) => None,
+                (IndentGuideBackgroundColoring::Active, false) => Some(faded_color(
                     indent_accent_colors,
                     INDENT_AWARE_BACKGROUND_ALPHA,
                 )),
-                (IndentGuideBackgroundColoring::IndentAware, true) => Some(faded_color(
+                (IndentGuideBackgroundColoring::Active, true) => Some(faded_color(
                     indent_accent_colors,
                     INDENT_AWARE_BACKGROUND_ACTIVE_ALPHA,
                 )),
@@ -5701,6 +5699,26 @@ impl EditorElement {
                         window,
                     );
                 }
+                DocumentColorsRenderMode::Full => {
+                    self.paint_highlighted_range(
+                        range.clone(),
+                        true,
+                        *color,
+                        Pixels::ZERO,
+                        line_end_overshoot,
+                        layout,
+                        window,
+                    );
+                    self.paint_highlighted_range(
+                        range.clone(),
+                        false,
+                        *color,
+                        Pixels::ZERO,
+                        line_end_overshoot,
+                        layout,
+                        window,
+                    );
+                }
             }
         }
     }
@@ -6297,6 +6315,7 @@ impl EditorElement {
                                 ..Default::default()
                             },
                             MinimapThumbBorder::None => Default::default(),
+                            MinimapThumbBorder::Rounded | MinimapThumbBorder::Square | MinimapThumbBorder::Full => Edges::all(ScrollbarLayout::BORDER_WIDTH),
                         };
 
                         window.paint_layer(minimap_hitbox.bounds, |window| {
@@ -6534,7 +6553,7 @@ impl EditorElement {
             .render_hunk_as_staged(&status, cx);
         let unstaged_hollow = matches!(
             ProjectSettings::get_global(cx).git.hunk_style,
-            GitHunkStyleSetting::UnstagedHollow
+            GitHunkStyleSetting::StagedSolid
         );
 
         unstaged == unstaged_hollow
@@ -7547,9 +7566,9 @@ impl LineWithInvisibles {
 
         let invisible_iter = self.invisibles.iter().map(extract_whitespace_info);
         match whitespace_setting {
-            ShowWhitespaceSetting::None => (),
+            ShowWhitespaceSetting::Off => (),
             ShowWhitespaceSetting::All => invisible_iter.for_each(|(_, paint)| paint(window, cx)),
-            ShowWhitespaceSetting::Selection => invisible_iter.for_each(|([start, _], paint)| {
+            ShowWhitespaceSetting::Selected => invisible_iter.for_each(|([start, _], paint)| {
                 let invisible_point = DisplayPoint::new(row, start as u32);
                 if !selection_ranges
                     .iter()
@@ -7569,49 +7588,6 @@ impl LineWithInvisibles {
                     }
                     previous_start = start;
                     paint(window, cx);
-                }
-            }
-
-            // For a whitespace to be on a boundary, any of the following conditions need to be met:
-            // - It is a tab
-            // - It is adjacent to an edge (start or end)
-            // - It is adjacent to a whitespace (left or right)
-            ShowWhitespaceSetting::Boundary => {
-                // We'll need to keep track of the last invisible we've seen and then check if we are adjacent to it for some of
-                // the above cases.
-                // Note: We zip in the original `invisibles` to check for tab equality
-                let mut last_seen: Option<(bool, usize, Box<dyn Fn(&mut Window, &mut App)>)> = None;
-                for (([start, end], paint), invisible) in
-                    invisible_iter.zip_eq(self.invisibles.iter())
-                {
-                    let should_render = match (&last_seen, invisible) {
-                        (_, Invisible::Tab { .. }) => true,
-                        (Some((_, last_end, _)), _) => *last_end == start,
-                        _ => false,
-                    };
-
-                    if should_render || start == 0 || end == self.len {
-                        paint(window, cx);
-
-                        // Since we are scanning from the left, we will skip over the first available whitespace that is part
-                        // of a boundary between non-whitespace segments, so we correct by manually redrawing it if needed.
-                        if let Some((should_render_last, last_end, paint_last)) = last_seen {
-                            // Note that we need to make sure that the last one is actually adjacent
-                            if !should_render_last && last_end == start {
-                                paint_last(window, cx);
-                            }
-                        }
-                    }
-
-                    // Manually render anything within a selection
-                    let invisible_point = DisplayPoint::new(row, start as u32);
-                    if selection_ranges.iter().any(|region| {
-                        region.start <= invisible_point && invisible_point < region.end
-                    }) {
-                        paint(window, cx);
-                    }
-
-                    last_seen = Some((should_render, end, paint));
                 }
             }
         }

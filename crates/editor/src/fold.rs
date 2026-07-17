@@ -808,7 +808,7 @@ impl Editor {
 
         if self.mode.is_minimap()
             || WorkspaceSettings::get(None, cx).restore_on_startup
-                == RestoreOnStartupBehavior::EmptyTab
+                == RestoreOnStartupBehavior::Nothing
         {
             return;
         }
@@ -985,7 +985,7 @@ impl Editor {
     ) {
         if self.mode.is_minimap()
             || WorkspaceSettings::get(None, cx).restore_on_startup
-                == RestoreOnStartupBehavior::EmptyTab
+                == RestoreOnStartupBehavior::Nothing
         {
             return;
         }

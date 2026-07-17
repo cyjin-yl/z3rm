@@ -1647,7 +1647,7 @@ impl Editor {
             });
 
             if WorkspaceSettings::get(None, cx).restore_on_startup
-                != RestoreOnStartupBehavior::EmptyTab
+                != RestoreOnStartupBehavior::Nothing
                 && let Some(workspace_id) = self.workspace_serialization_id(cx)
             {
                 let snapshot = self.buffer().read(cx).snapshot(cx);

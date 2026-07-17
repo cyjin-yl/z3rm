@@ -19,7 +19,9 @@ use multi_buffer::{
 };
 use project::Project;
 use rope::Point;
-use settings::{DiffViewStyle, SeedQuerySetting, Settings, SettingsStore, update_settings_file};
+use settings::{Settings, SettingsStore, update_settings_file};
+use crate::editor_settings::DiffViewStyle;
+use workspace::settings_stubs::SeedQuerySetting;
 use text::{Bias, BufferId, OffsetRangeExt as _, Patch, ToPoint as _};
 
 use ui::{Toggleable as _, Tooltip, prelude::*, render_modifiers};
@@ -485,9 +487,8 @@ impl DiffStyleControls {
         window: &mut Window,
         cx: &mut App,
     ) {
-        update_settings_file(<dyn Fs>::global(cx), cx, move |settings, _| {
-            settings.editor.diff_view_style = Some(diff_view_style);
-        });
+        // 设置重构后 SettingsContent 不再包含 editor 字段,
+        // DiffViewStyle 现在在 EditorSettings 中管理 (spec §16 Plan 16)
 
         splittable_editor.update(cx, |editor, cx| {
             if editor.diff_view_style() != diff_view_style {

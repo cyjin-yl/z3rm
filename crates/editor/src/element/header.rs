@@ -14,7 +14,8 @@ use gpui::{
 use language::language_settings::ShowWhitespaceSetting;
 use multi_buffer::{Anchor, ExcerptBoundaryInfo, MultiBuffer};
 use project::Entry;
-use settings::{RelativeLineNumbers, Settings};
+use settings::Settings;
+use crate::editor_settings::RelativeLineNumbers;
 use smallvec::SmallVec;
 use sum_tree::Bias;
 use text::BufferId;

@@ -3,14 +3,203 @@ use core::num;
 use gpui::App;
 use language::CursorShape;
 use project::project_settings::DiagnosticSeverity;
-pub use settings::{
-    CodeLens, CompletionDetailAlignment, CompletionMenuItemKind, CurrentLineHighlight, DelayMs,
-    DiffViewStyle, DisplayIn, DocumentColorsRenderMode, DoubleClickInMultibuffer,
-    GoToDefinitionFallback, GoToDefinitionScrollStrategy, MinimapThumb, MinimapThumbBorder,
-    MultiCursorModifier, ScrollBeyondLastLine, ScrollbarDiagnostics, SeedQuerySetting, ShowMinimap,
-    SnippetSortOrder,
-};
-use settings::{RegisterSetting, RelativeLineNumbers, Settings};
+/// 兼容占位类型 - 设置重构后缺失的类型 (spec §16 Plan 16)
+/// 这些类型已从 settings crate 移除, 在此定义以保持下游代码编译。
+
+/// 代码透镜
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum CodeLens {
+    #[default]
+    On,
+    Off,
+}
+
+impl CodeLens {
+    /// 是否内联显示代码透镜
+    pub fn inline(&self) -> bool {
+        matches!(self, CodeLens::On)
+    }
+}
+
+/// 补全详情对齐
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum CompletionDetailAlignment {
+    #[default]
+    Left,
+    Right,
+}
+
+/// 补全菜单项种类
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum CompletionMenuItemKind {
+    #[default]
+    All,
+    Symbols,
+    Keywords,
+    Types,
+}
+
+/// 当前行高亮
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum CurrentLineHighlight {
+    #[default]
+    Line,
+    Gutter,
+    All,
+    None,
+}
+
+/// 延迟毫秒数
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct DelayMs(pub u64);
+
+/// 差异视图样式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum DiffViewStyle {
+    #[default]
+    Unified,
+    Split,
+}
+
+/// 显示位置
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum DisplayIn {
+    #[default]
+    ActiveEditor,
+    AllEditors,
+}
+
+/// 文档颜色渲染模式
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum DocumentColorsRenderMode {
+    #[default]
+    Inlay,
+    Background,
+    Border,
+    Full,
+    None,
+}
+
+/// 多缓冲区双击行为
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum DoubleClickInMultibuffer {
+    #[default]
+    Select,
+    Open,
+}
+
+/// 跳转定义回退策略
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum GoToDefinitionFallback {
+    #[default]
+    Lens,
+    Search,
+    Never,
+    None,
+    FindAllReferences,
+}
+
+/// 跳转定义滚动策略
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum GoToDefinitionScrollStrategy {
+    #[default]
+    Center,
+    Minimum,
+    Top,
+    Preserve,
+}
+
+/// 缩略图
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum MinimapThumb {
+    #[default]
+    Always,
+    Hover,
+}
+/// 缩略图边框
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum MinimapThumbBorder {
+    #[default]
+    Full,
+    LeftOnly,
+    LeftOpen,
+    RightOpen,
+    None,
+    Rounded,
+    Square,
+}
+
+/// 多光标修饰键
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum MultiCursorModifier {
+    #[default]
+    Alt,
+    CmdOrCtrl,
+}
+
+/// 滚动超过最后一行
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum ScrollBeyondLastLine {
+    #[default]
+    OnePage,
+    Off,
+    VerticalScrollMargin,
+}
+
+/// 滚动条诊断显示
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum ScrollbarDiagnostics {
+    #[default]
+    None,
+    All,
+    Error,
+    Warning,
+    Information,
+}
+
+/// 种子查询设置 (来自 workspace::settings_stubs)
+pub use workspace::settings_stubs::SeedQuerySetting;
+
+/// 显示缩略图
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum ShowMinimap {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+/// 代码片段排序
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum SnippetSortOrder {
+    #[default]
+    Relevance,
+    Alphabetical,
+    Frequency,
+}
+
+/// 相对行号
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum RelativeLineNumbers {
+    #[default]
+    Disabled,
+    Enabled,
+    Wrapped,
+}
+
+impl RelativeLineNumbers {
+    /// 是否启用了相对行号
+    pub fn enabled(&self) -> bool {
+        !matches!(self, RelativeLineNumbers::Disabled)
+    }
+
+    /// 是否使用环绕模式 (wrapped buffer rows)
+    pub fn wrapped(&self) -> bool {
+        matches!(self, RelativeLineNumbers::Wrapped)
+    }
+}
+
+use settings::{RegisterSetting, Settings};
 use ui::scrollbars::ShowScrollbar;
 
 /// Imports from the VSCode settings at
@@ -193,124 +382,103 @@ impl EditorSettings {
 }
 
 impl Settings for EditorSettings {
-    fn from_settings(content: &settings::SettingsContent) -> Self {
-        let editor = content.editor.clone();
-        let scrollbar = editor.scrollbar.unwrap();
-        let minimap = editor.minimap.unwrap();
-        let gutter = editor.gutter.unwrap();
-        let axes = scrollbar.axes.unwrap();
-        let toolbar = editor.toolbar.unwrap();
-        let search = editor.search.unwrap();
-        let drag_and_drop_selection = editor.drag_and_drop_selection.unwrap();
-        let sticky_scroll = editor.sticky_scroll.unwrap();
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        // 设置重构后 SettingsContent 不再包含 editor 字段,
+        // 返回默认值 (spec §16 Plan 16)
         Self {
-            cursor_blink: editor.cursor_blink.unwrap(),
-            cursor_shape: editor.cursor_shape.map(Into::into),
-            current_line_highlight: editor.current_line_highlight.unwrap(),
-            selection_highlight: editor.selection_highlight.unwrap(),
-            rounded_selection: editor.rounded_selection.unwrap(),
-            lsp_highlight_debounce: editor.lsp_highlight_debounce.unwrap(),
-            hover_popover_enabled: editor.hover_popover_enabled.unwrap(),
-            hover_popover_delay: editor.hover_popover_delay.unwrap(),
-            hover_popover_sticky: editor.hover_popover_sticky.unwrap(),
-            hover_popover_hiding_delay: editor.hover_popover_hiding_delay.unwrap(),
+            cursor_blink: true,
+            cursor_shape: None,
+            current_line_highlight: CurrentLineHighlight::default(),
+            selection_highlight: true,
+            rounded_selection: true,
+            lsp_highlight_debounce: DelayMs(100),
+            hover_popover_enabled: true,
+            hover_popover_delay: DelayMs(50),
+            hover_popover_sticky: true,
+            hover_popover_hiding_delay: DelayMs(100),
             toolbar: Toolbar {
-                breadcrumbs: toolbar.breadcrumbs.unwrap(),
-                quick_actions: toolbar.quick_actions.unwrap(),
-                selections_menu: toolbar.selections_menu.unwrap(),
-                agent_review: toolbar.agent_review.unwrap(),
-                code_actions: toolbar.code_actions.unwrap(),
+                breadcrumbs: true,
+                quick_actions: true,
+                selections_menu: true,
+                agent_review: true,
+                code_actions: true,
             },
             scrollbar: Scrollbar {
-                show: scrollbar.show.map(ui_scrollbar_settings_from_raw).unwrap(),
-                git_diff: scrollbar.git_diff.unwrap()
-                    && content
-                        .git
-                        .as_ref()
-                        .unwrap()
-                        .enabled
-                        .unwrap()
-                        .is_git_diff_enabled(),
-                selected_text: scrollbar.selected_text.unwrap(),
-                selected_symbol: scrollbar.selected_symbol.unwrap(),
-                search_results: scrollbar.search_results.unwrap(),
-                diagnostics: scrollbar.diagnostics.unwrap(),
-                cursors: scrollbar.cursors.unwrap(),
+                show: ShowScrollbar::Auto,
+                git_diff: true,
+                selected_text: true,
+                selected_symbol: true,
+                search_results: true,
+                diagnostics: ScrollbarDiagnostics::default(),
+                cursors: true,
                 axes: ScrollbarAxes {
-                    horizontal: axes.horizontal.unwrap(),
-                    vertical: axes.vertical.unwrap(),
+                    horizontal: true,
+                    vertical: true,
                 },
             },
             minimap: Minimap {
-                show: minimap.show.unwrap(),
-                display_in: minimap.display_in.unwrap(),
-                thumb: minimap.thumb.unwrap(),
-                thumb_border: minimap.thumb_border.unwrap(),
-                current_line_highlight: minimap.current_line_highlight,
-                max_width_columns: minimap.max_width_columns.unwrap(),
+                show: ShowMinimap::default(),
+                display_in: DisplayIn::default(),
+                thumb: MinimapThumb::default(),
+                thumb_border: MinimapThumbBorder::default(),
+                current_line_highlight: None,
+                max_width_columns: num::NonZeroU32::new(128).unwrap(),
             },
             gutter: Gutter {
-                min_line_number_digits: gutter.min_line_number_digits.unwrap(),
-                line_numbers: gutter.line_numbers.unwrap(),
-                runnables: gutter.runnables.unwrap(),
-                bookmarks: gutter.bookmarks.unwrap(),
-                breakpoints: gutter.breakpoints.unwrap(),
-                folds: gutter.folds.unwrap(),
+                min_line_number_digits: 2,
+                line_numbers: true,
+                runnables: true,
+                breakpoints: true,
+                bookmarks: true,
+                folds: true,
             },
-            scroll_beyond_last_line: editor.scroll_beyond_last_line.unwrap(),
-            vertical_scroll_margin: editor.vertical_scroll_margin.unwrap() as f64,
-            autoscroll_on_clicks: editor.autoscroll_on_clicks.unwrap(),
-            horizontal_scroll_margin: editor.horizontal_scroll_margin.unwrap(),
-            scroll_sensitivity: editor.scroll_sensitivity.unwrap(),
-            mouse_wheel_zoom: editor.mouse_wheel_zoom.unwrap(),
-            fast_scroll_sensitivity: editor.fast_scroll_sensitivity.unwrap(),
-            sticky_scroll: StickyScroll {
-                enabled: sticky_scroll.enabled.unwrap(),
-            },
-            relative_line_numbers: editor.relative_line_numbers.unwrap(),
-            seed_search_query_from_cursor: editor.seed_search_query_from_cursor.unwrap(),
-            use_smartcase_search: editor.use_smartcase_search.unwrap(),
-            multi_cursor_modifier: editor.multi_cursor_modifier.unwrap(),
-            redact_private_values: editor.redact_private_values.unwrap(),
-            expand_excerpt_lines: editor.expand_excerpt_lines.unwrap(),
-            excerpt_context_lines: editor.excerpt_context_lines.unwrap(),
-            middle_click_paste: editor.middle_click_paste.unwrap(),
-            double_click_in_multibuffer: editor.double_click_in_multibuffer.unwrap(),
-            search_wrap: editor.search_wrap.unwrap(),
+            scroll_beyond_last_line: ScrollBeyondLastLine::default(),
+            vertical_scroll_margin: 0.0,
+            autoscroll_on_clicks: true,
+            horizontal_scroll_margin: 0.0,
+            scroll_sensitivity: 1.0,
+            mouse_wheel_zoom: false,
+            fast_scroll_sensitivity: 2.0,
+            sticky_scroll: StickyScroll { enabled: false },
+            relative_line_numbers: RelativeLineNumbers::default(),
+            seed_search_query_from_cursor: SeedQuerySetting::default(),
+            use_smartcase_search: true,
+            multi_cursor_modifier: MultiCursorModifier::default(),
+            redact_private_values: false,
+            expand_excerpt_lines: 3,
+            excerpt_context_lines: 3,
+            middle_click_paste: false,
+            double_click_in_multibuffer: DoubleClickInMultibuffer::default(),
+            search_wrap: true,
             search: SearchSettings {
-                button: search.button.unwrap(),
-                whole_word: search.whole_word.unwrap(),
-                case_sensitive: search.case_sensitive.unwrap(),
-                include_ignored: search.include_ignored.unwrap(),
-                regex: search.regex.unwrap(),
-                center_on_match: search.center_on_match.unwrap(),
+                button: true,
+                whole_word: false,
+                case_sensitive: false,
+                include_ignored: false,
+                regex: false,
+                center_on_match: true,
             },
-            auto_signature_help: editor.auto_signature_help.unwrap(),
-            show_signature_help_after_edits: editor.show_signature_help_after_edits.unwrap(),
-            go_to_definition_fallback: editor.go_to_definition_fallback.unwrap(),
-            go_to_definition_scroll_strategy: editor.go_to_definition_scroll_strategy.unwrap(),
-            jupyter: Jupyter {
-                enabled: editor.jupyter.unwrap().enabled.unwrap(),
-            },
-            snippet_sort_order: editor.snippet_sort_order.unwrap(),
-            diagnostics_max_severity: editor.diagnostics_max_severity.map(Into::into),
-            inline_code_actions: editor.inline_code_actions.unwrap(),
+            auto_signature_help: true,
+            show_signature_help_after_edits: false,
+            go_to_definition_fallback: GoToDefinitionFallback::default(),
+            go_to_definition_scroll_strategy: GoToDefinitionScrollStrategy::default(),
+            jupyter: Jupyter { enabled: true },
+            snippet_sort_order: SnippetSortOrder::default(),
+            diagnostics_max_severity: None,
+            inline_code_actions: false,
             drag_and_drop_selection: DragAndDropSelection {
-                enabled: drag_and_drop_selection.enabled.unwrap(),
-                delay: drag_and_drop_selection.delay.unwrap(),
+                enabled: true,
+                delay: DelayMs(300),
             },
-            code_lens: editor.code_lens.unwrap(),
-            lsp_document_colors: editor.lsp_document_colors.unwrap(),
-            lsp_document_links: editor.lsp_document_links.unwrap(),
-            minimum_contrast_for_highlights: editor.minimum_contrast_for_highlights.unwrap().0,
-            completion_menu_scrollbar: editor
-                .completion_menu_scrollbar
-                .map(ui_scrollbar_settings_from_raw)
-                .unwrap(),
-            completion_detail_alignment: editor.completion_detail_alignment.unwrap(),
-            completion_menu_item_kind: editor.completion_menu_item_kind.unwrap(),
-            diff_view_style: editor.diff_view_style.unwrap(),
-            minimum_split_diff_width: editor.minimum_split_diff_width.unwrap(),
+            code_lens: CodeLens::default(),
+            lsp_document_colors: DocumentColorsRenderMode::default(),
+            lsp_document_links: true,
+            minimum_contrast_for_highlights: 0.15,
+            completion_menu_scrollbar: ShowScrollbar::Auto,
+            completion_detail_alignment: CompletionDetailAlignment::default(),
+            completion_menu_item_kind: CompletionMenuItemKind::default(),
+            diff_view_style: DiffViewStyle::default(),
+            minimum_split_diff_width: 480.0,
         }
     }
 }

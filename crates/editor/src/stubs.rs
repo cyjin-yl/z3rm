@@ -10,7 +10,7 @@ use rpc::proto::PeerId;
 use text::{Anchor, BufferId, Point};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use settings::SnippetSortOrder;
+use crate::editor_settings::SnippetSortOrder;
 use markdown::Markdown;
 use crate::display_map::BlockProperties;
 

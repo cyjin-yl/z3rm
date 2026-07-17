@@ -38,9 +38,7 @@ impl Editor {
             .into_iter()
             .filter(|buffer| {
                 let buffer = buffer.read(cx);
-                !LanguageSettings::for_buffer(&buffer, cx)
-                    .document_folding_ranges
-                    .enabled()
+                false
             })
             .map(|buffer| buffer.read(cx).remote_id())
             .collect::<Vec<_>>();

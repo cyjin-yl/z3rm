@@ -28,7 +28,7 @@ mod toolbar;
 pub mod welcome;
 pub mod workspace_error;
 pub mod workspace_settings;
-mod settings_stubs;
+pub mod settings_stubs;
 
 pub use dock::Panel;
 pub use multi_workspace::{
