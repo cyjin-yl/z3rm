@@ -8,6 +8,7 @@ mod decline;
 mod lca;
 mod memtable;
 mod monitor;
+mod git_hook;
 mod quota;
 mod storage;
 mod version_tree;
