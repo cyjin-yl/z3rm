@@ -1,4 +1,6 @@
-// §16.7 输入处理与 prefix mode 状态机 (spec §16.7, Plan 17)
+// §16.7 输入路由优先级链 (spec §16.7, Plan 21)
+//
+// 输入优先级: IME → 扩展 → prefix mode → Agent CLI → 全屏应用 → copy mode → 终端应用
 //
 // 实现 prefix mode 状态机，支持 tmux/screen 风格的 prefix key → 命令键模式。
 // 全屏应用检测 (alt screen / bracketed paste / mouse tracking) 触发 passthrough。
@@ -316,6 +318,188 @@ pub fn default_prefix_timeout() -> Duration {
     Duration::from_millis(500)
 }
 
+// ============================================================================
+// §16.7 Pane 模式状态 (Plan 21)
+// ============================================================================
+
+/// §16.7 Pane 模式集合，用于判断当前终端处于什么模式
+///
+/// 由 dispatch_context 从 Terminal 的 Modes 标志位构建。
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PaneModes {
+    /// Alt screen 模式 (DECSET 1049/1047) — vim, htop, less 等全屏应用
+    pub alt_screen: bool,
+    /// Bracketed paste 模式 (DECSET 2004)
+    pub bracketed_paste: bool,
+    /// Mouse tracking 模式 (DECSET 1002/1003/1006)
+    pub mouse_tracking: bool,
+    /// 其他 DECSET 模式已启用
+    pub any_decset: bool,
+}
+
+/// §16.7 检查 Pane 是否处于全屏应用模式
+///
+/// 当任一模式 (alt_screen, bracketed_paste, mouse_tracking, any_decset)
+/// 为 true 时，认为当前 pane 运行全屏应用，输入应直接透传到 PTY。
+pub fn is_full_screen_active(modes: &PaneModes) -> bool {
+    modes.alt_screen || modes.bracketed_paste || modes.mouse_tracking || modes.any_decset
+}
+
+// ============================================================================
+// §16.7 输入路由优先级链 (Plan 21)
+// ============================================================================
+
+/// §16.7 输入路由上下文
+///
+/// 包含输入路由决策所需的全部状态信息。
+/// 由调用方 (TerminalView) 在 key_down 处理时构建并传入。
+#[derive(Debug, Clone)]
+pub struct KeyDispatchContext {
+    /// IME 是否处于组字中 (composition active)。组字期间按键路由到 IME。
+    pub ime_composing: bool,
+    /// 扩展全局快捷键匹配结果。Some(action_id) 表示匹配到扩展快捷键。
+    pub extension_shortcut: Option<String>,
+    /// Prefix mode 状态机。
+    pub prefix_mode_machine: PrefixModeMachine,
+    /// 当前 pane 的模式状态 (alt screen, bracketed paste 等)。
+    pub pane_modes: PaneModes,
+    /// Agent CLI 是否处于活动状态 (agent 工具在终端中运行)。
+    /// 活动期间所有输入直接透传到 PTY，不经过 prefix mode 等拦截。
+    pub agent_cli_mode: bool,
+    /// Copy mode (vi 浏览模式) 是否激活。
+    pub copy_mode: bool,
+}
+
+/// §16.7 输入路由结果
+///
+/// 优先级链的每一步返回对应的路由结果，调用方根据结果执行相应操作。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KeyDispatchResult {
+    /// 路由到 IME: 按键由输入法处理，不发送到 PTY
+    RouteToIme,
+    /// 执行扩展全局快捷键。包含扩展 action ID。
+    ExecuteExtensionAction(String),
+    /// 执行 prefix mode 命令。调用方应执行对应的 mux 命令。
+    ExecutePrefixCommand,
+    /// 按键透传到 PTY (无匹配或全屏应用模式)
+    Passthrough,
+    /// 双击 prefix key，发送 literal 字节到 PTY
+    SendLiteral {
+        /// 要发送的字节 (prefix key 本身)
+        bytes: Vec<u8>,
+    },
+    /// 发送到 PTY (终端应用)
+    SendToPty {
+        /// 要发送的字节
+        bytes: Vec<u8>,
+    },
+    /// 路由到 Copy mode 处理器
+    RouteToCopyMode,
+    /// Agent CLI 透传: 输入直接发送到 PTY，不经过任何拦截
+    RouteToAgentCli,
+}
+
+/// §16.7 输入路由优先级链调度器
+///
+/// 按以下优先级顺序检查输入路由:
+/// 1. IME composing — 组字期间按键由 IME 处理
+/// 2. 扩展全局快捷键 — 扩展定义的快捷键优先于 terminal 快捷键
+/// 3. Prefix mode — 如果处于 prefix wait 状态，处理 prefix key
+/// 4. Agent CLI 透传 — agent CLI 运行时输入直接透传
+/// 5. 全屏应用透传 — alt screen / bracketed paste / mouse tracking 模式下透传
+/// 6. Copy mode — vi 浏览模式处理
+/// 7. 终端应用 — 默认发送到 PTY
+///
+/// 返回值指示调用方应采取的动作。
+pub fn handle_key_event(
+    key_bytes: &[u8],
+    is_prefix_key: bool,
+    binding_match: bool,
+    ctx: &mut KeyDispatchContext,
+) -> KeyDispatchResult {
+    // §16.7 Step 1: IME composing?
+    // 组字期间按键由 IME 处理，不发送到 PTY
+    if ctx.ime_composing {
+        return KeyDispatchResult::RouteToIme;
+    }
+
+    // §16.7 Step 2: Extension global shortcut?
+    // 扩展快捷键优先于 terminal 快捷键
+    if let Some(action) = &ctx.extension_shortcut {
+        return KeyDispatchResult::ExecuteExtensionAction(action.clone());
+    }
+
+    // §16.7 Step 3: Prefix mode active?
+    // 处理 prefix mode 状态机
+    let machine = &mut ctx.prefix_mode_machine;
+    if machine.is_prefix_wait() {
+        // §16.7 处于 prefix wait 状态，处理后续按键
+        let action = machine.on_prefix_wait_key(is_prefix_key, binding_match);
+        match action {
+            PrefixAction::ExecuteCommand => return KeyDispatchResult::ExecutePrefixCommand,
+            PrefixAction::DoubleTapLiteral => {
+                return KeyDispatchResult::SendLiteral {
+                    bytes: key_bytes.to_vec(),
+                }
+            }
+            PrefixAction::Passthrough => return KeyDispatchResult::Passthrough,
+            PrefixAction::EnterPrefixMode => {} // 不会在此分支触发
+        }
+    }
+
+    // §16.7 Step 4: Agent CLI passthrough?
+    // Agent CLI 运行时，输入直接透传到 PTY，不经过 prefix mode 等拦截
+    if ctx.agent_cli_mode {
+        return KeyDispatchResult::RouteToAgentCli;
+    }
+
+    // §16.7 Step 5: Full-screen app passthrough?
+    // 全屏应用模式下 prefix key 也透传到 PTY
+    if is_full_screen_active(&ctx.pane_modes) {
+        if is_prefix_key && machine.is_prefix_wait() {
+            // §16.7 双击 prefix key: 发送 literal 字节
+            machine.on_timeout();
+            return KeyDispatchResult::SendLiteral {
+                bytes: key_bytes.to_vec(),
+            }
+        }
+        // §16.7 全屏应用 passthrough: 直接发送到 PTY
+        return KeyDispatchResult::SendToPty {
+            bytes: key_bytes.to_vec(),
+        };
+    }
+
+    // §16.7 检查是否为 prefix key，进入 prefix mode
+    if is_prefix_key {
+        let action = machine.on_prefix_key();
+        match action {
+            PrefixAction::EnterPrefixMode => {
+                // §16.7 进入 prefix mode，等待后续按键
+                return KeyDispatchResult::Passthrough;
+            }
+            PrefixAction::Passthrough => {
+                // §16.7 全屏模式下 prefix key 透传 (已由上面的全屏检测处理)
+                return KeyDispatchResult::SendToPty {
+                    bytes: key_bytes.to_vec(),
+                };
+            }
+            _ => {}
+        }
+    }
+
+    // §16.7 Step 6: Copy mode?
+    // vi 浏览模式下按键由 copy mode 处理器处理
+    if ctx.copy_mode {
+        return KeyDispatchResult::RouteToCopyMode;
+    }
+
+    // §16.7 Step 7: Terminal application (default)
+    // 默认将按键发送到 PTY
+    KeyDispatchResult::SendToPty {
+        bytes: key_bytes.to_vec(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -503,5 +687,258 @@ mod tests {
         let bytes = b"\x1b[?h";
         let code = parse_csi_parameter(bytes, 0);
         assert_eq!(code, None);
+    }
+
+    #[test]
+    fn test_priority_ime_composing() {
+        // §16.7 测试: IME 组字期间按键路由到 IME
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: true,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        let result = handle_key_event(b"a", false, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::RouteToIme);
+    }
+
+    #[test]
+    fn test_priority_extension_shortcut() {
+        // §16.7 测试: 扩展全局快捷键优先于 prefix mode
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: Some("toggle_pane".to_string()),
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        let result = handle_key_event(b"c", false, false, &mut ctx);
+        assert_eq!(
+            result,
+            KeyDispatchResult::ExecuteExtensionAction("toggle_pane".to_string())
+        );
+    }
+
+    #[test]
+    fn test_priority_prefix_execute_command() {
+        // §16.7 测试: prefix mode 匹配 binding → 执行命令
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        // 先按下 prefix key 进入 prefix wait
+        let result = handle_key_event(b"\x02", true, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::Passthrough);
+
+        // 再按下匹配的 binding 键
+        let result = handle_key_event(b"c", false, true, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::ExecutePrefixCommand);
+    }
+
+    #[test]
+    fn test_priority_prefix_passthrough_no_match() {
+        // §16.7 测试: prefix mode 不匹配 → 透传到 PTY
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        // 进入 prefix wait
+        let _ = handle_key_event(b"\x02", true, false, &mut ctx);
+
+        // 不匹配的键 → 透传
+        let result = handle_key_event(b"x", false, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::Passthrough);
+    }
+
+    #[test]
+    fn test_priority_prefix_double_tap() {
+        // §16.7 测试: prefix mode double-tap → 发送 literal 字节
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        // 进入 prefix wait
+        let _ = handle_key_event(b"\x02", true, false, &mut ctx);
+
+        // 再次按下 prefix key (double-tap)
+        let result = handle_key_event(b"\x02", true, false, &mut ctx);
+        assert_eq!(
+            result,
+            KeyDispatchResult::SendLiteral { bytes: vec![0x02] }
+        );
+    }
+
+    #[test]
+    fn test_priority_agent_cli_passthrough() {
+        // §16.7 测试: Agent CLI 透传 — 输入直接发送到 PTY
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: true,
+            copy_mode: false,
+        };
+
+        let result = handle_key_event(b"a", false, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::RouteToAgentCli);
+    }
+
+    #[test]
+    fn test_priority_full_screen_passthrough() {
+        // §16.7 测试: 全屏应用模式下输入透传到 PTY
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes {
+                alt_screen: true,
+                bracketed_paste: false,
+                mouse_tracking: false,
+                any_decset: false,
+            },
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        let result = handle_key_event(b"v", false, false, &mut ctx);
+        assert_eq!(
+            result,
+            KeyDispatchResult::SendToPty { bytes: vec![b'v'] }
+        );
+    }
+
+    #[test]
+    fn test_priority_copy_mode() {
+        // §16.7 测试: Copy mode 激活时路由到 copy mode 处理器
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: true,
+        };
+
+        let result = handle_key_event(b"j", false, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::RouteToCopyMode);
+    }
+
+    #[test]
+    fn test_priority_terminal_default() {
+        // §16.7 测试: 默认路由到终端应用 (PTY)
+        let machine = PrefixModeMachine::new(PrefixModeConfig::default());
+        let mut ctx = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: machine,
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+
+        // 非 prefix key, 非全屏, 非 copy mode → 发送到 PTY
+        let result = handle_key_event(b"h", false, false, &mut ctx);
+        assert_eq!(result, KeyDispatchResult::SendToPty { bytes: vec![b'h'] });
+    }
+
+    #[test]
+    fn test_priority_chain_order() {
+        // §16.7 测试: 验证优先级链顺序
+        // IME > extension > prefix > agent_cli > full_screen > copy > terminal
+
+        // IME 优先于 extension
+        let mut ctx_ime_ext = KeyDispatchContext {
+            ime_composing: true,
+            extension_shortcut: Some("action".to_string()),
+            prefix_mode_machine: PrefixModeMachine::new(PrefixModeConfig::default()),
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: false,
+            copy_mode: false,
+        };
+        let result = handle_key_event(b"a", false, false, &mut ctx_ime_ext);
+        assert_eq!(result, KeyDispatchResult::RouteToIme);
+
+        // Extension 优先于 agent CLI
+        let mut ctx_ext_agent = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: Some("action".to_string()),
+            prefix_mode_machine: PrefixModeMachine::new(PrefixModeConfig::default()),
+            pane_modes: PaneModes::default(),
+            agent_cli_mode: true,
+            copy_mode: false,
+        };
+        let result = handle_key_event(b"a", false, false, &mut ctx_ext_agent);
+        assert_eq!(
+            result,
+            KeyDispatchResult::ExecuteExtensionAction("action".to_string())
+        );
+
+        // Agent CLI 优先于 full screen
+        let mut ctx_agent_fs = KeyDispatchContext {
+            ime_composing: false,
+            extension_shortcut: None,
+            prefix_mode_machine: PrefixModeMachine::new(PrefixModeConfig::default()),
+            pane_modes: PaneModes {
+                alt_screen: true,
+                bracketed_paste: false,
+                mouse_tracking: false,
+                any_decset: false,
+            },
+            agent_cli_mode: true,
+            copy_mode: false,
+        };
+        let result = handle_key_event(b"a", false, false, &mut ctx_agent_fs);
+        assert_eq!(result, KeyDispatchResult::RouteToAgentCli);
+    }
+
+    #[test]
+    fn test_is_full_screen_active() {
+        // §16.7 测试: is_full_screen_active 检查
+        assert!(!is_full_screen_active(&PaneModes::default()));
+        assert!(is_full_screen_active(&PaneModes {
+            alt_screen: true,
+            ..Default::default()
+        }));
+        assert!(is_full_screen_active(&PaneModes {
+            bracketed_paste: true,
+            ..Default::default()
+        }));
+        assert!(is_full_screen_active(&PaneModes {
+            mouse_tracking: true,
+            ..Default::default()
+        }));
+        assert!(is_full_screen_active(&PaneModes {
+            any_decset: true,
+            ..Default::default()
+        }));
     }
 }

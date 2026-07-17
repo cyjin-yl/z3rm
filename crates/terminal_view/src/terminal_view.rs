@@ -391,6 +391,13 @@ impl TerminalView {
         }
     }
 
+    /// §16.7 检查 IME 是否处于组字中 (Plan 21)
+    ///
+    /// 组字期间按键应由 IME 处理，不发送到 PTY。
+    pub(crate) fn is_ime_composing(&self) -> bool {
+        self.ime_state.is_some()
+    }
+
     /// Commits (sends) the given text to the PTY. Called by InputHandler::replace_text_in_range.
     pub(crate) fn commit_text(&mut self, text: &str, cx: &mut Context<Self>) {
         if !text.is_empty() {
