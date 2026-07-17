@@ -18,6 +18,7 @@ pub async fn handle_connection(
     stream: UnixStream,
     sessions: Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
     db: Arc<parking_lot::Mutex<Connection>>,
+    clipboard: Arc<crate::clipboard::ServerClipboard>,
 ) -> anyhow::Result<()> {
     let (reader, writer) = tokio::io::split(stream);
 
@@ -28,7 +29,7 @@ pub async fn handle_connection(
         let mut reader = reader;
         loop {
             let envelope = read_envelope(&mut reader).await?;
-            dispatch_envelope(&envelope, &sessions, &notification_tx, &db).await?;
+            dispatch_envelope(&envelope, &sessions, &notification_tx, &db, &clipboard).await?;
         }
         #[allow(unreachable_code)]
         Ok::<_, anyhow::Error>(())
@@ -86,6 +87,7 @@ async fn dispatch_envelope(
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
     notification_tx: &mpsc::UnboundedSender<Notification>,
     _db: &Arc<parking_lot::Mutex<Connection>>,
+    clipboard: &Arc<crate::clipboard::ServerClipboard>,
 ) -> anyhow::Result<()> {
     let payload = match &envelope.payload {
         Some(p) => p,
@@ -95,7 +97,7 @@ async fn dispatch_envelope(
     match payload {
         EnvelopePayload::Request(req) => {
             let request_id = req.request_id;
-            let response = dispatch_request(req, sessions, notification_tx).await?;
+            let response = dispatch_request(req, sessions, notification_tx, clipboard).await?;
             send_response(response, request_id).await?;
         }
         EnvelopePayload::Response(_) => {
@@ -113,7 +115,8 @@ async fn dispatch_envelope(
 async fn dispatch_request(
     req: &Request,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
-    _notification_tx: &mpsc::UnboundedSender<Notification>,
+    notification_tx: &mpsc::UnboundedSender<Notification>,
+    clipboard: &Arc<crate::clipboard::ServerClipboard>,
 ) -> anyhow::Result<Response> {
     let request_id = req.request_id;
 
@@ -138,8 +141,8 @@ async fn dispatch_request(
         RequestBody::ClosePane(r) => handle_close_pane(r, sessions).await?,
         RequestBody::FocusPane(r) => handle_focus_pane(r, sessions).await?,
         RequestBody::ResizePane(r) => handle_resize_pane(r, sessions).await?,
-        RequestBody::SendInput(r) => handle_send_input(r, sessions).await?,
-        RequestBody::Paste(r) => handle_paste(r, sessions).await?,
+        RequestBody::SendInput(r) => handle_send_input(r, sessions, clipboard, notification_tx).await?,
+        RequestBody::Paste(r) => handle_paste(r, sessions, clipboard, notification_tx).await?,
         RequestBody::FetchGridUpdate(r) => handle_fetch_grid_update(r, sessions).await?,
         RequestBody::FetchScrollback(_) => {
             return Ok(Response {
@@ -167,22 +170,8 @@ async fn dispatch_request(
                 body: Some(ResponseBody::Error("stat_file not implemented yet".to_string())),
             });
         }
-        RequestBody::SetClipboard(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "set_clipboard not implemented yet".to_string(),
-                )),
-            });
-        }
-        RequestBody::GetClipboard(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "get_clipboard not implemented yet".to_string(),
-                )),
-            });
-        }
+        RequestBody::SetClipboard(r) => handle_set_clipboard(r, clipboard, notification_tx).await?,
+        RequestBody::GetClipboard(_) => handle_get_clipboard(clipboard).await?,
         RequestBody::RenameSession(_r) => {
             return Ok(Response {
                 request_id,
@@ -196,6 +185,14 @@ async fn dispatch_request(
                 request_id,
                 body: Some(ResponseBody::Error(
                     "set_pane_title not implemented yet".to_string(),
+                )),
+            });
+        }
+        RequestBody::InstallExtension(_) => {
+            return Ok(Response {
+                request_id,
+                body: Some(ResponseBody::Error(
+                    "install_extension not implemented yet".to_string(),
                 )),
             });
         }
@@ -360,11 +357,52 @@ async fn handle_resize_pane(
     Ok(ResponseBody::Error(String::new()))
 }
 
-/// §3.10 发送输入
+/// §3.10 发送输入 + §16.6 OSC 52 剪贴板拦截
 async fn handle_send_input(
     req: &SendInputRequest,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
+    clipboard: &Arc<crate::clipboard::ServerClipboard>,
+    notification_tx: &mpsc::UnboundedSender<Notification>,
 ) -> anyhow::Result<ResponseBody> {
+    // §16.6 解析 OSC 52 序列: ESC ] 52 ; c ; <base64> BEL/ST
+    let mut osc52_parser = crate::clipboard::Osc52Parser::new();
+    if let Some(base64_content) = osc52_parser.feed(&req.data) {
+        // §16.6 OSC 52 触发剪贴板更新并通知所有客户端
+        let origin_host = std::env::var("HOSTNAME")
+            .unwrap_or_else(|_| "z3rm-server".to_string());
+        clipboard.set_from_osc52(&base64_content, origin_host, notification_tx)?;
+        // OSC 52 序列已被消费, 不转发到 PTY
+        return Ok(ResponseBody::Error(String::new()));
+    }
+
+    // §16.6 检查 bracketed paste 模式切换序列
+    // ESC [ ? 2004 h (enable) / ESC [ ? 2004 l (disable)
+    const BRACKETED_PASTE_ENABLE: &[u8] = &[0x1B, b'[', b'?', b'2', b'0', b'0', b'4', b'h'];
+    const BRACKETED_PASTE_DISABLE: &[u8] = &[0x1B, b'[', b'?', b'2', b'0', b'0', b'4', b'l'];
+    if req.data == BRACKETED_PASTE_ENABLE {
+        // §16.6 启用 bracketed paste
+        let sessions_r = sessions.read();
+        for session in sessions_r.iter() {
+            let panes = session.panes.clone();
+            if let Some(pane) = panes.read().get(&req.pane_id) {
+                pane.set_bracketed_paste_mode(true);
+            }
+        }
+        return Ok(ResponseBody::Error(String::new()));
+    }
+    if req.data == BRACKETED_PASTE_DISABLE {
+        // §16.6 禁用 bracketed paste
+        let sessions_r = sessions.read();
+        for session in sessions_r.iter() {
+            let panes = session.panes.clone();
+            if let Some(pane) = panes.read().get(&req.pane_id) {
+                pane.set_bracketed_paste_mode(false);
+            }
+        }
+        return Ok(ResponseBody::Error(String::new()));
+    }
+
+    // §3.10 普通输入: 转发到 PTY
     let sessions_r = sessions.read();
     for session in sessions_r.iter() {
         let panes = session.panes.clone();
@@ -375,19 +413,67 @@ async fn handle_send_input(
     Ok(ResponseBody::Error(String::new()))
 }
 
-/// §3.10 粘贴文本
+/// §3.10 粘贴文本 + §16.6 bracketed paste 包裹
 async fn handle_paste(
     req: &PasteRequest,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
+    _clipboard: &Arc<crate::clipboard::ServerClipboard>,
+    _notification_tx: &mpsc::UnboundedSender<Notification>,
 ) -> anyhow::Result<ResponseBody> {
     let sessions_r = sessions.read();
     for session in sessions_r.iter() {
         let panes = session.panes.clone();
         if let Some(pane) = panes.read().get(&req.pane_id) {
-            pane.paste(&req.text)?;
+            // §16.6 如果 bracketed paste 模式激活, 包裹内容
+            let text = crate::clipboard::wrap_bracketed_paste(
+                &req.text,
+                pane.is_bracketed_paste_active(),
+            );
+            pane.paste(&text)?;
         }
     }
     Ok(ResponseBody::Error(String::new()))
+}
+
+/// §16.6 设置剪贴板
+async fn handle_set_clipboard(
+    req: &SetClipboardRequest,
+    clipboard: &Arc<crate::clipboard::ServerClipboard>,
+    notification_tx: &mpsc::UnboundedSender<Notification>,
+) -> anyhow::Result<ResponseBody> {
+    // §16.6 从 proto 消息转换并设置剪贴板
+    let entry = match &req.entry {
+        Some(proto_entry) => crate::clipboard::ClipboardEntry::from_proto(proto_entry),
+        None => {
+            return Ok(ResponseBody::Error("empty clipboard entry".to_string()));
+        }
+    };
+    clipboard.set_clipboard(entry, notification_tx);
+    Ok(ResponseBody::Error(String::new()))
+}
+
+/// §16.6 获取剪贴板
+async fn handle_get_clipboard(
+    clipboard: &Arc<crate::clipboard::ServerClipboard>,
+) -> anyhow::Result<ResponseBody> {
+    let entry = clipboard.get_clipboard();
+    match entry {
+        Some(entry) => {
+            let proto_entry = entry.to_proto();
+            Ok(ResponseBody::Clipboard(GetClipboardResponse {
+                entry: Some(proto_entry),
+            }))
+        }
+        None => {
+            Ok(ResponseBody::Clipboard(GetClipboardResponse {
+                entry: Some(mux_protocol::proto::ClipboardEntry {
+                    content_type: mux_protocol::proto::clipboard_entry::ClipboardContentType::Text as i32,
+                    data: Vec::new(),
+                    origin_host: String::new(),
+                }),
+            }))
+        }
+    }
 }
 
 /// §3.3 获取 grid 更新

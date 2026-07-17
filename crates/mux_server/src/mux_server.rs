@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use tokio::net::UnixListener;
 
 pub mod connection;
+pub mod clipboard;
 pub mod grid_sync;
 pub mod layout;
 pub mod pane;
@@ -86,10 +87,12 @@ pub fn run() -> Result<()> {
         persistence::persist_loop(sessions_clone, db_clone).await;
     });
 
+    let clipboard = std::sync::Arc::new(clipboard::ServerClipboard::new());
     let server = Server {
         sessions,
         _db: db,
         _persist_handle: Some(persist_handle),
+        clipboard,
     };
 
     tokio::runtime::Builder::new_multi_thread()
@@ -106,6 +109,8 @@ pub struct Server {
     _db: std::sync::Arc<parking_lot::Mutex<Connection>>,
     // §3.6 持久化后台任务句柄
     _persist_handle: Option<tokio::task::JoinHandle<()>>,
+    // §16.6 服务器剪贴板
+    clipboard: std::sync::Arc<clipboard::ServerClipboard>,
 }
 
 impl Server {
@@ -117,9 +122,10 @@ impl Server {
 
             let sessions = self.sessions.clone();
             let db = self._db.clone();
+            let clipboard = self.clipboard.clone();
 
             tokio::spawn(async move {
-                if let Err(e) = connection::handle_connection(stream, sessions, db).await {
+                if let Err(e) = connection::handle_connection(stream, sessions, db, clipboard).await {
                     tracing::error!(error = %e, "connection error");
                 }
             });

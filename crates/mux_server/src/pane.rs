@@ -26,6 +26,8 @@ pub struct Pane {
     /// 终端尺寸
     pub cols: u32,
     pub rows: u32,
+    /// §16.6 Bracketed paste 模式 (ESC [ ? 2004 h / l)
+    pub bracketed_paste_mode: AtomicBool,
 }
 
 /// alacritty 终端包装器
@@ -78,6 +80,7 @@ impl Pane {
             alive: AtomicBool::new(true),
             cols,
             rows,
+            bracketed_paste_mode: AtomicBool::new(false),
         }
     }
 
@@ -142,6 +145,16 @@ impl Pane {
     /// §3.10 获取标题
     pub fn get_title(&self) -> String {
         self.title.read().clone()
+    }
+
+    /// §16.6 检查 bracketed paste 模式是否激活
+    pub fn is_bracketed_paste_active(&self) -> bool {
+        self.bracketed_paste_mode.load(Ordering::SeqCst)
+    }
+
+    /// §16.6 设置 bracketed paste 模式
+    pub fn set_bracketed_paste_mode(&self, active: bool) {
+        self.bracketed_paste_mode.store(active, Ordering::SeqCst);
     }
 }
 
