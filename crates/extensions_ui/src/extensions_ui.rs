@@ -1,6 +1,7 @@
 mod components;
 mod extension_suggest;
 mod extension_version_selector;
+mod marketplace;
 
 use std::sync::OnceLock;
 use std::time::Duration;

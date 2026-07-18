@@ -47,12 +47,15 @@ tracing.workspace = true
 url.workspace = true
 util.workspace = true
 wasmparser.workspace = true
+sha2.workspace = true
 wasmtime-wasi.workspace = true
 wasmtime.workspace = true
 ztracing.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
+flate2.workspace = true
+tokio = { workspace = true, features = ["macros"] }
 ctor.workspace = true
 fs = { workspace = true, features = ["test-support"] }
 gpui = { workspace = true, features = ["test-support"] }

@@ -1,6 +1,7 @@
 mod capability_granter;
 pub mod extension_settings;
 pub mod headless_host;
+pub mod marketplace;
 pub mod wasm_host;
 
 #[cfg(test)]

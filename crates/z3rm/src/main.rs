@@ -169,6 +169,17 @@ fn main() {
         std::process::exit(0);
     }
 
+    // §16.11 扩展市场 CLI 命令处理
+    if let Ok(Some(ext_args)) = cli::marketplace::parse_extension_args() {
+        let rt = tokio::runtime::Runtime::new()
+            .expect("failed to create tokio runtime for extension CLI");
+        if let Err(e) = rt.block_on(async { cli::marketplace::run_extension_command(ext_args).await }) {
+            eprintln!("error: {}", e);
+            std::process::exit(1);
+        }
+        std::process::exit(0);
+    }
+
     #[cfg(unix)]
     util::prevent_root_execution();
 

@@ -312,6 +312,9 @@ path = "crates/fuzzy"
 [workspace.dependencies.fuzzy_nucleo]
 path = "crates/fuzzy_nucleo"
 
+[workspace.dependencies.flate2]
+version = "1.0"
+
 [workspace.dependencies.git]
 path = "crates/git"
 

@@ -4,6 +4,7 @@
 pub mod capture;
 pub mod dispatch;
 pub mod keys;
+pub mod marketplace;
 pub mod target;
 
 pub use dispatch::CliCommand;

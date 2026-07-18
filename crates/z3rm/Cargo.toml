@@ -224,6 +224,12 @@ workspace = true
 [dependencies.reqwest_client]
 workspace = true
 
+[dependencies.flate2]
+workspace = true
+
+[dependencies.tar]
+version = "0.4"
+
 [dependencies.rope]
 workspace = true
 
