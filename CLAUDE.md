@@ -121,6 +121,8 @@ Actions with no data defined with the `actions!(some_namespace, [SomeAction, Ano
 
 Action handlers can be registered on an element via the event handler `.on_action(|action, window, cx| ...)`. Like other event handlers, this is often used with `cx.listener`.
 
+* **Action namespace uniqueness.** Each `actions!(namespace, [...])` registration creates globally unique action types. Registering the same `namespace::ActionName` in multiple crates causes a runtime panic. Before defining a new action, search the codebase for existing registrations with the same namespace. When creating actions in a new crate, use a distinct namespace to avoid conflicts (e.g., `mux_pane` instead of reusing `pane`).
+
 ## Notify
 
 When a view's state has changed in a way that may affect its rendering, it should call `cx.notify()`. This will cause the view to be rerendered. It will also cause any observe callbacks registered for the entity with `cx.observe` to be called.
