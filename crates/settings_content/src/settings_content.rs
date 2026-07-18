@@ -344,10 +344,11 @@ pub struct UserSettingsContent {
 pub enum BaseKeymapContent {
     /// VSCode 键盘映射
     #[default]
+    #[serde(alias = "VSCode")]
     VSCode,
-    /// JetBrains 键盘映射
+    #[serde(alias = "JetBrains")]
     JetBrains,
-    /// Sublime Text 键盘映射
+    #[serde(alias = "SublimeText")]
     SublimeText,
     /// Vim 键盘映射
     Vim,
@@ -358,6 +359,7 @@ pub enum BaseKeymapContent {
     /// Atom 键盘映射
     Atom,
     /// TextMate 键盘映射
+    #[serde(alias = "TextMate")]
     TextMate,
     /// Emacs 键盘映射
     Emacs,
