@@ -5,6 +5,7 @@ mod daemon;
 mod zed;
 mod input;
 mod cli;
+mod log_viewer;
 
 use std::sync::Arc;
 

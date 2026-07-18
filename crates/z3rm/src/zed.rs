@@ -3,6 +3,7 @@ use crashes;
 use fs::Fs;
 use gpui::{actions, App, Global, UpdateGlobal as _};
 use settings::SettingsStore;
+use crate::log_viewer;
 
 #[allow(dead_code)]
 pub struct CrashHandler(pub Arc<crashes::Client>);
@@ -19,6 +20,7 @@ actions!(
 
 pub fn init(cx: &mut App) {
     cx.on_action(quit);
+    log_viewer::init(cx);
 }
 
 fn quit(_: &Quit, cx: &mut App) {
