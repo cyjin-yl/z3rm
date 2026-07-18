@@ -69,6 +69,8 @@ message AttachRequest {
     AttachMode mode = 2;
     // §3.3 窗口 ID (多窗口支持，Plan 32)
     string window_id = 3;
+    // §3.3 客户端身份与角色 (Plan 33)
+    ClientIdentity identity = 4;
 
     enum AttachMode {
         ATTACH_MODE_UNSPECIFIED = 0;
@@ -76,6 +78,20 @@ message AttachRequest {
         STEAL = 2;
         READ_ONLY = 3;
     }
+}
+
+// §3.3 客户端身份: UUID + 角色 (Plan 33)
+message ClientIdentity {
+    string client_id = 1;  // 客户端 UUID
+    ClientRole role = 2;   // 客户端角色
+}
+
+// §3.3 客户端角色 (Plan 33)
+enum ClientRole {
+    CLIENT_ROLE_UNSPECIFIED = 0;  // 未指定，默认为 READ_WRITE
+    READ_ONLY = 1;                // 只读: 只能读取，不能写入
+    READ_WRITE = 2;               // 读写: 可执行 pane 操作
+    ADMIN = 3;                    // 管理员: 所有操作包括管理命令
 }
 
 // §3.10 连接成功后返回完整快照。

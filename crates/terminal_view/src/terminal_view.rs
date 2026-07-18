@@ -12,7 +12,7 @@ use editor::{
 use gpui::{
     Action, AnyElement, App, ClipboardEntry, DismissEvent, Entity, EventEmitter, ExternalPaths,
     FocusHandle, Focusable, Font, KeyContext, KeyDownEvent, Keystroke, MouseButton, MouseDownEvent,
-    Pixels, Point as GpuiPoint, Render, ScrollWheelEvent, Styled, Subscription, Task, TaskExt,
+    Pixels, Point as GpuiPoint, Rems, Render, ScrollWheelEvent, Styled, Subscription, Task, TaskExt,
     WeakEntity, actions, anchored, deferred, div,
 };
 use menu;
@@ -174,6 +174,8 @@ pub struct TerminalView {
     // §12 复制模式状态 (Plan 31)
     copy_mode_state: copy_mode::CopyModeState,
     self_handle: WeakEntity<Self>,
+    // §3.3 只读模式: 客户端为 ReadOnly 时禁用输入 (Plan 33)
+    read_only: bool,
     rename_editor: Option<Entity<Editor>>,
     rename_editor_subscription: Option<Subscription>,
     _subscriptions: Vec<Subscription>,
@@ -368,6 +370,7 @@ impl TerminalView {
             scroll_locked: false,
             copy_mode_state: Default::default(),
             self_handle: cx.entity().downgrade(),
+            read_only: false,
             rename_editor: None,
             rename_editor_subscription: None,
             _subscriptions: subscriptions,
@@ -396,6 +399,18 @@ impl TerminalView {
     pub fn set_show_workspace_actions(&mut self, show: bool, cx: &mut Context<Self>) {
         self.show_workspace_actions = Some(show);
         cx.notify();
+    }
+
+    /// §3.3 设置只读模式 (Plan 33)
+    /// 只读模式下禁止键盘输入和文本发送
+    pub fn set_read_only(&mut self, read_only: bool, cx: &mut Context<Self>) {
+        self.read_only = read_only;
+        cx.notify();
+    }
+
+    /// §3.3 获取只读状态 (Plan 33)
+    pub fn is_read_only(&self) -> bool {
+        self.read_only
     }
 
     fn shows_workspace_actions(&self) -> bool {
@@ -1108,6 +1123,10 @@ impl TerminalView {
     }
 
     fn send_text(&mut self, text: &SendText, _: &mut Window, cx: &mut Context<Self>) {
+        // §3.3 只读客户端禁止发送文本 (Plan 33)
+        if self.read_only {
+            return;
+        }
         self.clear_bell(cx);
         self.blink_manager.update(cx, BlinkManager::pause_blinking);
         self.terminal.update(cx, |term, _| {
@@ -1116,6 +1135,10 @@ impl TerminalView {
     }
 
     fn send_keystroke(&mut self, text: &SendKeystroke, _: &mut Window, cx: &mut Context<Self>) {
+        // §3.3 只读客户端禁止发送按键 (Plan 33)
+        if self.read_only {
+            return;
+        }
         if let Some(keystroke) = Keystroke::parse(&text.0).log_err() {
             self.clear_bell(cx);
             self.blink_manager.update(cx, BlinkManager::pause_blinking);
@@ -1582,6 +1605,28 @@ impl Render for TerminalView {
                         )
                     }),
             )
+            // §3.3 只读指示器 (Plan 33)
+            .when(self.read_only, |this| {
+                this.child(
+                    deferred(
+                        div()
+                            .id("read-only-badge")
+                            .absolute()
+                            .top_0()
+                            .right_0()
+                            .p(Rems(0.5))
+                            .bg(cx.theme().colors().editor_background)
+                            .rounded_sm()
+                            .child(
+                                div()
+                                    .text_size(Rems(1.))
+                                    .text_color(cx.theme().colors().text_muted)
+                                    .child("READ-ONLY"),
+                            ),
+                    )
+                    .with_priority(1),
+                )
+            })
             .children(self.context_menu.as_ref().map(|(menu, position, _)| {
                 deferred(
                     anchored()

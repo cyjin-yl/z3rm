@@ -55,6 +55,23 @@ pub struct AttachedClient {
     pub mode: AttachMode,
     /// §3.3 窗口 ID (多窗口支持，Plan 32)
     pub window_id: Option<String>,
+    /// §3.3 客户端角色 (Plan 33)
+    pub role: ClientRole,
+}
+
+/// §3.3 客户端角色 (Plan 33)
+/// ReadOnly: 只能读取，不能修改 pane
+/// ReadWrite: 可执行 pane 操作
+/// Admin: 所有操作包括 kill/rename/install
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Default)]
+pub enum ClientRole {
+    /// 只读: 只能读取，不能写入
+    ReadOnly,
+    /// 读写: 可执行 pane 操作 (默认)
+    #[default]
+    ReadWrite,
+    /// 管理员: 所有操作包括管理命令
+    Admin,
 }
 
 /// 连接模式 (§3.10 AttachRequest.AttachMode)
@@ -121,9 +138,9 @@ impl Session {
     }
 
     /// 添加附加客户端 (§3.10 AttachRequest)
-    pub fn add_attached_client(&mut self, client_id: String, mode: AttachMode) {
+    pub fn add_attached_client(&mut self, client_id: String, mode: AttachMode, role: ClientRole) {
         let clients = self.attached_clients.clone();
-        clients.write().push(AttachedClient { client_id, mode, window_id: None });
+        clients.write().push(AttachedClient { client_id, mode, window_id: None, role });
     }
 
     /// 移除附加客户端 (§3.10 DetachRequest)

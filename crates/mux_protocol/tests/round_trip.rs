@@ -76,3 +76,42 @@ fn test_full_snapshot_serialization() {
     assert_eq!(decoded.rows, 24);
     assert_eq!(decoded.cells.len(), 80 * 24);
 }
+
+// §3.3 验证 ClientIdentity 编码/解码 (Plan 33)
+#[test]
+fn test_client_identity_round_trip() {
+    let identity = ClientIdentity {
+        client_id: "test-uuid-123".to_string(),
+        role: proto::ClientRole::Admin as i32,
+    };
+
+    let mut buf = Vec::new();
+    identity.encode(&mut buf).unwrap();
+    let decoded = ClientIdentity::decode(buf.as_slice()).unwrap();
+    assert_eq!(decoded.client_id, "test-uuid-123");
+    assert_eq!(decoded.role, proto::ClientRole::Admin as i32);
+}
+
+// §3.3 验证 AttachRequest 含 ClientIdentity 的 round-trip (Plan 33)
+#[test]
+fn test_attach_request_with_identity() {
+    let req = AttachRequest {
+        session_id: "session-1".to_string(),
+        mode: proto::attach_request::AttachMode::Shared as i32,
+        window_id: "win-1".to_string(),
+        identity: Some(ClientIdentity {
+            client_id: "client-abc".to_string(),
+            role: proto::ClientRole::ReadOnly as i32,
+        }),
+    };
+
+    let mut buf = Vec::new();
+    req.encode(&mut buf).unwrap();
+    let decoded = AttachRequest::decode(buf.as_slice()).unwrap();
+    assert_eq!(decoded.session_id, "session-1");
+    assert_eq!(decoded.window_id, "win-1");
+    assert!(decoded.identity.is_some());
+    let identity = decoded.identity.unwrap();
+    assert_eq!(identity.client_id, "client-abc");
+    assert_eq!(identity.role, proto::ClientRole::ReadOnly as i32);
+}

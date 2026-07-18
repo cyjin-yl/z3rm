@@ -418,6 +418,7 @@ impl MuxDomain {
             session_id: session_id.to_string(),
             mode: AttachMode::Shared as i32,
             window_id: self.window_id.clone(),
+            identity: None,
         });
         let resp = self.send_request(req).await?;
         match resp.body {
@@ -592,6 +593,7 @@ impl MuxDomain {
             session_id: session.to_string(),
             mode: mode as i32,
             window_id: self.window_id.clone(),
+            identity: None,
         });
         let resp = self.send_request(req).await?;
         match resp.body {

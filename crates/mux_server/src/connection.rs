@@ -13,6 +13,30 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tokio::sync::mpsc;
 
+// §3.3 客户端角色 (Plan 33)
+use crate::session::ClientRole;
+
+/// §3.3 将 proto ClientRole 值映射为内部 ClientRole
+pub fn proto_role_to_client_role(role: i32) -> ClientRole {
+    match role {
+        1 => ClientRole::ReadOnly,
+        2 => ClientRole::ReadWrite,
+        3 => ClientRole::Admin,
+        _ => ClientRole::ReadWrite, // 未指定时默认为 ReadWrite
+    }
+}
+
+/// §3.3 权限检查: 判断角色是否允许执行操作
+pub fn check_permission(role: ClientRole, required: ClientRole) -> bool {
+    match (role, required) {
+        (ClientRole::Admin, _) => true,
+        (ClientRole::ReadWrite, ClientRole::ReadWrite) |
+        (ClientRole::ReadWrite, ClientRole::ReadOnly) => true,
+        (ClientRole::ReadOnly, ClientRole::ReadOnly) => true,
+        _ => false,
+    }
+}
+
 /// 处理单个客户端连接 (§9)
 pub async fn handle_connection(
     stream: UnixStream,
@@ -25,11 +49,15 @@ pub async fn handle_connection(
     let (notification_tx, mut notification_rx) =
         mpsc::unbounded_channel::<Notification>();
 
+    // §3.3 客户端角色: 初始为 None, attach 后设置 (Plan 33)
+    let client_role: Arc<parking_lot::Mutex<Option<ClientRole>>> =
+        Arc::new(parking_lot::Mutex::new(None));
+
     let read_handle = tokio::spawn(async move {
         let mut reader = reader;
         loop {
             let envelope = read_envelope(&mut reader).await?;
-            dispatch_envelope(&envelope, &sessions, &notification_tx, &db, &clipboard).await?;
+            dispatch_envelope(&envelope, &sessions, &notification_tx, &db, &clipboard, &client_role).await?;
         }
         #[allow(unreachable_code)]
         Ok::<_, anyhow::Error>(())
@@ -88,6 +116,7 @@ async fn dispatch_envelope(
     notification_tx: &mpsc::UnboundedSender<Notification>,
     _db: &Arc<parking_lot::Mutex<Connection>>,
     clipboard: &Arc<crate::clipboard::ServerClipboard>,
+    client_role: &Arc<parking_lot::Mutex<Option<ClientRole>>>,
 ) -> anyhow::Result<()> {
     let payload = match &envelope.payload {
         Some(p) => p,
@@ -97,7 +126,7 @@ async fn dispatch_envelope(
     match payload {
         EnvelopePayload::Request(req) => {
             let request_id = req.request_id;
-            let response = dispatch_request(req, sessions, notification_tx, clipboard).await?;
+            let response = dispatch_request(req, sessions, notification_tx, clipboard, client_role).await?;
             send_response(response, request_id).await?;
         }
         EnvelopePayload::Response(_) => {
@@ -110,13 +139,13 @@ async fn dispatch_envelope(
 
     Ok(())
 }
-
 /// §9 分发请求到具体处理器
 async fn dispatch_request(
     req: &Request,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
     notification_tx: &mpsc::UnboundedSender<Notification>,
     clipboard: &Arc<crate::clipboard::ServerClipboard>,
+    client_role: &Arc<parking_lot::Mutex<Option<ClientRole>>>,
 ) -> anyhow::Result<Response> {
     let request_id = req.request_id;
 
@@ -130,67 +159,121 @@ async fn dispatch_request(
         }
     };
 
+    // §3.3 获取当前客户端角色，未 attach 时默认为 ReadOnly (Plan 33)
+    let role = client_role.lock().unwrap_or(ClientRole::ReadOnly);
+
     let resp_body = match body {
+        // §3.3 无权限要求的操作
         RequestBody::CreateSession(r) => handle_create_session(r, sessions).await?,
         RequestBody::ListSessions(_) => handle_list_sessions(sessions).await?,
-        RequestBody::KillSession(r) => handle_kill_session(r, sessions).await?,
-        RequestBody::Attach(r) => handle_attach(r, sessions).await?,
+        RequestBody::Attach(r) => handle_attach(r, sessions, client_role).await?,
         RequestBody::Detach(_) => handle_detach(sessions).await?,
-        RequestBody::SpawnPane(r) => handle_spawn_pane(r, sessions).await?,
-        RequestBody::SplitPane(r) => handle_split_pane(r, sessions).await?,
-        RequestBody::ClosePane(r) => handle_close_pane(r, sessions).await?,
-        RequestBody::FocusPane(r) => handle_focus_pane(r, sessions).await?,
-        RequestBody::ResizePane(r) => handle_resize_pane(r, sessions).await?,
-        RequestBody::SendInput(r) => handle_send_input(r, sessions, clipboard, notification_tx).await?,
-        RequestBody::Paste(r) => handle_paste(r, sessions, clipboard, notification_tx).await?,
         RequestBody::FetchGridUpdate(r) => handle_fetch_grid_update(r, sessions).await?,
         RequestBody::FetchScrollback(r) => handle_fetch_scrollback(r, sessions).await?,
         RequestBody::SearchScrollback(r) => handle_search_scrollback(r, sessions).await?,
-        RequestBody::ReadFile(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error("read_file not implemented yet".to_string())),
-            });
-        }
-        RequestBody::ListDir(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error("list_dir not implemented yet".to_string())),
-            });
-        }
-        RequestBody::StatFile(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error("stat_file not implemented yet".to_string())),
-            });
-        }
-        RequestBody::SetClipboard(r) => handle_set_clipboard(r, clipboard, notification_tx).await?,
         RequestBody::GetClipboard(_) => handle_get_clipboard(clipboard).await?,
-        RequestBody::RenameSession(_r) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "rename_session not implemented yet".to_string(),
-                )),
-            });
+
+        // §3.3 Admin-only 操作 (Plan 33)
+        RequestBody::KillSession(r) => {
+            if check_permission(role, ClientRole::Admin) {
+                handle_kill_session(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: admin required".to_string())
+            }
         }
-        RequestBody::SetPaneTitle(_r) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "set_pane_title not implemented yet".to_string(),
-                )),
-            });
+        RequestBody::RenameSession(_r) => {
+            if check_permission(role, ClientRole::Admin) {
+                ResponseBody::Error("rename_session not implemented yet".to_string())
+            } else {
+                ResponseBody::Error("permission denied: admin required".to_string())
+            }
         }
         RequestBody::InstallExtension(_) => {
-            return Ok(Response {
-                request_id,
-                body: Some(ResponseBody::Error(
-                    "install_extension not implemented yet".to_string(),
-                )),
-            });
+            if check_permission(role, ClientRole::Admin) {
+                ResponseBody::Error("install_extension not implemented yet".to_string())
+            } else {
+                ResponseBody::Error("permission denied: admin required".to_string())
+            }
         }
-        RequestBody::NewWindow(r) => handle_new_window(r, sessions, notification_tx).await?,
+        RequestBody::NewWindow(r) => {
+            if check_permission(role, ClientRole::Admin) {
+                handle_new_window(r, sessions, notification_tx).await?
+            } else {
+                ResponseBody::Error("permission denied: admin required".to_string())
+            }
+        }
+
+        // §3.3 需要 ReadWrite 的 pane 操作 (Plan 33)
+        RequestBody::SpawnPane(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_spawn_pane(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::SplitPane(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_split_pane(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::ClosePane(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_close_pane(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::FocusPane(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_focus_pane(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::ResizePane(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_resize_pane(r, sessions).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+
+        // §3.3 需要 ReadWrite 的输入操作 (Plan 33)
+        RequestBody::SendInput(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_send_input(r, sessions, clipboard, notification_tx).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::Paste(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_paste(r, sessions, clipboard, notification_tx).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::SetClipboard(r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                handle_set_clipboard(r, clipboard, notification_tx).await?
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+        RequestBody::SetPaneTitle(_r) => {
+            if check_permission(role, ClientRole::ReadWrite) {
+                ResponseBody::Error("set_pane_title not implemented yet".to_string())
+            } else {
+                ResponseBody::Error("permission denied: read-write required".to_string())
+            }
+        }
+
+        // §3.3 文件操作暂不限制 (Plan 33)
+        RequestBody::ReadFile(_) => ResponseBody::Error("read_file not implemented yet".to_string()),
+        RequestBody::ListDir(_) => ResponseBody::Error("list_dir not implemented yet".to_string()),
+        RequestBody::StatFile(_) => ResponseBody::Error("stat_file not implemented yet".to_string()),
     };
 
     Ok(Response {
@@ -260,6 +343,7 @@ async fn handle_kill_session(
 async fn handle_attach(
     req: &AttachRequest,
     sessions: &Arc<parking_lot::RwLock<Vec<crate::session::Session>>>,
+    client_role: &Arc<parking_lot::Mutex<Option<ClientRole>>>,
 ) -> anyhow::Result<ResponseBody> {
     let mut sessions_w = sessions.write();
     let session = sessions_w
@@ -270,8 +354,27 @@ async fn handle_attach(
     // §16.12 记录客户端 attach 事件
     zlog::info!("client attached: session={} mode={:?}", req.session_id, req.mode);
 
-    // §3.3 将客户端注册到会话 (Plan 32)
-    let client_id = format!("client-{}", std::process::id());
+    // §3.3 解析客户端身份 (Plan 33)
+    let client_id = if let Some(identity) = &req.identity {
+        if !identity.client_id.is_empty() {
+            identity.client_id.clone()
+        } else {
+            format!("client-{}", std::process::id())
+        }
+    } else {
+        format!("client-{}", std::process::id())
+    };
+
+    // §3.3 从 ClientIdentity 提取角色 (Plan 33)
+    let role = if let Some(identity) = &req.identity {
+        proto_role_to_client_role(identity.role)
+    } else {
+        ClientRole::ReadWrite // 无 identity 时默认 ReadWrite
+    };
+
+    // §3.3 将角色写入连接级状态 (Plan 33)
+    *client_role.lock() = Some(role);
+
     let mode = match req.mode {
         0 => crate::session::AttachMode::Shared,
         1 => crate::session::AttachMode::Shared,
@@ -279,7 +382,7 @@ async fn handle_attach(
         3 => crate::session::AttachMode::ReadOnly,
         _ => crate::session::AttachMode::Shared,
     };
-    session.add_attached_client(client_id, mode);
+    session.add_attached_client(client_id, mode, role);
 
     // §3.3 将窗口 ID 注册到会话 (Plan 32)
     if !req.window_id.is_empty() {
