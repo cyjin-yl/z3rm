@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crashes;
 use fs::Fs;
-use gpui::{actions, App, Global, UpdateGlobal as _};
+use gpui::{App, Global, UpdateGlobal as _};
 use settings::SettingsStore;
 use crate::log_viewer;
 
@@ -10,20 +10,12 @@ pub struct CrashHandler(pub Arc<crashes::Client>);
 
 impl Global for CrashHandler {}
 
-actions!(
-    zed,
-    [
-        /// Quits the application.
-        Quit,
-    ]
-);
-
 pub fn init(cx: &mut App) {
     cx.on_action(quit);
     log_viewer::init(cx);
 }
 
-fn quit(_: &Quit, cx: &mut App) {
+fn quit(_: &zed_actions::Quit, cx: &mut App) {
     cx.quit();
 }
 

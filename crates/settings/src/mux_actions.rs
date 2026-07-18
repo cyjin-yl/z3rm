@@ -42,7 +42,7 @@ fn default_prefix_timeout_ms() -> u64 {
 // ============================================================================
 
 actions!(
-    pane,
+    mux_pane,
     [
         /// §16.7 新建标签页。
         NewTab,
@@ -85,7 +85,7 @@ actions!(
 
 /// §16.7 按索引聚焦 pane。index 为 0-8。
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Action)]
-#[action(namespace = pane)]
+#[action(namespace = mux_pane)]
 pub struct FocusPaneIndex {
     #[serde(default)]
     pub index: u8,
@@ -99,7 +99,7 @@ impl Default for FocusPaneIndex {
 
 // 为 0-8 创建便捷动作，映射到 FocusPaneIndex
 actions!(
-    pane,
+    mux_pane,
     [
         /// §16.7 聚焦 pane 0。
         FocusPane0,
