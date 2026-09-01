@@ -7535,6 +7535,7 @@ dependencies = [
  "nanoid",
  "parking_lot",
  "prost",
+ "regex",
  "serde",
  "serde_json",
  "sha2",
@@ -7604,6 +7605,7 @@ dependencies = [
  "anyhow",
  "futures",
  "gpui",
+ "menu",
  "mux",
  "mux_protocol",
  "nanoid",
@@ -7616,6 +7618,7 @@ dependencies = [
  "theme_settings",
  "tracing",
  "ui",
+ "ui_input",
  "util",
  "workspace",
 ]

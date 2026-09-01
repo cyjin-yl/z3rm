@@ -250,6 +250,19 @@ fn a11y_text_run_values(tree: &serde_json::Value) -> Vec<String> {
 }
 
 /// Roles present in the frame, sorted, for diagnostics in failure messages.
+/// The values every live region is currently announcing.
+///
+/// A region with no value is one that has been rendered so it has something to
+/// diff against later; it is not an announcement, and asking whether the node
+/// exists would count it as one.
+fn announced_status_values(tree: &serde_json::Value) -> Vec<String> {
+    a11y_nodes_with_role(tree, "Status")
+        .into_iter()
+        .filter_map(|node| a11y_string_field(node, "value"))
+        .filter(|value| !value.is_empty())
+        .collect()
+}
+
 fn a11y_role_summary(tree: &serde_json::Value) -> Vec<String> {
     let mut roles: Vec<String> = a11y_nodes(tree)
         .into_iter()
@@ -440,6 +453,9 @@ fn serve_mock_mux_with_output(
     let mut pane_output_sent = false;
     let mut buffered: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 8192];
+    // The session clipboard, which lives on the server: a copy that reached it
+    // and a copy that vanished are indistinguishable from the client.
+    let mut clipboard: Option<mux_protocol::ClipboardEntry> = None;
 
     while !stop.load(Ordering::SeqCst) {
         match stream.read(&mut chunk) {
@@ -486,6 +502,7 @@ fn serve_mock_mux_with_output(
                 served_history,
                 served_generation,
                 served_fence,
+                &mut clipboard,
             );
             let bytes = mux_protocol::frame(&Envelope {
                 version: Some(mux_protocol::PROTOCOL_VERSION),
@@ -542,6 +559,7 @@ fn mock_response(
     history: &[String],
     generation: u64,
     output_sequence: u64,
+    clipboard: &mut Option<mux_protocol::ClipboardEntry>,
 ) -> Response {
     let body = match &request.body {
         Some(RequestBody::FetchGridUpdate(fetch)) => {
@@ -575,6 +593,41 @@ fn mock_response(
                 scrollback_version: snapshot.history_version,
             }))
         }
+        // §16.6 The session clipboard. A copy that the server accepted and a
+        // copy that vanished look identical from the client, so the mock keeps
+        // what it was given and hands it back.
+        Some(RequestBody::SetClipboard(request)) => {
+            if let Some(entry) = request.entry.clone() {
+                clipboard.replace(entry);
+            }
+            Some(ResponseBody::Error(String::new()))
+        }
+        Some(RequestBody::GetClipboard(_)) => Some(ResponseBody::Clipboard(
+            mux_protocol::GetClipboardResponse {
+                // The server answers an empty clipboard with an empty text
+                // entry rather than no entry, so the mock does too — a `None`
+                // here is a protocol error on the client, not emptiness.
+                entry: Some(clipboard.clone().unwrap_or(mux_protocol::ClipboardEntry {
+                    content_type:
+                        mux_protocol::clipboard_entry::ClipboardContentType::Text as i32,
+                    data: Vec::new(),
+                    origin_host: String::new(),
+                })),
+            },
+        )),
+        // §3.3 The OSC 133 markers the jump navigates by. Two commands, both
+        // in history, so a jump has somewhere to land and a second one has a
+        // boundary to stop at.
+        Some(RequestBody::ListCommands(_)) => Some(ResponseBody::Commands(
+            mux_protocol::ListCommandsResponse {
+                commands: vec![
+                    mock_command(1, -4, Some(0)),
+                    mock_command(2, -2, Some(1)),
+                ],
+                history_size: u32::try_from(history.len()).unwrap_or(u32::MAX),
+                recorded_markers: 2,
+            },
+        )),
         // Empty body = success. Anything the view issues during startup that is
         // not answered would leave a task waiting forever.
         _ => None,
@@ -582,6 +635,23 @@ fn mock_response(
     Response {
         request_id: request.request_id,
         body,
+    }
+}
+
+/// One OSC 133 command: a prompt at `prompt_line` and an exit status.
+fn mock_command(id: u64, prompt_line: i64, exit_code: Option<i32>) -> mux_protocol::CommandRange {
+    mux_protocol::CommandRange {
+        id,
+        prompt: Some(mux_protocol::CommandMarker {
+            line: Some(prompt_line),
+            column: 0,
+        }),
+        command_end: Some(mux_protocol::CommandMarker {
+            line: Some(prompt_line + 1),
+            column: 0,
+        }),
+        exit_code,
+        ..Default::default()
     }
 }
 
@@ -685,6 +755,7 @@ const TERMINAL_MARKER: &str = "Z3RM-HEADLESS-GRID";
 /// Pane id shared by the mock server and the view under test; a `PaneOutputChunk`
 /// addressed to any other pane is ignored by the client.
 const MOCK_PANE_ID: &str = "headless-pane";
+const MOCK_SESSION_ID: &str = "headless-session";
 const TERMINAL_ACCENT_BG: u32 = 0x1e6fd9;
 const TERMINAL_ACCENT_FG: u32 = 0xffe680;
 
@@ -1487,6 +1558,345 @@ fn terminal_semantic_scroll_actions_move_viewport() -> Result<()> {
     Ok(())
 }
 
+/// §3.3 The shell reports where each command started and how it ended, and the
+/// server keeps those markers — but nothing in the GUI reached them, so
+/// scrolling back for "what did that command print" meant hunting by eye.
+///
+/// The jump moves the viewport, which a sighted user reads at a glance and a
+/// screen-reader user cannot: without a live region saying where it landed, the
+/// two keystrokes are silent and indistinguishable from doing nothing.
+fn prompt_jump_moves_the_viewport_and_says_where_it_landed() -> Result<()> {
+    let mut cx = headless_app()?;
+    let (domain, _server) = MockMuxServer::start(terminal_grid_with_history())?;
+    cx.allow_parking();
+
+    let window = open_mux_pane(&mut cx, domain)?;
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        a11y_text_run_values(tree)
+            .iter()
+            .any(|value| value.contains(TERMINAL_MARKER))
+    })?;
+    // The precondition: history is off-screen, so a jump that does nothing
+    // cannot be mistaken for a jump that worked.
+    assert!(
+        !a11y_text_run_values(&tree)
+            .iter()
+            .any(|value| value.contains("HIST-")),
+        "history must start above the viewport"
+    );
+    assert!(
+        announced_status_values(&tree).is_empty(),
+        "the region is there from the first frame, but with nothing to say yet"
+    );
+
+    // The action is dispatched from whatever holds focus, and a headless window
+    // focuses nothing on its own.
+    cx.update_window(window.into(), |view, window, cx| {
+        let handle = view
+            .downcast::<MuxPaneView>()
+            .ok()
+            .map(|view| gpui::Focusable::focus_handle(view.read(cx), cx));
+        if let Some(handle) = handle {
+            window.focus(&handle, cx);
+        }
+        window.dispatch_action(
+            Box::new(settings::mux_actions::JumpToPreviousPrompt),
+            cx,
+        );
+    })?;
+    cx.run_until_parked();
+
+    // The newest command's prompt sits two rows into history, so the jump has
+    // to bring history into view.
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.starts_with("Command "))
+    })?;
+    check_a11y(&tree, "mux prompt jump");
+    let (frame, _) = draw_frame(&mut cx, window.into())?;
+    save_frame("mux_prompt_jump", &frame, &tree)?;
+
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced
+            .iter()
+            .any(|value| value.starts_with("Command 2 of 2")),
+        "the jump must say which command it landed on: {announced:?}"
+    );
+    assert!(
+        announced.iter().any(|value| value.contains("exited 1")),
+        "a reader goes looking for a command because of how it ended: {announced:?}"
+    );
+
+    let runs = a11y_text_run_values(&tree);
+    assert!(
+        runs.iter().any(|value| value.contains("HIST-")),
+        "the jump must move the viewport into history: {runs:?}"
+    );
+
+    // A second jump backwards lands on the older command; a third has nowhere
+    // left to go and must say so rather than silently leaving the view alone.
+    for expected in ["Command 1 of 2", "At the oldest recorded command"] {
+        cx.update_window(window.into(), |_, window, cx| {
+            window.dispatch_action(
+                Box::new(settings::mux_actions::JumpToPreviousPrompt),
+                cx,
+            );
+        })?;
+        cx.run_until_parked();
+        let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+            announced_status_values(tree)
+                .iter()
+                .any(|value| value.starts_with(expected))
+        })?;
+        let announced = announced_status_values(&tree);
+        assert!(
+            announced.iter().any(|value| value.starts_with(expected)),
+            "expected {expected:?}, got {announced:?}"
+        );
+    }
+
+    Ok(())
+}
+
+/// §16.6 The ordinary copy writes to this machine's clipboard, which a second
+/// client attached to the same session cannot see. The session clipboard is the
+/// one both windows share — and neither the copy nor the paste shows anything
+/// in the pane, so what happened has to be said out loud.
+fn session_clipboard_copy_and_paste_report_what_happened() -> Result<()> {
+    let mut cx = headless_app()?;
+    let (domain, _server) = MockMuxServer::start(terminal_grid())?;
+    cx.allow_parking();
+
+    // A second client on the same session: the domain is one connection, and
+    // the clipboard it reaches is the server's, not this machine's.
+    let peer = domain.clone();
+    let window = open_mux_pane(&mut cx, domain)?;
+    draw_until(&mut cx, window.into(), |tree| {
+        a11y_text_run_values(tree)
+            .iter()
+            .any(|value| value.contains(TERMINAL_MARKER))
+    })?;
+
+    let dispatch = |cx: &mut HeadlessAppContext, action: Box<dyn gpui::Action>| -> Result<()> {
+        cx.update_window(window.into(), |view, window, cx| {
+            let handle = view
+                .downcast::<MuxPaneView>()
+                .ok()
+                .map(|view| gpui::Focusable::focus_handle(view.read(cx), cx));
+            if let Some(handle) = handle {
+                window.focus(&handle, cx);
+            }
+            window.dispatch_action(action, cx);
+        })?;
+        cx.run_until_parked();
+        Ok(())
+    };
+
+    // Nothing is selected, so the copy has nothing to send. Saying so is the
+    // difference between "there was nothing to copy" and a silent failure.
+    dispatch(
+        &mut cx,
+        Box::new(settings::mux_actions::CopyToSession),
+    )?;
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.contains("Nothing selected"))
+    })?;
+    check_a11y(&tree, "mux session clipboard");
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced
+            .iter()
+            .any(|value| value.contains("Nothing selected")),
+        "a copy with no selection must say so: {announced:?}"
+    );
+
+    // The clipboard the mock server holds is empty until something is put in
+    // it, and a paste from an empty clipboard is also not a failure.
+    dispatch(
+        &mut cx,
+        Box::new(settings::mux_actions::PasteFromSession),
+    )?;
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.contains("empty"))
+    })?;
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced
+            .iter()
+            .any(|value| value.contains("session clipboard is empty")),
+        "a paste from an empty session clipboard must say so: {announced:?}"
+    );
+
+    // The point of the session clipboard: another client attached to the same
+    // session copied something, and this pane can paste it. The machine's own
+    // clipboard carries nothing between the two.
+    cx.foreground_executor
+        .block_on(peer.set_clipboard(mux_protocol::ClipboardEntry {
+            content_type: mux_protocol::clipboard_entry::ClipboardContentType::Text as i32,
+            data: "from the other window".as_bytes().to_vec(),
+            origin_host: String::new(),
+        }))
+        .map_err(|error| anyhow::anyhow!("peer client could not set the clipboard: {error}"))?;
+
+    dispatch(&mut cx, Box::new(settings::mux_actions::PasteFromSession))?;
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.contains("Pasted"))
+    })?;
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced
+            .iter()
+            .any(|value| value.contains("Pasted 21 characters")),
+        "the paste must report what it pasted: {announced:?}"
+    );
+
+    let (frame, _) = draw_frame(&mut cx, window.into())?;
+    save_frame("mux_session_clipboard", &frame, &tree)?;
+    Ok(())
+}
+
+/// §3.10 The CLI has had `rename-session` since the beginning and the GUI listed
+/// sessions by a name it offered no way to change. Renaming needs the admin
+/// role, so the interesting path is the refusal: a modal that simply closed
+/// would look exactly like a rename that worked.
+fn rename_session_modal_names_its_field_and_speaks_its_refusal() -> Result<()> {
+    let mut cx = headless_app()?;
+    let (domain, _server) = MockMuxServer::start(terminal_grid())?;
+    cx.allow_parking();
+    // `InputField` builds its editor through a factory that `editor::init`
+    // installs; without it the modal cannot be constructed at all.
+    cx.update(|cx| editor::init(cx));
+
+    let window = cx.open_window(size(px(520.0), px(220.0)), |window, cx| {
+        cx.new(|cx| {
+            mux_window::RenameSessionModal::new(
+                domain,
+                MOCK_SESSION_ID.to_string(),
+                window,
+                cx,
+            )
+        })
+    })?;
+
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        !a11y_nodes_with_role(tree, "TextInput").is_empty()
+    })?;
+    check_a11y(&tree, "rename session modal");
+    assert!(
+        announced_status_values(&tree).is_empty(),
+        "the field's error region is there from the first frame with nothing to say"
+    );
+    let (frame, _) = draw_frame(&mut cx, window.into())?;
+    save_frame("rename_session_modal", &frame, &tree)?;
+
+    // A bare text box is a text box. `InputField` names itself through its
+    // placeholder — the field's own documented contract — so an empty one is a
+    // field a reader cannot identify.
+    let named = a11y_nodes(&tree).into_iter().any(|(_, node)| {
+        node["aria"]["role"] == "TextInput"
+            && a11y_string_field(node, "placeholder").is_some_and(|name| !name.is_empty())
+    });
+    assert!(
+        named,
+        "the name field must identify itself: {:?}",
+        a11y_role_summary(&tree)
+    );
+
+    // An empty name is refused here rather than sent, and the refusal is a live
+    // region: a reader who pressed enter is otherwise told nothing at all.
+    cx.update_window(window.into(), |view, window, cx| {
+        let handle = view
+            .downcast::<mux_window::RenameSessionModal>()
+            .ok()
+            .map(|view| gpui::Focusable::focus_handle(view.read(cx), cx));
+        if let Some(handle) = handle {
+            window.focus(&handle, cx);
+        }
+        window.dispatch_action(Box::new(menu::Confirm), cx);
+    })?;
+    cx.run_until_parked();
+
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.contains("needs a name"))
+    })?;
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced.iter().any(|value| value.contains("needs a name")),
+        "an empty name must be refused out loud: {announced:?}"
+    );
+
+    Ok(())
+}
+
+/// §12 A search reports how many matches it found, and that count is the whole
+/// answer to "did that find anything". It was a plain label: no node, no role,
+/// nothing said — a reader typing a query got silence either way.
+fn copy_mode_search_announces_its_match_count() -> Result<()> {
+    let mut cx = headless_app()?;
+    let (domain, _server) = MockMuxServer::start(terminal_grid_with_history())?;
+    cx.allow_parking();
+
+    let window = open_mux_pane(&mut cx, domain)?;
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        a11y_text_run_values(tree)
+            .iter()
+            .any(|value| value.contains(TERMINAL_MARKER))
+    })?;
+    assert!(
+        announced_status_values(&tree).is_empty(),
+        "nothing has been searched for yet"
+    );
+
+    let view = window.root(&mut cx)?;
+    cx.update(|cx| {
+        view.update(cx, |pane, cx| {
+            let terminal_view = pane.terminal_view_for_test().clone();
+            terminal_view.update(cx, |terminal_view, cx| {
+                terminal_view.enter_copy_mode_for_test(cx);
+                // The keys a user presses: `/`, the query, then enter.
+                for key in ["/", "r", "o", "w", "enter"] {
+                    let keystroke =
+                        gpui::Keystroke::parse(key).expect("well-formed test keystroke");
+                    terminal_view.dispatch_copy_mode_keystroke(&keystroke, cx);
+                }
+            });
+        });
+    });
+    cx.run_until_parked();
+
+    let (_, tree) = draw_until(&mut cx, window.into(), |tree| {
+        announced_status_values(tree)
+            .iter()
+            .any(|value| value.contains("match"))
+    })?;
+    check_a11y(&tree, "copy mode search");
+    let (frame, _) = draw_frame(&mut cx, window.into())?;
+    save_frame("mux_copy_mode_search", &frame, &tree)?;
+
+    let announced = announced_status_values(&tree);
+    assert!(
+        announced.iter().any(|value| value.starts_with("/row")),
+        "the indicator must name the query it searched for: {announced:?}"
+    );
+    assert!(
+        announced
+            .iter()
+            .any(|value| value.contains("matches") && !value.contains("no matches")),
+        "the grid has rows to match, so a count is what proves the search ran: {announced:?}"
+    );
+    Ok(())
+}
+
 /// A failure and a piece of news arrive through the same component, told apart
 /// on screen by a red warning icon. An icon is not a node and carries no text,
 /// so the screenshot and the a11y dump beside it are the two halves of the
@@ -1686,6 +2096,22 @@ fn main() {
         (
             "notification_severity_reaches_the_reader",
             notification_severity_reaches_the_reader,
+        ),
+        (
+            "prompt_jump_moves_the_viewport_and_says_where_it_landed",
+            prompt_jump_moves_the_viewport_and_says_where_it_landed,
+        ),
+        (
+            "session_clipboard_copy_and_paste_report_what_happened",
+            session_clipboard_copy_and_paste_report_what_happened,
+        ),
+        (
+            "rename_session_modal_names_its_field_and_speaks_its_refusal",
+            rename_session_modal_names_its_field_and_speaks_its_refusal,
+        ),
+        (
+            "copy_mode_search_announces_its_match_count",
+            copy_mode_search_announces_its_match_count,
         ),
     ];
 
