@@ -38,7 +38,7 @@ use wayland_client::{
     Connection, Dispatch, Proxy, QueueHandle, delegate_noop,
     protocol::{
         wl_buffer, wl_compositor, wl_keyboard, wl_pointer, wl_registry, wl_seat, wl_shm,
-        wl_shm_pool, wl_surface,
+        wl_shm_pool, wl_surface, wl_touch,
     },
 };
 use wayland_protocols::ext::background_effect::v1::client::{
@@ -107,8 +107,8 @@ use gpui::{
     KeyUpEvent, Keystroke, Modifiers, ModifiersChangedEvent, MouseButton, MouseDownEvent,
     MouseExitEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection, Pixels, PlatformDisplay,
     PlatformFrameSignal, PlatformInput, PlatformKeyboardLayout, PlatformWindow, Point, ScrollDelta,
-    ScrollEvent, ScrollSource, SharedString, Size, TouchPhase, WindowButtonLayout, WindowKind,
-    WindowParams, point, px, size,
+    ScrollEvent, ScrollSource, SharedString, Size, TouchEvent, TouchId, TouchPhase,
+    WindowButtonLayout, WindowKind, WindowParams, point, px, size,
 };
 use gpui_wgpu::{CompositorGpuHint, GpuContext};
 use wayland_protocols::wp::linux_dmabuf::zv1::client::{
@@ -364,6 +364,9 @@ pub(crate) struct WaylandClientState {
     pub compositor_gpu: Option<CompositorGpuHint>,
     wl_seat: wl_seat::WlSeat, // TODO: Multi seat support
     wl_pointer: Option<wl_pointer::WlPointer>,
+    wl_touch: Option<wl_touch::WlTouch>,
+    active_touches: HashMap<i32, ActiveTouch>,
+    next_touch_id: u64,
     pinch_gesture: Option<zwp_pointer_gesture_pinch_v1::ZwpPointerGesturePinchV1>,
     pinch_scale: f32,
     wl_keyboard: Option<wl_keyboard::WlKeyboard>,
@@ -419,6 +422,25 @@ pub(crate) struct WaylandClientState {
     registrations: Vec<RegistrationToken>,
     pub common: Rc<RefCell<LinuxCommon>>,
     ime_enabled: Option<bool>,
+}
+
+// Keep only surface identity here: an in-flight contact must not keep a window alive.
+struct ActiveTouch {
+    id: TouchId,
+    surface_id: ObjectId,
+    position: Point<Pixels>,
+}
+
+impl ActiveTouch {
+    fn event(&self, phase: TouchPhase) -> PlatformInput {
+        PlatformInput::Touch(TouchEvent {
+            id: self.id,
+            phase,
+            position: self.position,
+            predicted_position: None,
+            force: None,
+        })
+    }
 }
 
 struct DragState<DataOffer = wl_data_offer::WlDataOffer, Window = WaylandWindowStatePtr> {
@@ -806,6 +828,9 @@ impl WaylandClientStatePtr {
         let client = self.get_client();
         let mut state = client.borrow_mut();
         let closed_window = state.windows.remove(surface_id).unwrap();
+        state
+            .active_touches
+            .retain(|_, touch| &touch.surface_id != surface_id);
         if let Some(window) = state.mouse_focused_window.take()
             && !window.ptr_eq(&closed_window)
         {
@@ -825,6 +850,10 @@ impl WaylandClientStatePtr {
 }
 
 impl WaylandClientState {
+    fn take_touch_cancellations(&mut self) -> HashMap<i32, ActiveTouch> {
+        std::mem::take(&mut self.active_touches)
+    }
+
     fn hide_cursor_until_mouse_moves(&mut self) {
         if self.cursor_hidden_window.is_some() {
             return;
@@ -898,6 +927,11 @@ impl Drop for WaylandConnection {
 
         let mut state = self.0.borrow_mut();
         state.windows.clear();
+
+        if let Some(touch) = state.wl_touch.take() {
+            touch.release();
+        }
+        state.active_touches.clear();
 
         if let Some(wl_pointer) = &state.wl_pointer {
             wl_pointer.release();
@@ -1070,6 +1104,9 @@ impl WaylandConnection {
             compositor_gpu,
             wl_seat: seat,
             wl_pointer: None,
+            wl_touch: None,
+            active_touches: HashMap::default(),
+            next_touch_id: 0,
             wl_keyboard: None,
             pinch_gesture: None,
             pinch_scale: 1.0,
@@ -1619,8 +1656,14 @@ impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for WaylandClientStat
                     if let Some(wl_keyboard) = state.wl_keyboard.take() {
                         wl_keyboard.release();
                     }
+                    if let Some(touch) = state.wl_touch.take() {
+                        touch.release();
+                    }
+                    let cancellations = state.take_touch_cancellations();
                     state.wl_seat.release();
                     state.wl_seat = registry.bind::<wl_seat::WlSeat, _, _>(name, version, qh, ());
+                    drop(state);
+                    this.dispatch_touch_cancellations(cancellations);
                 }
                 "wl_output" => {
                     let Ok(version) = wl_output_version(version) else {
@@ -1947,7 +1990,7 @@ impl Dispatch<xdg_activation_token_v1::XdgActivationTokenV1, PendingActivation>
 
 impl Dispatch<wl_seat::WlSeat, ()> for WaylandClientStatePtr {
     fn event(
-        state: &mut Self,
+        this: &mut Self,
         seat: &wl_seat::WlSeat,
         event: wl_seat::Event,
         _: &(),
@@ -1958,7 +2001,7 @@ impl Dispatch<wl_seat::WlSeat, ()> for WaylandClientStatePtr {
             capabilities: WEnum::Value(capabilities),
         } = event
         {
-            let client = state.get_client();
+            let client = this.get_client();
             let mut state = client.borrow_mut();
             if capabilities.contains(wl_seat::Capability::Keyboard) {
                 let keyboard = seat.get_keyboard(qh, ());
@@ -2006,6 +2049,100 @@ impl Dispatch<wl_seat::WlSeat, ()> for WaylandClientStatePtr {
 
                 state.wl_pointer = Some(pointer);
             }
+            if capabilities.contains(wl_seat::Capability::Touch) {
+                if state.wl_touch.is_none() {
+                    state.wl_touch = Some(seat.get_touch(qh, ()));
+                }
+            } else {
+                if let Some(touch) = state.wl_touch.take() {
+                    // Seat bindings are at least v5; wl_touch.release requires v3.
+                    touch.release();
+                }
+                let cancellations = state.take_touch_cancellations();
+                drop(state);
+                this.dispatch_touch_cancellations(cancellations);
+            }
+        }
+    }
+}
+
+impl WaylandClientStatePtr {
+    fn dispatch_touch_cancellations(&self, cancellations: HashMap<i32, ActiveTouch>) {
+        let client = self.get_client();
+        for (_, touch) in cancellations {
+            // Resolve each window anew: an earlier callback may close another window.
+            let window = client.borrow().windows.get(&touch.surface_id).cloned();
+            if let Some(window) = window {
+                window.handle_input(touch.event(TouchPhase::Cancelled));
+            }
+        }
+    }
+}
+
+impl Dispatch<wl_touch::WlTouch, ()> for WaylandClientStatePtr {
+    fn event(
+        this: &mut Self,
+        proxy: &wl_touch::WlTouch,
+        event: wl_touch::Event,
+        _: &(),
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+        let client = this.get_client();
+        let mut state = client.borrow_mut();
+        if state.wl_touch.as_ref() != Some(proxy) {
+            return;
+        }
+        let (surface_id, input) = match event {
+            wl_touch::Event::Down {
+                surface, id, x, y, ..
+            } => {
+                let surface_id = surface.id();
+                if !state.windows.contains_key(&surface_id) {
+                    return;
+                }
+                state.next_touch_id = state
+                    .next_touch_id
+                    .checked_add(1)
+                    .expect("GPUI touch identifiers exhausted");
+                let touch = ActiveTouch {
+                    id: TouchId(state.next_touch_id),
+                    surface_id: surface_id.clone(),
+                    position: point(px(x as f32), px(y as f32)),
+                };
+                let input = touch.event(TouchPhase::Started);
+                state.active_touches.insert(id, touch);
+                (surface_id, input)
+            }
+            wl_touch::Event::Motion { id, x, y, .. } => {
+                let Some(touch) = state.active_touches.get_mut(&id) else {
+                    return;
+                };
+                touch.position = point(px(x as f32), px(y as f32));
+                (touch.surface_id.clone(), touch.event(TouchPhase::Moved))
+            }
+            wl_touch::Event::Up { id, .. } => {
+                let Some(touch) = state.active_touches.remove(&id) else {
+                    return;
+                };
+                let input = touch.event(TouchPhase::Ended);
+                (touch.surface_id, input)
+            }
+            // The core protocol's cancel event has no arguments and needs no frame.
+            wl_touch::Event::Cancel => {
+                let cancellations = state.take_touch_cancellations();
+                drop(state);
+                this.dispatch_touch_cancellations(cancellations);
+                return;
+            }
+            _ => return,
+        };
+        // Down's surface remains authoritative across mouse focus changes,
+        // including contacts in nested popup windows.
+        let window = get_window(&mut state, &surface_id);
+        drop(state);
+        if let Some(window) = window {
+            window.handle_input(input);
         }
     }
 }
