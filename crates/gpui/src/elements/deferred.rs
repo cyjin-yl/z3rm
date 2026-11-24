@@ -481,29 +481,28 @@ mod tests {
             })
             .expect("open the real in-window prompt");
 
-        window
-            .update(cx, |_, window, app| {
-                trace.borrow_mut().clear();
-                window.refresh();
-                window.draw(app).clear(app);
-                assert_eq!(
-                    trace.borrow().as_slice(),
-                    &[
-                        ("prepaint", "root"),
-                        ("prepaint", "root-deferred"),
-                        ("prepaint", "prompt-background"),
-                        ("prepaint", "prompt-deferred"),
-                        ("prepaint", "prompt-nested"),
-                        ("paint", "root"),
-                        ("paint", "root-deferred"),
-                        ("paint", "prompt-background"),
-                        ("paint", "prompt-deferred"),
-                        ("paint", "prompt-nested"),
-                    ],
-                    "each deferred child must prepaint and paint once in its host layer",
-                );
-            })
-            .expect("draw a prompt with nested deferred children");
+        cx.update_window(window.into(), |_, window, app| {
+            trace.borrow_mut().clear();
+            window.refresh();
+            window.draw(app).clear(app);
+            assert_eq!(
+                trace.borrow().as_slice(),
+                &[
+                    ("prepaint", "root"),
+                    ("prepaint", "root-deferred"),
+                    ("prepaint", "prompt-background"),
+                    ("prepaint", "prompt-deferred"),
+                    ("prepaint", "prompt-nested"),
+                    ("paint", "root"),
+                    ("paint", "root-deferred"),
+                    ("paint", "prompt-background"),
+                    ("paint", "prompt-deferred"),
+                    ("paint", "prompt-nested"),
+                ],
+                "each deferred child must prepaint and paint once in its host layer",
+            );
+        })
+        .expect("draw a prompt with nested deferred children");
 
         let initial_root_renders = root_renders.get();
         let initial_prompt_renders = prompt_renders.get();
@@ -512,28 +511,27 @@ mod tests {
                 .update(cx, |_, _, cx| cx.notify())
                 .expect("notify root");
             cx.run_until_parked();
-            window
-                .update(cx, |_, window, app| {
-                    trace.borrow_mut().clear();
-                    window.draw(app).clear(app);
-                    assert!(window.has_active_prompt());
-                    assert_eq!(window.rendered_frame.deferred_draws.len(), 3);
-                    assert_eq!(
-                        window.rendered_frame.debug_bounds["PROMPT_NESTED"].size,
-                        size(px(24.), px(24.)),
-                    );
-                    assert_eq!(
-                        trace.borrow().as_slice(),
-                        &[
-                            ("prepaint", "root"),
-                            ("prepaint", "prompt-background"),
-                            ("paint", "root"),
-                            ("paint", "prompt-background"),
-                        ],
-                        "both deferred subtrees should replay their cached frame ranges",
-                    );
-                })
-                .expect("reuse cached ranges with the prompt still open");
+            cx.update_window(window.into(), |_, window, app| {
+                trace.borrow_mut().clear();
+                window.draw(app).clear(app);
+                assert!(window.has_active_prompt());
+                assert_eq!(window.rendered_frame.deferred_draws.len(), 3);
+                assert_eq!(
+                    window.rendered_frame.debug_bounds["PROMPT_NESTED"].size,
+                    size(px(24.), px(24.)),
+                );
+                assert_eq!(
+                    trace.borrow().as_slice(),
+                    &[
+                        ("prepaint", "root"),
+                        ("prepaint", "prompt-background"),
+                        ("paint", "root"),
+                        ("paint", "prompt-background"),
+                    ],
+                    "both deferred subtrees should replay their cached frame ranges",
+                );
+            })
+            .expect("reuse cached ranges with the prompt still open");
             assert_eq!(root_renders.get(), initial_root_renders);
             assert_eq!(prompt_renders.get(), initial_prompt_renders);
         }
@@ -543,17 +541,16 @@ mod tests {
             prompt.panel.update(cx, |_, cx| cx.notify());
         });
         cx.run_until_parked();
-        window
-            .update(cx, |_, window, app| {
-                window.draw(app).clear(app);
-                assert!(
-                    window
-                        .rendered_frame
-                        .debug_bounds
-                        .contains_key("PROMPT_NESTED")
-                );
-            })
-            .expect("redraw the invalidated prompt subtree");
+        cx.update_window(window.into(), |_, window, app| {
+            window.draw(app).clear(app);
+            assert!(
+                window
+                    .rendered_frame
+                    .debug_bounds
+                    .contains_key("PROMPT_NESTED")
+            );
+        })
+        .expect("redraw the invalidated prompt subtree");
         assert!(prompt_renders.get() > initial_prompt_renders);
         assert_eq!(response.try_recv().expect("pending response"), None);
 
@@ -561,12 +558,15 @@ mod tests {
         cx.run_until_parked();
         assert_eq!(response.try_recv().expect("prompt response"), Some(1));
         window
-            .update(cx, |root, window, app| {
+            .update(cx, |root, window, _| {
                 assert!(!window.has_active_prompt());
                 assert!(root.focus.is_focused(window));
-                window.draw(app).clear(app);
-                assert_eq!(window.rendered_frame.deferred_draws.len(), 1);
             })
-            .expect("remove the prompt and retain root deferred draws");
+            .expect("restore the root focus");
+        cx.update_window(window.into(), |_, window, app| {
+            window.draw(app).clear(app);
+            assert_eq!(window.rendered_frame.deferred_draws.len(), 1);
+        })
+        .expect("remove the prompt and retain root deferred draws");
     }
 }
