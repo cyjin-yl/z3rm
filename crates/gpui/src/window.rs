@@ -4040,7 +4040,8 @@ impl Window {
         #[cfg(any(feature = "inspector", debug_assertions))]
         let inspector_element = self.prepaint_inspector(_inspector_width, cx);
 
-        self.prepaint_deferred_draws(cx);
+        self.prepaint_deferred_draws(0, cx);
+        let root_deferred_draws_end = self.next_frame.deferred_draws.len();
 
         let mut prompt_element = None;
         let mut active_drag_element = None;
@@ -4065,6 +4066,12 @@ impl Window {
             tooltip_element = self.prepaint_tooltip(cx);
         }
 
+        // Prompts, drags, and tooltips may defer children after the root's
+        // deferred pass. Keep their draws above the root while preserving
+        // the vector indices recorded by cached prepaint ranges.
+        self.prepaint_deferred_draws(root_deferred_draws_end, cx);
+        let overlay_deferred_draws_end = self.next_frame.deferred_draws.len();
+
         self.mouse_hit_test = self.next_frame.hit_test(self.mouse_position);
 
         // Now actually paint the elements.
@@ -4076,7 +4083,7 @@ impl Window {
         #[cfg(any(feature = "inspector", debug_assertions))]
         self.paint_inspector(inspector_element, cx);
 
-        self.paint_deferred_draws(cx);
+        self.paint_deferred_draws(0..root_deferred_draws_end, cx);
 
         if let Some(mut prompt_element) = prompt_element {
             prompt_element.paint(self, cx);
@@ -4085,6 +4092,7 @@ impl Window {
         } else if let Some(mut tooltip_element) = tooltip_element {
             tooltip_element.paint(self, cx);
         }
+        self.paint_deferred_draws(root_deferred_draws_end..overlay_deferred_draws_end, cx);
 
         #[cfg(any(feature = "inspector", debug_assertions))]
         self.paint_inspector_hitbox(cx);
@@ -4194,7 +4202,7 @@ impl Window {
         None
     }
 
-    fn prepaint_deferred_draws(&mut self, cx: &mut App) {
+    fn prepaint_deferred_draws(&mut self, start: usize, cx: &mut App) {
         assert_eq!(self.element_id_stack.len(), 0);
 
         // Process deferred draws in multiple rounds to support nesting.
@@ -4207,7 +4215,7 @@ impl Window {
         // slices on the next frame. Moving the draws out and re-appending them
         // shifts the indices of nested draws, causing reused subtrees to graft
         // the wrong deferred draws and panic in the dispatch tree.
-        let mut round_start = 0;
+        let mut round_start = start;
         let mut depth = 0;
         loop {
             let round_end = self.next_frame.deferred_draws.len();
@@ -4274,16 +4282,14 @@ impl Window {
         }
     }
 
-    fn paint_deferred_draws(&mut self, cx: &mut App) {
+    fn paint_deferred_draws(&mut self, range: Range<usize>, cx: &mut App) {
         assert_eq!(self.element_id_stack.len(), 0);
 
-        // Paint all deferred draws in priority order.
-        // Since prepaint has already processed nested deferreds, we just paint them all.
-        if self.next_frame.deferred_draws.len() == 0 {
+        if range.is_empty() {
             return;
         }
 
-        let traversal_order = self.deferred_draw_traversal_order();
+        let traversal_order = self.deferred_draw_traversal_order(range);
         let mut deferred_draws = mem::take(&mut self.next_frame.deferred_draws);
         for deferred_draw_ix in traversal_order {
             let deferred_draw = &mut deferred_draws[deferred_draw_ix];
@@ -4316,9 +4322,8 @@ impl Window {
         self.element_id_stack.clear();
     }
 
-    fn deferred_draw_traversal_order(&mut self) -> SmallVec<[usize; 8]> {
-        let deferred_count = self.next_frame.deferred_draws.len();
-        let mut sorted_indices = (0..deferred_count).collect::<SmallVec<[_; 8]>>();
+    fn deferred_draw_traversal_order(&self, range: Range<usize>) -> SmallVec<[usize; 8]> {
+        let mut sorted_indices = range.collect::<SmallVec<[_; 8]>>();
         sorted_indices.sort_by_key(|ix| self.next_frame.deferred_draws[*ix].priority);
         sorted_indices
     }
